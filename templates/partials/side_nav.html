@@ -1,0 +1,56 @@
+{% with current_url=request.resolver_match.url_name suffix=nav_id_suffix|default:'main' %}
+<div class="card glass-card side-nav-card">
+  <div class="card-body p-0">
+    <div class="px-3 py-3 border-bottom">
+      <h6 class="mb-1">Navigation</h6>
+      <small class="text-muted">Quick access to all sections</small>
+    </div>
+
+    <div class="list-group list-group-flush">
+      {% if user.is_staff %}
+        <a href="{% url 'admin_dashboard' %}" class="list-group-item list-group-item-action side-link {% if current_url == 'admin_dashboard' %}active{% endif %}">Dashboard</a>
+
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_user_list' or current_url == 'admin_user_edit' or current_url == 'admin_member_list' or current_url == 'admin_member_create' or current_url == 'admin_member_edit' or current_url == 'admin_kid_list' or current_url == 'admin_kid_create' or current_url == 'admin_kid_edit' or current_url == 'admin_officiant_list' or current_url == 'admin_officiant_create' or current_url == 'admin_officiant_edit' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#peopleNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_user_list' or current_url == 'admin_user_edit' or current_url == 'admin_member_list' or current_url == 'admin_member_create' or current_url == 'admin_member_edit' or current_url == 'admin_kid_list' or current_url == 'admin_kid_create' or current_url == 'admin_kid_edit' or current_url == 'admin_officiant_list' or current_url == 'admin_officiant_create' or current_url == 'admin_officiant_edit' %}true{% else %}false{% endif %}">
+          People Data
+        </button>
+        <div id="peopleNav{{ suffix }}" class="collapse {% if current_url == 'admin_user_list' or current_url == 'admin_user_edit' or current_url == 'admin_member_list' or current_url == 'admin_member_create' or current_url == 'admin_member_edit' or current_url == 'admin_kid_list' or current_url == 'admin_kid_create' or current_url == 'admin_kid_edit' or current_url == 'admin_officiant_list' or current_url == 'admin_officiant_create' or current_url == 'admin_officiant_edit' %}show{% endif %}">
+          <a href="{% url 'admin_user_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_user_list' or current_url == 'admin_user_edit' %}active{% endif %}">Users</a>
+          <a href="{% url 'admin_member_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_member_list' or current_url == 'admin_member_create' or current_url == 'admin_member_edit' %}active{% endif %}">Members</a>
+          <a href="{% url 'admin_kid_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_kid_list' or current_url == 'admin_kid_create' or current_url == 'admin_kid_edit' %}active{% endif %}">Kids</a>
+          <a href="{% url 'admin_officiant_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_officiant_list' or current_url == 'admin_officiant_create' or current_url == 'admin_officiant_edit' %}active{% endif %}">Officiants</a>
+        </div>
+
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#sacramentsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}true{% else %}false{% endif %}">
+          Sacraments
+        </button>
+        <div id="sacramentsNav{{ suffix }}" class="collapse {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}show{% endif %}">
+          <a href="{% url 'admin_baptism_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' %}active{% endif %}">Baptisms</a>
+          <a href="{% url 'admin_dedication_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' %}active{% endif %}">Dedications</a>
+          <a href="{% url 'admin_wedding_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}active{% endif %}">Weddings</a>
+        </div>
+
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#recordsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}true{% else %}false{% endif %}">
+          Records & Reports
+        </button>
+        <div id="recordsNav{{ suffix }}" class="collapse {% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}show{% endif %}">
+          <a href="{% url 'admin_certificate_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_certificate_list' %}active{% endif %}">Certificates</a>
+          <a href="{% url 'admin_calendar' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_calendar' %}active{% endif %}">Calendar</a>
+          <a href="{% url 'admin_reports' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_reports' %}active{% endif %}">Reports</a>
+        </div>
+      {% else %}
+        <a href="{% url 'member_dashboard' %}" class="list-group-item list-group-item-action side-link {% if current_url == 'member_dashboard' %}active{% endif %}">Dashboard</a>
+
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#memberRequests{{ suffix }}" aria-expanded="{% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}true{% else %}false{% endif %}">
+          Requests
+        </button>
+        <div id="memberRequests{{ suffix }}" class="collapse {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}show{% endif %}">
+          <a href="{% url 'member_baptism_request' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'member_baptism_request' %}active{% endif %}">Baptism Request</a>
+          <a href="{% url 'member_dedication_request' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}active{% endif %}">Dedication Request</a>
+        </div>
+
+        <a href="{% url 'member_certificate_list' %}" class="list-group-item list-group-item-action side-link {% if current_url == 'member_certificate_list' %}active{% endif %}">Certificates</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endwith %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Baby Dedication Request</h3>
+<form method="post" class="card card-body">{% csrf_token %}
+<div class="row g-3">
+  <div class="col-md-4"><label>Child First Name</label><input name="child_first_name" class="form-control" required></div>
+  <div class="col-md-4"><label>Child Last Name</label><input name="child_last_name" class="form-control" required></div>
+  <div class="col-md-4"><label>Child Gender</label><select name="child_gender" class="form-select" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
+  <div class="col-md-4"><label>Child Date of Birth</label><input type="date" name="child_date_of_birth" class="form-control" required></div>
+  <div class="col-md-4"><label>Father Full Name</label><input name="father_name" class="form-control" required></div>
+  <div class="col-md-4"><label>Mother Full Name</label><input name="mother_name" class="form-control" required></div>
+  <div class="col-md-4"><label>Scripture Reference</label><input name="scripture_reference" class="form-control" placeholder="e.g. Proverbs 22:6" required></div>
+  <div class="col-md-8"><label>Scripture Verse</label><textarea name="scripture_text" class="form-control" rows="3" required></textarea></div>
+</div>
+<button class="btn btn-primary mt-3">Submit Request</button>
+</form>
+{% endblock %}

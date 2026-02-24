@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3"><h3>Weddings</h3><a class="btn btn-primary" href="{% url 'admin_wedding_create' %}">Create Wedding</a></div>
+<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Couple</th><th>Date</th><th>Health Docs</th><th>Status</th><th></th></tr></thead><tbody>
+{% for item in page_obj %}<tr><td>{{ item.groom }} & {{ item.bride }}</td><td>{{ item.wedding_date }}</td><td>{% if item.groom_health_document and item.bride_health_document %}<span class="badge bg-success">Complete</span>{% else %}<span class="badge bg-warning text-dark">Missing</span>{% endif %}</td><td>{{ item.status }}</td><td><a class="btn btn-sm btn-primary" href="{% url 'admin_wedding_review' item.id %}">Manage</a></td></tr>{% empty %}<tr><td colspan="5">No weddings.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+{% endblock %}

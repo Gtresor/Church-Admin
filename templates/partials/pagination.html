@@ -1,0 +1,83 @@
+{% if page_obj and page_obj.paginator.num_pages > 1 %}
+<nav class="mt-3" aria-label="Pagination">
+  {% with total=page_obj.paginator.num_pages current=page_obj.number %}
+  <ul class="pagination mb-0">
+    {% if page_query %}
+      {% with qp=page_query|add:'&' %}
+      <li class="page-item {% if current == 1 %}disabled{% endif %}">
+        <a class="page-link" href="?{{ qp }}page=1">First</a>
+      </li>
+      <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+        <a class="page-link" href="?{{ qp }}page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">Previous</a>
+      </li>
+      <li class="page-item {% if current == 1 %}active{% endif %}">
+        <a class="page-link" href="?{{ qp }}page=1">1</a>
+      </li>
+      {% if current > 4 %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+
+      {% for num in page_obj.paginator.page_range %}
+      {% if num > 1 and num < total and num >= current|add:'-1' and num <= current|add:'1' %}
+      <li class="page-item {% if current == num %}active{% endif %}">
+        <a class="page-link" href="?{{ qp }}page={{ num }}">{{ num }}</a>
+      </li>
+      {% endif %}
+      {% endfor %}
+
+      {% if current < total|add:'-3' %}
+      <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+      {% if total > 1 %}
+      <li class="page-item {% if current == total %}active{% endif %}">
+        <a class="page-link" href="?{{ qp }}page={{ total }}">{{ total }}</a>
+      </li>
+      {% endif %}
+      <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+        <a class="page-link" href="?{{ qp }}page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">Next</a>
+      </li>
+      <li class="page-item {% if current == total %}disabled{% endif %}">
+        <a class="page-link" href="?{{ qp }}page={{ total }}">Last</a>
+      </li>
+      {% endwith %}
+    {% else %}
+    <li class="page-item {% if current == 1 %}disabled{% endif %}">
+      <a class="page-link" href="?page=1">First</a>
+    </li>
+    <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+      <a class="page-link" href="?page={% if page_obj.has_previous %}{{ page_obj.previous_page_number }}{% else %}1{% endif %}">Previous</a>
+    </li>
+    <li class="page-item {% if current == 1 %}active{% endif %}">
+      <a class="page-link" href="?page=1">1</a>
+    </li>
+    {% if current > 4 %}
+    <li class="page-item disabled"><span class="page-link">…</span></li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+    {% if num > 1 and num < total and num >= current|add:'-1' and num <= current|add:'1' %}
+    <li class="page-item {% if current == num %}active{% endif %}">
+      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+    </li>
+    {% endif %}
+    {% endfor %}
+
+    {% if current < total|add:'-3' %}
+    <li class="page-item disabled"><span class="page-link">…</span></li>
+    {% endif %}
+    {% if total > 1 %}
+    <li class="page-item {% if current == total %}active{% endif %}">
+      <a class="page-link" href="?page={{ total }}">{{ total }}</a>
+    </li>
+    {% endif %}
+    <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+      <a class="page-link" href="?page={% if page_obj.has_next %}{{ page_obj.next_page_number }}{% else %}{{ page_obj.paginator.num_pages }}{% endif %}">Next</a>
+    </li>
+    <li class="page-item {% if current == total %}disabled{% endif %}">
+      <a class="page-link" href="?page={{ total }}">Last</a>
+    </li>
+    {% endif %}
+  </ul>
+  {% endwith %}
+</nav>
+{% endif %}

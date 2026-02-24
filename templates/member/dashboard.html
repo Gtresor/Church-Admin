@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-wrap">
+<div class="dashboard-hero hero-member mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h3 class="mb-1">Member Dashboard</h3>
+      <p class="mb-0 opacity-75">Track your requests, certificates, and sacramental progress in one place.</p>
+    </div>
+    <span class="badge rounded-pill text-bg-light">My Portal</span>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-xl-3"><div class="stat-card stat-1 h-100"><div class="card-body"><div class="label">My Baptism Status</div><p class="value">{{ baptism.status|default:'No request' }}</p></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="stat-card stat-2 h-100"><div class="card-body"><div class="label">Dedication Requests</div><p class="value">{{ dedications|length }}</p></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">My Certificates</div><p class="value">{{ certificates|length }}</p></div></div></div>
+  <div class="col-md-6 col-xl-3"><div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Pending Requests</div><p class="value">{{ pending_requests }}</p></div></div></div>
+</div>
+{% if baptism and baptism.admin_comment %}
+<div class="alert alert-warning border-0 shadow-sm mb-3">Baptism comment: {{ baptism.admin_comment }}</div>
+{% endif %}
+{% if dedications %}
+<div class="glass-card mb-3"><div class="card-body"><h5 class="section-title">Dedication Requests</h5>
+<ul class="mb-0">
+  {% for d in dedications %}
+  <li>{{ d.child }} - {{ d.status }} {% if d.status == 'Rejected' %}<a href="{% url 'member_dedication_edit' d.id %}">Resubmit</a>{% endif %}</li>
+  {% endfor %}
+</ul>
+</div></div>
+{% endif %}
+<div class="glass-card">
+  <div class="card-body">
+    <h5 class="section-title">Recent Certificates</h5>
+    <div class="table-responsive">
+      <table class="table table-sm soft-table mb-0">
+        <thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>Download</th></tr></thead>
+        <tbody>
+        {% for cert in recent_certificates %}
+          <tr>
+            <td>{{ cert.certificate_number }}</td>
+            <td>{{ cert.service_type }}</td>
+            <td>{{ cert.issued_date }}</td>
+            <td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
+            <td>{% if cert.certificate_file %}<a class="btn btn-sm btn-outline-primary" href="{{ cert.certificate_file.url }}">Download</a>{% else %}-{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No certificates available.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Calendar - {{ month_name }} {{ year }}</h3>
+<form class="row g-2 mb-3">
+  <div class="col-md-2"><input class="form-control" type="number" name="month" min="1" max="12" value="{{ month }}"></div>
+  <div class="col-md-2"><input class="form-control" type="number" name="year" min="2000" max="2100" value="{{ year }}"></div>
+  <div class="col-md-2"><button class="btn btn-outline-primary">Go</button></div>
+</form>
+<div class="row row-cols-7 g-2">
+  {% for day in days %}
+    <div class="col-md-1 border rounded p-2 bg-white" style="min-height:120px;">
+      <strong>{{ day }}</strong>
+      {% for event in events %}
+        {% if event.day == day %}
+          <div class="small mt-1 p-1 text-white rounded" style="background:{{ event.color }};">{{ event.label }}</div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

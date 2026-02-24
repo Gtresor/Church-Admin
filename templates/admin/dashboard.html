@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-wrap">
+<div class="dashboard-hero hero-admin mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h3 class="mb-1">Admin Command Center</h3>
+      <p class="mb-0 opacity-75">Track sacramental operations, upcoming services, and certificate activity at a glance.</p>
+    </div>
+    <span class="badge rounded-pill text-bg-light">Church Management</span>
+  </div>
+</div>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-xxl-5 g-3 mb-4">
+  <div class="col"><div class="stat-card stat-1 h-100"><div class="card-body"><div class="label">Total Members</div><p class="value">{{ total_members }}</p></div></div></div>
+  <div class="col"><div class="stat-card stat-2 h-100"><div class="card-body"><div class="label">Pending Baptisms</div><p class="value">{{ pending_baptisms }}</p></div></div></div>
+  <div class="col"><div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">Pending Dedications</div><p class="value">{{ pending_dedications }}</p></div></div></div>
+  <div class="col"><div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Total Weddings</div><p class="value">{{ total_weddings }}</p></div></div></div>
+  <div class="col"><div class="stat-card stat-5 h-100"><div class="card-body"><div class="label">Certificates Issued</div><p class="value">{{ certificates_issued }}</p></div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-lg-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title">Upcoming Services</h5>
+        <div class="table-responsive">
+          <table class="table table-sm soft-table mb-0">
+            <thead><tr><th>Type</th><th>Name</th><th>Date</th><th></th></tr></thead>
+            <tbody>
+            {% for item in upcoming_services %}
+              <tr>
+                <td>{{ item.service }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.date }}</td>
+                <td><a href="{{ item.url }}" class="btn btn-sm btn-outline-primary">Open</a></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4">No upcoming services.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title">Recent Requests</h5>
+        <div class="mb-2"><strong>Baptisms</strong></div>
+        <ul class="small ps-3 mb-3">
+          {% for item in recent_requests.baptisms %}
+            <li>{{ item.person }} - {{ item.status }}</li>
+          {% empty %}
+            <li>No baptism requests.</li>
+          {% endfor %}
+        </ul>
+        <div class="mb-2"><strong>Dedications</strong></div>
+        <ul class="small ps-3 mb-0">
+          {% for item in recent_requests.dedications %}
+            <li>{{ item.child }} - {{ item.status }}</li>
+          {% empty %}
+            <li>No dedication requests.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="glass-card mb-3">
+  <div class="card-body">
+    <h5 class="section-title">Recent Certificates</h5>
+    <div class="table-responsive">
+      <table class="table table-sm soft-table mb-0">
+        <thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>File</th></tr></thead>
+        <tbody>
+        {% for cert in recent_certificates %}
+          <tr>
+            <td>{{ cert.certificate_number }}</td>
+            <td>{{ cert.service_type }}</td>
+            <td>{{ cert.issued_date }}</td>
+            <td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
+            <td>{% if cert.certificate_file %}<a class="btn btn-sm btn-outline-primary" href="{{ cert.certificate_file.url }}">Download</a>{% else %}-{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No certificates yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

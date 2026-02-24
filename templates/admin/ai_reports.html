@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .chat-shell {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  }
+
+  .chat-window {
+    max-height: 56vh;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    border: 1px solid #e8eefc;
+    border-radius: 0.8rem;
+    padding: 1rem;
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    padding: 0.62rem 0.85rem;
+    border-radius: 0.8rem;
+    margin-bottom: 0.6rem;
+    white-space: pre-wrap;
+  }
+
+  .chat-user {
+    margin-left: auto;
+    background: #1d4ed8;
+    color: #fff;
+  }
+
+  .chat-assistant {
+    margin-right: auto;
+    background: #eef4ff;
+    color: #1e293b;
+  }
+</style>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">AI System Assistant</h3>
+  <a href="{% url 'admin_reports' %}" class="btn btn-outline-secondary">Back to Reports</a>
+</div>
+
+<div class="card chat-shell mb-3">
+  <div class="card-body">
+    <p class="text-muted mb-3">Chat with the system about members, sacraments, schedules, and certificates.</p>
+
+    <div id="chatWindow" class="chat-window mb-3">
+      <div class="chat-bubble chat-assistant">Hello. Ask me for reports or system counts, for example: “How many active members do we have?”</div>
+    </div>
+
+    <form id="chatForm" class="row g-2" autocomplete="off">
+      {% csrf_token %}
+      <div class="col-lg-8 col-md-12">
+        <input id="chatPromptInput" name="prompt" class="form-control" placeholder="Type your question..." required>
+      </div>
+      <div class="col-lg-2 col-md-6 d-grid">
+        <button class="btn btn-primary" type="submit">Send</button>
+      </div>
+      <div class="col-lg-2 col-md-6 d-grid">
+        <button id="micBtn" class="btn btn-outline-secondary" type="button">🎤 Speak</button>
+      </div>
+    </form>
+
+    <div id="reportResultCard" class="card border-0 shadow-sm mt-3 d-none">
+      <div class="card-body">
+        <h5 id="reportTitle" class="mb-2">Report</h5>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead id="reportThead"></thead>
+            <tbody id="reportTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body">
+    <h6 class="mb-2">Try Prompts</h6>
+    <div class="d-flex flex-wrap gap-2">
+      {% for example in chat_examples %}
+      <button class="btn btn-sm btn-outline-primary chat-example" type="button" data-prompt="{{ example }}">{{ example }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatPromptInput');
+    const chatWindow = document.getElementById('chatWindow');
+    const micBtn = document.getElementById('micBtn');
+    const reportCard = document.getElementById('reportResultCard');
+    const reportTitle = document.getElementById('reportTitle');
+    const reportThead = document.getElementById('reportThead');
+    const reportTbody = document.getElementById('reportTbody');
+
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) {
+        return parts.pop().split(';').shift();
+      }
+      return '';
+    }
+
+    function addBubble(text, role) {
+      const bubble = document.createElement('div');
+      bubble.className = `chat-bubble ${role === 'user' ? 'chat-user' : 'chat-assistant'}`;
+      bubble.textContent = text;
+      chatWindow.appendChild(bubble);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function renderReport(report) {
+      if (!report || !report.columns || !report.columns.length) {
+        reportCard.classList.add('d-none');
+        return;
+      }
+
+      reportCard.classList.remove('d-none');
+      reportTitle.textContent = report.title || 'Report';
+
+      reportThead.innerHTML = '';
+      reportTbody.innerHTML = '';
+
+      const headRow = document.createElement('tr');
+      report.columns.forEach((column) => {
+        const th = document.createElement('th');
+        th.textContent = column;
+        headRow.appendChild(th);
+      });
+      reportThead.appendChild(headRow);
+
+      (report.rows || []).forEach((row) => {
+        const tr = document.createElement('tr');
+        row.forEach((value) => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        reportTbody.appendChild(tr);
+      });
+    }
+
+    function speakText(text) {
+      if (!('speechSynthesis' in window) || !text) {
+        return;
+      }
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function sendPrompt(prompt) {
+      if (!prompt) {
+        return;
+      }
+      addBubble(prompt, 'user');
+
+      const formData = new FormData();
+      formData.append('prompt', prompt);
+
+      try {
+        const response = await fetch("{% url 'admin_ai_reports_chat_api' %}", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        const reply = data.reply || 'No response available.';
+        addBubble(reply, 'assistant');
+        speakText(reply);
+        renderReport(data.report);
+      } catch (error) {
+        addBubble('Unable to reach assistant right now.', 'assistant');
+      }
+    }
+
+    if (chatForm) {
+      chatForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const prompt = chatInput.value.trim();
+        if (!prompt) {
+          return;
+        }
+        chatInput.value = '';
+        await sendPrompt(prompt);
+      });
+    }
+
+    document.querySelectorAll('.chat-example').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const prompt = button.dataset.prompt || '';
+        await sendPrompt(prompt);
+      });
+    });
+
+    if (micBtn) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        micBtn.disabled = true;
+        micBtn.textContent = 'Voice N/A';
+      } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        micBtn.addEventListener('click', () => {
+          recognition.start();
+        });
+
+        recognition.onresult = async (event) => {
+          const transcript = event.results[0][0].transcript || '';
+          chatInput.value = transcript;
+          await sendPrompt(transcript);
+          chatInput.value = '';
+        };
+      }
+    }
+  })();
+</script>
+{% endblock %}

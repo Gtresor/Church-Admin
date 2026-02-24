@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Create Wedding</h3>
+  <span class="badge bg-primary-subtle text-primary-emphasis">Admin Wedding Panel</span>
+</div>
+<form method="post" enctype="multipart/form-data" class="card shadow-sm border-0">
+{% csrf_token %}
+<div class="card-body">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+        <h5 class="mb-1">Groom</h5>
+        <p class="text-muted small mb-3">Select from existing records or enable manual registration.</p>
+        <label class="form-label">Existing Groom</label>
+        <select id="groom_person_id" name="groom_person_id" class="form-select mb-3">
+          <option value="">-- Select Groom from System --</option>
+          {% for person in people %}
+          <option value="{{ person.id }}">{{ person }} {% if person.is_member %}(Member){% endif %}</option>
+          {% endfor %}
+        </select>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="groom_manual_toggle">
+          <label class="form-check-label" for="groom_manual_toggle">Groom not in system (add manually)</label>
+        </div>
+        <div id="groom_manual_section" class="d-none">
+          <div class="row g-2">
+            <div class="col-md-6"><label class="form-label">First Name</label><input name="groom_first_name" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Last Name</label><input name="groom_last_name" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Gender</label><select name="groom_gender" class="form-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+            <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" name="groom_date_of_birth" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Phone</label><input name="groom_phone" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="groom_email" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Address</label><input name="groom_address" class="form-control"></div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="form-label">Groom Health Document</label>
+          <input type="file" name="groom_health_document" class="form-control" accept=".pdf,image/png,image/jpeg" required>
+          <div class="form-text">Required. Accepted: PDF, PNG, JPG (max 5MB).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+        <h5 class="mb-1">Bride</h5>
+        <p class="text-muted small mb-3">Select from existing records or enable manual registration.</p>
+        <label class="form-label">Existing Bride</label>
+        <select id="bride_person_id" name="bride_person_id" class="form-select mb-3">
+          <option value="">-- Select Bride from System --</option>
+          {% for person in people %}
+          <option value="{{ person.id }}">{{ person }} {% if person.is_member %}(Member){% endif %}</option>
+          {% endfor %}
+        </select>
+        <div class="form-check form-switch mb-3">
+          <input class="form-check-input" type="checkbox" id="bride_manual_toggle">
+          <label class="form-check-label" for="bride_manual_toggle">Bride not in system (add manually)</label>
+        </div>
+        <div id="bride_manual_section" class="d-none">
+          <div class="row g-2">
+            <div class="col-md-6"><label class="form-label">First Name</label><input name="bride_first_name" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Last Name</label><input name="bride_last_name" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Gender</label><select name="bride_gender" class="form-select"><option value="">Select</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select></div>
+            <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" name="bride_date_of_birth" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Phone</label><input name="bride_phone" class="form-control"></div>
+            <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="bride_email" class="form-control"></div>
+            <div class="col-12"><label class="form-label">Address</label><input name="bride_address" class="form-control"></div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <label class="form-label">Bride Health Document</label>
+          <input type="file" name="bride_health_document" class="form-control" accept=".pdf,image/png,image/jpeg" required>
+          <div class="form-text">Required. Accepted: PDF, PNG, JPG (max 5MB).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4"><label class="form-label">Wedding Date</label><input type="date" name="wedding_date" class="form-control" required></div>
+    <div class="col-md-8">
+      <label class="form-label">Officiant</label>
+      <select name="officiant_id" class="form-select" required>
+        <option value="">Select officiant</option>
+        {% for officiant in officiants %}
+        <option value="{{ officiant.id }}">{{ officiant }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="mt-4 d-flex justify-content-end">
+    <button class="btn btn-primary px-4">Save Wedding</button>
+  </div>
+</div>
+</form>
+
+<script>
+const groomToggle = document.getElementById('groom_manual_toggle');
+const brideToggle = document.getElementById('bride_manual_toggle');
+const groomManualSection = document.getElementById('groom_manual_section');
+const brideManualSection = document.getElementById('bride_manual_section');
+const groomSelect = document.getElementById('groom_person_id');
+const brideSelect = document.getElementById('bride_person_id');
+
+function syncManualVisibility(toggle, section, selectBox) {
+  if (toggle.checked) {
+    section.classList.remove('d-none');
+    selectBox.value = '';
+    selectBox.setAttribute('disabled', 'disabled');
+  } else {
+    section.classList.add('d-none');
+    selectBox.removeAttribute('disabled');
+  }
+}
+
+groomToggle.addEventListener('change', function () {
+  syncManualVisibility(groomToggle, groomManualSection, groomSelect);
+});
+
+brideToggle.addEventListener('change', function () {
+  syncManualVisibility(brideToggle, brideManualSection, brideSelect);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>My Certificates</h3>
+<div class="card"><div class="table-responsive"><table class="table mb-0">
+<thead><tr><th>Certificate</th><th>Service</th><th>Date</th><th>Status</th><th>Download</th></tr></thead>
+<tbody>
+{% for cert in page_obj %}
+<tr>
+  <td>{{ cert.certificate_number }}</td>
+  <td>{{ cert.service_type }}</td>
+  <td>{{ cert.issued_date }}</td>
+  <td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
+  <td>{% if cert.certificate_file %}<a class="btn btn-sm btn-primary" href="{{ cert.certificate_file.url }}">Download</a>{% endif %}</td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No certificates available.</td></tr>
+{% endfor %}
+</tbody>
+</table></div></div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Baptism Request</h3>
+<div class="card card-body">
+  {% if existing %}
+    <p><strong>Current Status:</strong> {{ existing.status }}</p>
+    {% if existing.admin_comment %}<div class="alert alert-warning">{{ existing.admin_comment }}</div>{% endif %}
+  {% endif %}
+  <form method="post">{% csrf_token %}
+    <p class="mb-3">Submit or resubmit your baptism request.</p>
+    <button class="btn btn-primary">Submit Request</button>
+  </form>
+</div>
+{% endblock %}

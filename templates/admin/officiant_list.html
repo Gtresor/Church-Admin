@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h3>Officiants</h3>
+  <a href="{% url 'admin_officiant_create' %}" class="btn btn-primary">Add Officiant</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-4"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search officiants"></div>
+  <div class="col-md-2"><button class="btn btn-outline-primary">Search</button></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table mb-0">
+<thead><tr><th>Name</th><th>Title</th><th>Signature</th><th>Status</th><th></th></tr></thead>
+<tbody>
+{% for officiant in page_obj %}
+<tr>
+  <td>{{ officiant.name }}</td>
+  <td>{{ officiant.title|default:'-' }}</td>
+  <td>
+    {% if officiant.signature_image %}
+      <img src="{{ officiant.signature_image.url }}" alt="{{ officiant.name }} signature" class="img-fluid border rounded p-1 bg-white" style="max-height: 48px;">
+    {% else %}
+      <span class="text-muted">-</span>
+    {% endif %}
+  </td>
+  <td>{% if officiant.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+  <td class="d-flex gap-2">
+    <a href="{% url 'admin_officiant_edit' officiant.id %}" class="btn btn-sm btn-secondary">Edit</a>
+    <form method="post" action="{% url 'admin_officiant_delete' officiant.id %}" class="officiant-delete-form" data-officiant-name="{{ officiant }}">
+      {% csrf_token %}
+      <button type="button" class="btn btn-sm btn-danger open-officiant-delete-modal">Delete</button>
+    </form>
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No officiants found.</td></tr>
+{% endfor %}
+</tbody>
+</table></div></div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+
+<div id="officiantDeleteModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
+<div id="officiantDeleteModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
+        <h5 class="mb-0">Confirm Delete</h5>
+        </div>
+        <button type="button" id="closeOfficiantDeleteModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+      </div>
+      <p class="mb-2">You are about to delete <strong id="deleteOfficiantName"></strong>.</p>
+      <p class="text-muted small mb-4">If linked sacramental records exist, the officiant will be deactivated instead.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelOfficiantDeleteBtn" class="btn btn-outline-secondary">Cancel</button>
+        <button type="button" id="confirmOfficiantDeleteBtn" class="btn btn-danger">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const modal = document.getElementById('officiantDeleteModal');
+  const backdrop = document.getElementById('officiantDeleteModalBackdrop');
+  const nameEl = document.getElementById('deleteOfficiantName');
+  const confirmBtn = document.getElementById('confirmOfficiantDeleteBtn');
+  const cancelBtn = document.getElementById('cancelOfficiantDeleteBtn');
+  const closeBtn = document.getElementById('closeOfficiantDeleteModalBtn');
+  let pendingForm = null;
+
+  function openModal(form) {
+    pendingForm = form;
+    nameEl.textContent = form.dataset.officiantName || 'this officiant';
+    modal.classList.remove('d-none');
+    backdrop.classList.remove('d-none');
+  }
+
+  function closeModal() {
+    pendingForm = null;
+    modal.classList.add('d-none');
+    backdrop.classList.add('d-none');
+  }
+
+  document.querySelectorAll('.open-officiant-delete-modal').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const form = event.target.closest('.officiant-delete-form');
+      if (form) {
+        openModal(form);
+      }
+    });
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (pendingForm) {
+      pendingForm.submit();
+    }
+  });
+
+  cancelBtn.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .muted-user-row {
+    opacity: 0.58;
+    background: #f8f9fa;
+  }
+
+  .muted-user-row .btn {
+    opacity: 1;
+  }
+
+  .user-avatar-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e9eefc;
+    border: 1px solid #d6def4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .user-avatar-chip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+</style>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Users Management</h3>
+</div>
+
+<form class="row g-2 mb-3">
+  <div class="col-lg-3 col-md-6">
+    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by username, email, or name">
+  </div>
+  <div class="col-lg-2 col-md-6">
+    <select name="status" class="form-select">
+      <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+      <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <div class="col-lg-2 col-md-6">
+    <select name="role" class="form-select">
+      <option value="all" {% if role == 'all' %}selected{% endif %}>All Roles</option>
+      <option value="superuser" {% if role == 'superuser' %}selected{% endif %}>Superuser</option>
+      <option value="staff" {% if role == 'staff' %}selected{% endif %}>Staff</option>
+      <option value="member" {% if role == 'member' %}selected{% endif %}>Member</option>
+    </select>
+  </div>
+  <div class="col-lg-2 col-md-6">
+    <select name="member_link" class="form-select">
+      <option value="all" {% if member_link == 'all' %}selected{% endif %}>All Links</option>
+      <option value="linked" {% if member_link == 'linked' %}selected{% endif %}>Linked to Member</option>
+      <option value="unlinked" {% if member_link == 'unlinked' %}selected{% endif %}>Unlinked</option>
+    </select>
+  </div>
+  <div class="col-lg-3 col-md-12 d-flex gap-2">
+    <button class="btn btn-outline-primary">Apply Filters</button>
+    <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary">Reset</a>
+  </div>
+</form>
+
+<form id="bulkUsersForm" method="post" action="{% url 'admin_user_bulk_action' %}" class="card border-0 shadow-sm mb-3">
+  {% csrf_token %}
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-center">
+      <div class="col-lg-5 col-md-12 small text-muted">
+        Select users, then run a bulk action.
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <select name="bulk_action" id="bulkUserAction" class="form-select form-select-sm" required>
+          <option value="">Choose bulk action</option>
+          <option value="activate">Activate selected</option>
+          <option value="deactivate">Deactivate selected</option>
+          <option value="delete">Delete selected</option>
+          <option value="export_excel">Export selected to Excel</option>
+          <option value="export_pdf">Export selected to PDF</option>
+        </select>
+      </div>
+      <div class="col-lg-3 col-md-6 d-grid">
+        <button type="submit" class="btn btn-sm btn-primary">Apply Bulk Action</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th style="width: 40px;"><input type="checkbox" id="selectAllUsers"></th>
+          <th>Photo</th>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Member</th>
+          <th>Roles</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for item in page_obj %}
+        <tr class="{% if not item.is_active %}muted-user-row{% endif %}">
+          <td>
+            <input type="checkbox" class="user-row-checkbox" name="selected_ids" value="{{ item.id }}" form="bulkUsersForm">
+          </td>
+          <td>
+            <span class="user-avatar-chip">
+              {% if item.is_staff and item.admin_profile.profile_photo %}
+                <img src="{{ item.admin_profile.profile_photo.url }}" alt="{{ item.username }} photo">
+              {% elif not item.is_staff and item.member_account.profile_photo %}
+                <img src="{{ item.member_account.profile_photo.url }}" alt="{{ item.username }} photo">
+              {% else %}
+                {{ item.username|slice:":1"|upper }}
+              {% endif %}
+            </span>
+          </td>
+          <td>
+            {{ item.username }}
+          </td>
+          <td>
+            {% if item.member_account %}
+              {{ item.member_account.person }}
+            {% elif item.first_name or item.last_name %}
+              {{ item.first_name|default:'' }} {{ item.last_name|default:'' }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>{{ item.email|default:'-' }}</td>
+          <td>{% if item.member_account %}{{ item.member_account.person }}{% else %}-{% endif %}</td>
+          <td>
+            {% if item.is_superuser %}<span class="badge bg-danger me-1">Superuser</span>{% endif %}
+            {% if item.is_staff %}<span class="badge bg-primary">Staff</span>{% else %}<span class="badge bg-secondary">Member</span>{% endif %}
+          </td>
+          <td>{% if item.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+          <td class="d-flex gap-2">
+            <a href="{% url 'admin_user_edit' item.id %}" class="btn btn-sm btn-outline-primary">Manage</a>
+            {% if item.id != request.user.id %}
+            <form method="post" action="{% url 'admin_user_toggle_active' item.id %}" class="user-toggle-form" data-username="{{ item.username }}" data-action-label="{% if item.is_active %}deactivate{% else %}activate{% endif %}">
+              {% csrf_token %}
+              <button type="button" class="btn btn-sm {% if item.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %} open-user-toggle-modal">{% if item.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9">No users found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+
+<div id="userToggleModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
+<div id="userToggleModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
+          <h5 class="mb-0">Confirm Action</h5>
+        </div>
+        <button type="button" id="closeUserToggleModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+      </div>
+      <p class="mb-2">You are about to <strong id="userToggleActionLabel"></strong> user <strong id="userToggleName"></strong>.</p>
+      <p class="text-muted small mb-4">This updates account access and linked member active status.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelUserToggleBtn" class="btn btn-outline-secondary">Cancel</button>
+        <button type="button" id="confirmUserToggleBtn" class="btn btn-warning">Proceed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="bulkUserModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
+<div id="bulkUserModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
+          <h5 class="mb-0">Confirm Bulk Action</h5>
+        </div>
+        <button type="button" id="closeBulkUserModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+      </div>
+      <p class="mb-2">You are about to <strong id="bulkUserActionLabel"></strong> selected users.</p>
+      <p class="text-muted small mb-4">This action applies to all checked users.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelBulkUserBtn" class="btn btn-outline-secondary">Cancel</button>
+        <button type="button" id="confirmBulkUserBtn" class="btn btn-warning">Proceed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const selectAllUsers = document.getElementById('selectAllUsers');
+  const rowCheckboxes = Array.from(document.querySelectorAll('.user-row-checkbox'));
+  const bulkForm = document.getElementById('bulkUsersForm');
+  const bulkAction = document.getElementById('bulkUserAction');
+
+  const modal = document.getElementById('userToggleModal');
+  const backdrop = document.getElementById('userToggleModalBackdrop');
+  const usernameEl = document.getElementById('userToggleName');
+  const actionEl = document.getElementById('userToggleActionLabel');
+  const confirmBtn = document.getElementById('confirmUserToggleBtn');
+  const cancelBtn = document.getElementById('cancelUserToggleBtn');
+  const closeBtn = document.getElementById('closeUserToggleModalBtn');
+  let pendingForm = null;
+
+  const bulkModal = document.getElementById('bulkUserModal');
+  const bulkBackdrop = document.getElementById('bulkUserModalBackdrop');
+  const bulkActionLabel = document.getElementById('bulkUserActionLabel');
+  const confirmBulkBtn = document.getElementById('confirmBulkUserBtn');
+  const cancelBulkBtn = document.getElementById('cancelBulkUserBtn');
+  const closeBulkBtn = document.getElementById('closeBulkUserModalBtn');
+
+  if (selectAllUsers) {
+    selectAllUsers.addEventListener('change', () => {
+      rowCheckboxes.forEach((checkbox) => {
+        checkbox.checked = selectAllUsers.checked;
+      });
+    });
+  }
+
+  rowCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      if (!selectAllUsers) {
+        return;
+      }
+      selectAllUsers.checked = rowCheckboxes.length > 0 && rowCheckboxes.every((item) => item.checked);
+    });
+  });
+
+  function openModal(form) {
+    pendingForm = form;
+    usernameEl.textContent = form.dataset.username || 'this user';
+    actionEl.textContent = form.dataset.actionLabel || 'update';
+    modal.classList.remove('d-none');
+    backdrop.classList.remove('d-none');
+  }
+
+  function closeModal() {
+    pendingForm = null;
+    modal.classList.add('d-none');
+    backdrop.classList.add('d-none');
+  }
+
+  document.querySelectorAll('.open-user-toggle-modal').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const form = event.target.closest('.user-toggle-form');
+      if (form) {
+        openModal(form);
+      }
+    });
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (pendingForm) {
+      pendingForm.submit();
+    }
+  });
+
+  cancelBtn.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+
+  function openBulkModal(actionValue) {
+    bulkActionLabel.textContent = actionValue.replace('_', ' ');
+    bulkModal.classList.remove('d-none');
+    bulkBackdrop.classList.remove('d-none');
+  }
+
+  function closeBulkModal() {
+    bulkModal.classList.add('d-none');
+    bulkBackdrop.classList.add('d-none');
+  }
+
+  if (bulkForm && bulkAction) {
+    bulkForm.addEventListener('submit', (event) => {
+      const selectedCount = rowCheckboxes.filter((item) => item.checked).length;
+      if (!bulkAction.value) {
+        event.preventDefault();
+        return;
+      }
+      if (!selectedCount) {
+        event.preventDefault();
+        return;
+      }
+      const needsConfirm = ['activate', 'deactivate', 'delete'].includes(bulkAction.value);
+      if (needsConfirm) {
+        event.preventDefault();
+        openBulkModal(bulkAction.value);
+      }
+    });
+  }
+
+  confirmBulkBtn.addEventListener('click', () => {
+    closeBulkModal();
+    if (bulkForm) {
+      bulkForm.submit();
+    }
+  });
+  cancelBulkBtn.addEventListener('click', closeBulkModal);
+  closeBulkBtn.addEventListener('click', closeBulkModal);
+  bulkBackdrop.addEventListener('click', closeBulkModal);
+})();
+</script>
+{% endblock %}

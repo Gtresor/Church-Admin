@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block global_messages %}{% endblock %}
+{% block content %}
+<style>
+  .register-card {
+    border-radius: 1rem;
+    border: 0;
+  }
+
+  .info-card {
+    border: 1px solid #e9edf8;
+    border-radius: 0.9rem;
+    background: #fcfdff;
+    padding: 1rem;
+  }
+
+  .info-card h6 {
+    margin-bottom: 0.8rem;
+    color: #1e2a4a;
+  }
+
+  .password-toggle-btn {
+    min-width: 48px;
+    line-height: 1;
+  }
+
+  .password-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+<div class="row justify-content-center">
+  <div class="col-xl-10 col-xxl-9">
+    <div class="card shadow-sm register-card">
+      <div class="card-body p-4">
+        <h4 class="mb-2">Create Member Account</h4>
+        <p class="text-muted small mb-3">Account creation is only allowed for users already registered as church members.</p>
+        {% include 'partials/messages.html' %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="info-card">
+                <h6>Identity & Verification</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">First Name</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ form_data.first_name|default:'' }}" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ form_data.last_name|default:'' }}" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Date of Birth</label>
+                    <input type="date" name="date_of_birth" class="form-control" value="{{ form_data.date_of_birth|default:'' }}" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Phone (optional)</label>
+                    <input type="text" name="phone" class="form-control" value="{{ form_data.phone|default:'' }}" placeholder="Use phone registered in church records">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Email (optional)</label>
+                    <input type="email" name="email" class="form-control" value="{{ form_data.email|default:'' }}" placeholder="Use email registered in church records">
+                    <div class="form-text">Provide at least email or phone for member verification.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="info-card">
+                <h6>Residence Information</h6>
+                <div class="row g-3">
+                  <div class="col-md-4"><label class="form-label">Nationality</label><input name="nationality" class="form-control" value="{{ form_data.nationality|default:'' }}"></div>
+                  <div class="col-md-4"><label class="form-label">Country</label><input name="country" class="form-control" value="{{ form_data.country|default:'' }}"></div>
+                  <div class="col-md-4"><label class="form-label">Province</label><input name="province" class="form-control" value="{{ form_data.province|default:'' }}"></div>
+                  <div class="col-md-4"><label class="form-label">District</label><input name="district" class="form-control" value="{{ form_data.district|default:'' }}"></div>
+                  <div class="col-md-4"><label class="form-label">Cell</label><input name="cell" class="form-control" value="{{ form_data.cell|default:'' }}"></div>
+                  <div class="col-md-4"><label class="form-label">Village</label><input name="village" class="form-control" value="{{ form_data.village|default:'' }}"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="info-card">
+                <h6>Family & Church Information</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Marital Status</label>
+                    <select id="registerMaritalStatus" name="marital_status" class="form-select">
+                      <option value="Single" {% if form_data.marital_status == 'Single' or not form_data.marital_status %}selected{% endif %}>Single</option>
+                      <option value="Married" {% if form_data.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                      <option value="Widowed" {% if form_data.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                      <option value="Divorced" {% if form_data.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                    </select>
+                  </div>
+                  <div class="col-md-8" id="registerSpouseNameWrap">
+                    <label class="form-label">Spouse Name</label>
+                    <input id="registerSpouseNameInput" name="spouse_name" class="form-control" value="{{ form_data.spouse_name|default:'' }}" placeholder="Required if married">
+                  </div>
+                  <div class="col-md-6"><label class="form-label">Occupation</label><input name="occupation" class="form-control" value="{{ form_data.occupation|default:'' }}"></div>
+                  <div class="col-md-6"><label class="form-label">Emergency Contact Name</label><input name="emergency_contact_name" class="form-control" value="{{ form_data.emergency_contact_name|default:'' }}"></div>
+                  <div class="col-md-6"><label class="form-label">Emergency Contact Phone</label><input name="emergency_contact_phone" class="form-control" value="{{ form_data.emergency_contact_phone|default:'' }}"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12">
+              <div class="info-card">
+                <h6>Account Security</h6>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" value="{{ form_data.username|default:'' }}" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Password</label>
+                    <div class="input-group">
+                      <input id="registerPasswordInput" type="password" name="password" class="form-control" required>
+                      <button id="toggleRegisterPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="registerPasswordInput" data-eye-open-id="registerEyeOpenIcon" data-eye-closed-id="registerEyeClosedIcon">
+                        <svg id="registerEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg id="registerEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path>
+                          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path>
+                          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="input-group">
+                      <input id="registerConfirmPasswordInput" type="password" name="confirm_password" class="form-control" required>
+                      <button id="toggleRegisterConfirmPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="registerConfirmPasswordInput" data-eye-open-id="registerConfirmEyeOpenIcon" data-eye-closed-id="registerConfirmEyeClosedIcon">
+                        <svg id="registerConfirmEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        <svg id="registerConfirmEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path>
+                          <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path>
+                          <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                          <line x1="1" y1="1" x2="23" y2="23"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary w-100 mt-4" type="submit">Create Account</button>
+        </form>
+
+        <div class="text-center mt-3 small">
+          Already have an account? <a href="{% url 'login' %}">Sign in</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const maritalStatus = document.getElementById('registerMaritalStatus');
+    const spouseWrap = document.getElementById('registerSpouseNameWrap');
+    const spouseInput = document.getElementById('registerSpouseNameInput');
+
+    if (!maritalStatus || !spouseWrap || !spouseInput) {
+      return;
+    }
+
+    function syncSpouseField() {
+      const isMarried = maritalStatus.value === 'Married';
+      spouseWrap.classList.toggle('d-none', !isMarried);
+      spouseInput.required = isMarried;
+      if (!isMarried) {
+        spouseInput.value = '';
+      }
+    }
+
+    maritalStatus.addEventListener('change', syncSpouseField);
+    syncSpouseField();
+  })();
+</script>
+
+{% endblock %}

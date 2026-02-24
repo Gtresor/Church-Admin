@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Resubmit Dedication Request</h3>
+<div class="alert alert-warning">{{ item.admin_comment }}</div>
+<form method="post" class="card card-body">{% csrf_token %}
+  <div class="row g-3">
+    <div class="col-md-6"><label>Child First Name</label><input name="child_first_name" class="form-control" value="{{ item.child.first_name }}" required></div>
+    <div class="col-md-6"><label>Child Last Name</label><input name="child_last_name" class="form-control" value="{{ item.child.last_name }}" required></div>
+    <div class="col-md-4"><label>Scripture Reference</label><input name="scripture_reference" class="form-control" value="{{ item.scripture_reference }}" required></div>
+    <div class="col-md-8"><label>Scripture Verse</label><textarea name="scripture_text" class="form-control" rows="3" required>{{ item.scripture_text }}</textarea></div>
+  </div>
+  <button class="btn btn-primary mt-3">Resubmit</button>
+</form>
+{% endblock %}

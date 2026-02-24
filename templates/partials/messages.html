@@ -1,0 +1,17 @@
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert app-alert {% if 'error' in message.tags %}alert-danger{% elif 'success' in message.tags %}alert-success{% elif 'warning' in message.tags %}alert-warning{% else %}alert-info{% endif %} alert-dismissible fade show d-flex align-items-start gap-2" role="alert">
+      {% if 'error' in message.tags %}
+        <span class="alert-icon">!</span>
+      {% elif 'success' in message.tags %}
+        <span class="alert-icon">✓</span>
+      {% elif 'warning' in message.tags %}
+        <span class="alert-icon">!</span>
+      {% else %}
+        <span class="alert-icon">i</span>
+      {% endif %}
+      <div class="pe-4">{{ message }}</div>
+      <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  {% endfor %}
+{% endif %}

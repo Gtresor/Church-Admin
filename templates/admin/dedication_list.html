@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Dedication Requests</h3>
+<form class="row g-2 mb-3"><div class="col-md-4"><input name="q" value="{{ q }}" class="form-control" placeholder="Search child"></div><div class="col-md-2"><button class="btn btn-outline-primary">Search</button></div></form>
+<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Child</th><th>Parents</th><th>Status</th><th></th></tr></thead><tbody>
+{% for item in page_obj %}<tr><td>{{ item.child }}</td><td>{{ item.father }} / {{ item.mother }}</td><td>{{ item.status }}</td><td><a class="btn btn-sm btn-primary" href="{% url 'admin_dedication_review' item.id %}">Manage</a></td></tr>{% empty %}<tr><td colspan="4">No records.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+{% endblock %}

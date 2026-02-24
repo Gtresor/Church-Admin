@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .info-card {
+    border: 1px solid #e9edf8;
+    border-radius: 0.9rem;
+    background: #fcfdff;
+    padding: 1rem;
+  }
+
+  .info-card h6 {
+    margin-bottom: 0.8rem;
+    color: #1e2a4a;
+  }
+
+  .password-toggle-btn {
+    min-width: 48px;
+    line-height: 1;
+  }
+
+  .password-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+<h3 class="mb-3">{% if person %}Edit Member{% else %}Create Member{% endif %}</h3>
+<form method="post" class="card card-body">
+{% csrf_token %}
+<div class="row g-3">
+  <div class="col-12">
+    <div class="info-card">
+      <h6>Identity Information</h6>
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">First Name</label><input name="first_name" class="form-control" value="{{ form_data.first_name|default:person.first_name|default:'' }}" required></div>
+        <div class="col-md-4"><label class="form-label">Last Name</label><input name="last_name" class="form-control" value="{{ form_data.last_name|default:person.last_name|default:'' }}" required></div>
+        {% with selected_gender=form_data.gender|default:person.gender|default:'' %}
+        <div class="col-md-4"><label class="form-label">Gender</label><select name="gender" class="form-select" required><option value="">Select</option><option value="Male" {% if selected_gender == 'Male' %}selected{% endif %}>Male</option><option value="Female" {% if selected_gender == 'Female' %}selected{% endif %}>Female</option><option value="Other" {% if selected_gender == 'Other' %}selected{% endif %}>Other</option></select></div>
+        {% endwith %}
+        <div class="col-md-4"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control" value="{% if form_data.date_of_birth %}{{ form_data.date_of_birth }}{% else %}{{ person.date_of_birth|date:'Y-m-d' }}{% endif %}" required></div>
+        <div class="col-md-4"><label class="form-label">Phone</label><input name="phone" class="form-control" value="{{ form_data.phone|default:person.phone|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ form_data.email|default:person.email|default:'' }}"></div>
+        <div class="col-md-12"><label class="form-label">Address</label><input name="address" class="form-control" value="{{ form_data.address|default:person.address|default:'' }}"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="info-card">
+      <h6>Residence Information</h6>
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Nationality</label><input name="nationality" class="form-control" value="{{ form_data.nationality|default:person.nationality|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Country</label><input name="country" class="form-control" value="{{ form_data.country|default:person.country|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Province</label><input name="province" class="form-control" value="{{ form_data.province|default:person.province|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">District</label><input name="district" class="form-control" value="{{ form_data.district|default:person.district|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Cell</label><input name="cell" class="form-control" value="{{ form_data.cell|default:person.cell|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Village</label><input name="village" class="form-control" value="{{ form_data.village|default:person.village|default:'' }}"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="info-card">
+      <h6>Family & Pastoral Information</h6>
+      <div class="row g-3">
+        {% with selected_marital_status=form_data.marital_status|default:person.marital_status|default:'Single' %}
+        <div class="col-md-4">
+          <label class="form-label">Marital Status</label>
+          <select id="memberMaritalStatus" name="marital_status" class="form-select">
+            {% for value, label in marital_status_choices %}
+            <option value="{{ value }}" {% if selected_marital_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endwith %}
+        <div class="col-md-8" id="memberSpouseWrap"><label class="form-label">Spouse Name</label><input id="memberSpouseName" name="spouse_name" class="form-control" value="{{ form_data.spouse_name|default:person.spouse_name|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Occupation</label><input name="occupation" class="form-control" value="{{ form_data.occupation|default:person.occupation|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Emergency Contact Name</label><input name="emergency_contact_name" class="form-control" value="{{ form_data.emergency_contact_name|default:person.emergency_contact_name|default:'' }}"></div>
+        <div class="col-md-4"><label class="form-label">Emergency Contact Phone</label><input name="emergency_contact_phone" class="form-control" value="{{ form_data.emergency_contact_phone|default:person.emergency_contact_phone|default:'' }}"></div>
+      </div>
+    </div>
+  </div>
+
+  {% if not person %}
+  <div class="col-12">
+    <div class="info-card">
+      <h6>Account Access</h6>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Username</label><input name="username" class="form-control" value="{{ form_data.username|default:'' }}" required></div>
+        <div class="col-md-6">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <input id="memberPasswordInput" type="password" name="password" class="form-control" required>
+            <button
+              id="toggleMemberPasswordBtn"
+              class="btn btn-outline-secondary password-toggle-btn"
+              type="button"
+              aria-label="Show password"
+              aria-pressed="false"
+              data-password-toggle="true"
+              data-password-target="memberPasswordInput"
+              data-eye-open-id="memberEyeOpenIcon"
+              data-eye-closed-id="memberEyeClosedIcon"
+            >
+              <svg id="memberEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg id="memberEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path>
+                <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path>
+                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-md-6 form-check mt-4"><input class="form-check-input" type="checkbox" name="is_active" {% if person.is_active %}checked{% endif %}><label class="form-check-label">Active</label></div>
+  {% endif %}
+</div>
+<button class="btn btn-primary mt-3">Save</button>
+</form>
+
+<script>
+  (() => {
+    const maritalStatus = document.getElementById('memberMaritalStatus');
+    const spouseWrap = document.getElementById('memberSpouseWrap');
+    const spouseInput = document.getElementById('memberSpouseName');
+
+    if (!maritalStatus || !spouseWrap || !spouseInput) {
+      return;
+    }
+
+    function syncSpouse() {
+      const isMarried = maritalStatus.value === 'Married';
+      spouseWrap.classList.toggle('d-none', !isMarried);
+      spouseInput.required = isMarried;
+      if (!isMarried) {
+        spouseInput.value = '';
+      }
+    }
+
+    maritalStatus.addEventListener('change', syncSpouse);
+    syncSpouse();
+  })();
+</script>
+{% endblock %}

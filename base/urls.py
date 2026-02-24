@@ -1,0 +1,64 @@
+from django.urls import path
+
+from . import views
+
+urlpatterns = [
+    path("", views.home, name="home"),
+    path("login/", views.login_view, name="login"),
+    path("register/member/", views.member_register_view, name="member_register"),
+    path("logout/", views.logout_view, name="logout"),
+    path("verify/<str:certificate_number>/", views.verify_certificate, name="verify_certificate"),
+
+    path("portal/admin/dashboard/", views.AdminDashboardView.as_view(), name="admin_dashboard"),
+    path("portal/admin/profile/", views.admin_profile, name="admin_profile"),
+    path("portal/admin/users/", views.admin_user_list, name="admin_user_list"),
+    path("portal/admin/users/bulk-action/", views.admin_user_bulk_action, name="admin_user_bulk_action"),
+    path("portal/admin/users/<int:user_id>/", views.admin_user_edit, name="admin_user_edit"),
+    path("portal/admin/users/<int:user_id>/toggle-active/", views.admin_user_toggle_active, name="admin_user_toggle_active"),
+    path("portal/admin/members/", views.MemberListView.as_view(), name="admin_member_list"),
+    path("portal/admin/members/bulk-action/", views.admin_member_bulk_action, name="admin_member_bulk_action"),
+    path("portal/admin/members/create/", views.member_create, name="admin_member_create"),
+    path("portal/admin/members/<uuid:person_id>/edit/", views.member_edit, name="admin_member_edit"),
+    path("portal/admin/members/<uuid:person_id>/delete/", views.member_delete, name="admin_member_delete"),
+
+    path("portal/admin/kids/", views.KidsListView.as_view(), name="admin_kid_list"),
+    path("portal/admin/kids/create/", views.kid_create, name="admin_kid_create"),
+    path("portal/admin/kids/<uuid:person_id>/edit/", views.kid_edit, name="admin_kid_edit"),
+    path("portal/admin/kids/<uuid:person_id>/delete/", views.kid_delete, name="admin_kid_delete"),
+
+    path("portal/admin/baptisms/", views.BaptismListView.as_view(), name="admin_baptism_list"),
+    path("portal/admin/baptisms/<uuid:baptism_id>/", views.admin_baptism_review, name="admin_baptism_review"),
+    path("portal/admin/baptisms/<uuid:baptism_id>/certificate/", views.admin_generate_baptism_certificate, name="admin_generate_baptism_certificate"),
+
+    path("portal/admin/dedications/", views.DedicationListView.as_view(), name="admin_dedication_list"),
+    path("portal/admin/dedications/<uuid:dedication_id>/", views.admin_dedication_review, name="admin_dedication_review"),
+    path("portal/admin/dedications/<uuid:dedication_id>/certificate/", views.admin_generate_dedication_certificate, name="admin_generate_dedication_certificate"),
+    path("portal/admin/dedications/<uuid:dedication_id>/certificate/preview/", views.admin_preview_dedication_certificate, name="admin_preview_dedication_certificate"),
+
+    path("portal/admin/weddings/", views.WeddingListView.as_view(), name="admin_wedding_list"),
+    path("portal/admin/weddings/create/", views.admin_wedding_create, name="admin_wedding_create"),
+    path("portal/admin/weddings/<uuid:wedding_id>/", views.admin_wedding_review, name="admin_wedding_review"),
+    path("portal/admin/weddings/<uuid:wedding_id>/certificate/", views.admin_generate_wedding_certificate, name="admin_generate_wedding_certificate"),
+
+    path("portal/admin/officiants/", views.OfficiantListView.as_view(), name="admin_officiant_list"),
+    path("portal/admin/officiants/create/", views.admin_officiant_create, name="admin_officiant_create"),
+    path("portal/admin/officiants/<uuid:officiant_id>/edit/", views.admin_officiant_edit, name="admin_officiant_edit"),
+    path("portal/admin/officiants/<uuid:officiant_id>/delete/", views.admin_officiant_delete, name="admin_officiant_delete"),
+
+    path("portal/admin/certificates/", views.CertificateListView.as_view(), name="admin_certificate_list"),
+    path("portal/admin/certificates/<uuid:certificate_id>/revoke/", views.admin_revoke_certificate, name="admin_revoke_certificate"),
+    path("portal/admin/calendar/", views.admin_calendar, name="admin_calendar"),
+    path("portal/admin/reports/", views.admin_reports, name="admin_reports"),
+    path("portal/admin/reports/ai/", views.admin_ai_reports, name="admin_ai_reports"),
+    path("portal/admin/reports/ai/chat/", views.admin_ai_reports_chat_api, name="admin_ai_reports_chat_api"),
+    path("portal/admin/export/csv/", views.export_services_csv, name="export_services_csv"),
+    path("portal/admin/export/pdf/", views.export_services_pdf, name="export_services_pdf"),
+    path("portal/admin/export/certificates/pdf/", views.export_certificate_log_pdf, name="export_certificate_log_pdf"),
+
+    path("portal/member/dashboard/", views.MemberDashboardView.as_view(), name="member_dashboard"),
+    path("portal/member/profile/", views.member_profile, name="member_profile"),
+    path("portal/member/baptism/request/", views.member_baptism_request, name="member_baptism_request"),
+    path("portal/member/dedication/request/", views.member_dedication_request, name="member_dedication_request"),
+    path("portal/member/dedication/<uuid:dedication_id>/edit/", views.member_dedication_edit, name="member_dedication_edit"),
+    path("portal/member/certificates/", views.MemberCertificateListView.as_view(), name="member_certificate_list"),
+]

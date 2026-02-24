@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .member-avatar-chip {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e9eefc;
+    border: 1px solid #d6def4;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #334155;
+  }
+
+  .member-avatar-chip img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .muted-member-row {
+    opacity: 0.58;
+    background: #f8f9fa;
+  }
+
+  .muted-member-row .btn {
+    opacity: 1;
+  }
+</style>
+<div class="d-flex justify-content-between mb-3"><h3>Members</h3><a href="{% url 'admin_member_create' %}" class="btn btn-primary">Add Member</a></div>
+<form class="row g-2 mb-3">
+  <div class="col-lg-4 col-md-6"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search members"></div>
+  <div class="col-lg-3 col-md-6">
+    <select name="status" class="form-select">
+      <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+      <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <div class="col-lg-5 col-md-12 d-flex gap-2">
+    <button class="btn btn-outline-primary">Apply Filters</button>
+    <a href="{% url 'admin_member_list' %}" class="btn btn-outline-secondary">Reset</a>
+  </div>
+</form>
+
+<form id="bulkMembersForm" method="post" action="{% url 'admin_member_bulk_action' %}" class="card border-0 shadow-sm mb-3">
+  {% csrf_token %}
+  <div class="card-body py-2">
+    <div class="row g-2 align-items-center">
+      <div class="col-lg-5 col-md-12 small text-muted">
+        Select members, then run a bulk action.
+      </div>
+      <div class="col-lg-4 col-md-6">
+        <select name="bulk_action" id="bulkMemberAction" class="form-select form-select-sm" required>
+          <option value="">Choose bulk action</option>
+          <option value="activate">Activate selected</option>
+          <option value="deactivate">Deactivate selected</option>
+          <option value="delete">Delete selected</option>
+          <option value="export_excel">Export selected to Excel</option>
+          <option value="export_pdf">Export selected to PDF</option>
+        </select>
+      </div>
+      <div class="col-lg-3 col-md-6 d-grid">
+        <button type="submit" class="btn btn-sm btn-primary">Apply Bulk Action</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<div class="card"><div class="table-responsive"><table class="table mb-0">
+<thead><tr><th style="width:40px;"><input type="checkbox" id="selectAllMembers"></th><th>Photo</th><th>Name</th><th>Email</th><th>Phone</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>
+{% for member in page_obj %}
+<tr class="{% if not member.is_active %}muted-member-row{% endif %}">
+  <td><input type="checkbox" class="member-row-checkbox" name="selected_ids" value="{{ member.id }}" form="bulkMembersForm"></td>
+  <td>
+    <span class="member-avatar-chip">
+      {% if member.member_account and member.member_account.profile_photo %}
+        <img src="{{ member.member_account.profile_photo.url }}" alt="{{ member }} photo">
+      {% else %}
+        {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+      {% endif %}
+    </span>
+  </td>
+  <td>{{ member }}</td>
+  <td>{{ member.email }}</td>
+  <td>{{ member.phone }}</td>
+  <td>{% if member.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+  <td class="d-flex gap-2">
+    <a href="{% url 'admin_member_edit' member.id %}" class="btn btn-sm btn-secondary">Edit</a>
+    <form method="post" action="{% url 'admin_member_delete' member.id %}" class="member-delete-form" data-member-name="{{ member }}">
+      {% csrf_token %}
+      <button type="button" class="btn btn-sm btn-danger open-delete-modal">Delete</button>
+    </form>
+  </td>
+</tr>
+{% empty %}<tr><td colspan="7">No members found.</td></tr>{% endfor %}
+</tbody></table></div></div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+
+<div id="deleteModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
+<div id="deleteModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+        <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
+        <h5 class="mb-0">Confirm Delete</h5>
+        </div>
+        <button type="button" id="closeDeleteModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+      </div>
+      <p class="mb-2">You are about to delete <strong id="deleteMemberName"></strong>.</p>
+      <p class="text-muted small mb-4">If the member has sacramental history, the system will deactivate instead of deleting.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelDeleteBtn" class="btn btn-outline-secondary">Cancel</button>
+        <button type="button" id="confirmDeleteBtn" class="btn btn-danger">Yes, Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="bulkMemberModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
+<div id="bulkMemberModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
+  <div class="card shadow-lg border-0">
+    <div class="card-body p-4">
+      <div class="d-flex align-items-start justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
+          <h5 class="mb-0">Confirm Bulk Action</h5>
+        </div>
+        <button type="button" id="closeBulkMemberModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+      </div>
+      <p class="mb-2">You are about to <strong id="bulkMemberActionLabel"></strong> selected members.</p>
+      <p class="text-muted small mb-4">This action applies to all checked members.</p>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelBulkMemberBtn" class="btn btn-outline-secondary">Cancel</button>
+        <button type="button" id="confirmBulkMemberBtn" class="btn btn-warning">Proceed</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const selectAllMembers = document.getElementById('selectAllMembers');
+  const rowCheckboxes = Array.from(document.querySelectorAll('.member-row-checkbox'));
+  const bulkForm = document.getElementById('bulkMembersForm');
+  const bulkAction = document.getElementById('bulkMemberAction');
+
+  const modal = document.getElementById('deleteModal');
+  const backdrop = document.getElementById('deleteModalBackdrop');
+  const memberNameEl = document.getElementById('deleteMemberName');
+  const confirmBtn = document.getElementById('confirmDeleteBtn');
+  const cancelBtn = document.getElementById('cancelDeleteBtn');
+  const closeBtn = document.getElementById('closeDeleteModalBtn');
+  let pendingForm = null;
+
+  const bulkModal = document.getElementById('bulkMemberModal');
+  const bulkBackdrop = document.getElementById('bulkMemberModalBackdrop');
+  const bulkActionLabel = document.getElementById('bulkMemberActionLabel');
+  const confirmBulkBtn = document.getElementById('confirmBulkMemberBtn');
+  const cancelBulkBtn = document.getElementById('cancelBulkMemberBtn');
+  const closeBulkBtn = document.getElementById('closeBulkMemberModalBtn');
+
+  if (selectAllMembers) {
+    selectAllMembers.addEventListener('change', () => {
+      rowCheckboxes.forEach((checkbox) => {
+        checkbox.checked = selectAllMembers.checked;
+      });
+    });
+  }
+
+  rowCheckboxes.forEach((checkbox) => {
+    checkbox.addEventListener('change', () => {
+      if (!selectAllMembers) {
+        return;
+      }
+      selectAllMembers.checked = rowCheckboxes.length > 0 && rowCheckboxes.every((item) => item.checked);
+    });
+  });
+
+  function openModal(form) {
+    pendingForm = form;
+    memberNameEl.textContent = form.dataset.memberName || 'this member';
+    modal.classList.remove('d-none');
+    backdrop.classList.remove('d-none');
+  }
+
+  function closeModal() {
+    pendingForm = null;
+    modal.classList.add('d-none');
+    backdrop.classList.add('d-none');
+  }
+
+  document.querySelectorAll('.open-delete-modal').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      const form = event.target.closest('.member-delete-form');
+      if (form) {
+        openModal(form);
+      }
+    });
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (pendingForm) {
+      pendingForm.submit();
+    }
+  });
+
+  cancelBtn.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', closeModal);
+
+  function openBulkModal(actionValue) {
+    bulkActionLabel.textContent = actionValue.replace('_', ' ');
+    bulkModal.classList.remove('d-none');
+    bulkBackdrop.classList.remove('d-none');
+  }
+
+  function closeBulkModal() {
+    bulkModal.classList.add('d-none');
+    bulkBackdrop.classList.add('d-none');
+  }
+
+  if (bulkForm && bulkAction) {
+    bulkForm.addEventListener('submit', (event) => {
+      const selectedCount = rowCheckboxes.filter((item) => item.checked).length;
+      if (!bulkAction.value) {
+        event.preventDefault();
+        return;
+      }
+      if (!selectedCount) {
+        event.preventDefault();
+        return;
+      }
+      const needsConfirm = ['activate', 'deactivate', 'delete'].includes(bulkAction.value);
+      if (needsConfirm) {
+        event.preventDefault();
+        openBulkModal(bulkAction.value);
+      }
+    });
+  }
+
+  confirmBulkBtn.addEventListener('click', () => {
+    closeBulkModal();
+    if (bulkForm) {
+      bulkForm.submit();
+    }
+  });
+  cancelBulkBtn.addEventListener('click', closeBulkModal);
+  closeBulkBtn.addEventListener('click', closeBulkModal);
+  bulkBackdrop.addEventListener('click', closeBulkModal);
+})();
+</script>
+{% endblock %}

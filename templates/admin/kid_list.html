@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between mb-3">
+  <h3>Kids Database</h3>
+  <a href="{% url 'admin_kid_create' %}" class="btn btn-primary">Add Kid</a>
+</div>
+
+<form class="row g-2 mb-3">
+  <div class="col-lg-4 col-md-6"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search kids"></div>
+  <div class="col-lg-3 col-md-6">
+    <select name="status" class="form-select">
+      <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+      <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+  </div>
+  <div class="col-lg-5 col-md-12 d-flex gap-2">
+    <button class="btn btn-outline-primary">Apply Filters</button>
+    <a href="{% url 'admin_kid_list' %}" class="btn btn-outline-secondary">Reset</a>
+  </div>
+</form>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Gender</th>
+          <th>Date of Birth</th>
+          <th>Age</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for kid in page_obj %}
+        <tr class="{% if not kid.is_active %}table-light text-muted{% endif %}">
+          <td>{{ kid }}</td>
+          <td>{{ kid.gender }}</td>
+          <td>{{ kid.date_of_birth|date:'M d, Y' }}</td>
+          <td>{{ kid.date_of_birth|timesince|cut:"," }}</td>
+          <td>{% if kid.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+          <td class="d-flex gap-2">
+            <a href="{% url 'admin_kid_edit' kid.id %}" class="btn btn-sm btn-secondary">Edit</a>
+            <form method="post" action="{% url 'admin_kid_delete' kid.id %}">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">No kids found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include 'partials/pagination.html' with page_query=page_query %}
+{% endblock %}

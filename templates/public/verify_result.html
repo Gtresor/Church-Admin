@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h4>Certificate Verification</h4>
+        {% if not_found %}
+          <div class="alert alert-danger">Certificate not found.</div>
+        {% else %}
+          <p><strong>Certificate No:</strong> {{ certificate.certificate_number }}</p>
+          <p><strong>Service Type:</strong> {{ service_type }}</p>
+          <p><strong>Name(s):</strong> {{ names }}</p>
+          <p><strong>Date:</strong> {{ service_date }}</p>
+          <p><strong>Status:</strong> <span class="badge bg-{% if status == 'Valid' %}success{% else %}danger{% endif %}">{{ status }}</span></p>
+          {% if certificate.revoked_reason %}<p><strong>Reason:</strong> {{ certificate.revoked_reason }}</p>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
