@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Wedding Request Status</h3>
+
+<div class="card card-body mb-3">
+  <h5 class="mb-3">Request Details</h5>
+  <table class="table table-sm">
+    <tr><th>Status</th><td><span class="badge {% if wrequest.status == 'Pending' %}bg-warning{% elif wrequest.status == 'Approved' %}bg-success{% elif wrequest.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %}">{{ wrequest.status }}</span></td></tr>
+    <tr><th>Your Role</th><td>{{ wrequest.get_submitter_role_display|default:wrequest.submitter_role }}</td></tr>
+    <tr><th>Partner</th><td>{{ wrequest.partner|default:"Not yet assigned (non-member)" }}</td></tr>
+    <tr><th>Partner Consented</th>
+      <td>
+        {% if wrequest.partner_consented %}
+          <span class="text-success">✓ Yes</span>
+        {% elif wrequest.partner_is_member %}
+          <span class="text-warning">⏳ Awaiting partner confirmation</span>
+        {% else %}
+          <span class="text-muted">N/A (non-member partner)</span>
+        {% endif %}
+      </td>
+    </tr>
+    <tr><th>Admin Comment</th><td>{{ wrequest.admin_comment|default:"None yet" }}</td></tr>
+    <tr><th>Submitted</th><td>{{ wrequest.created_at|date:"M d, Y H:i" }}</td></tr>
+  </table>
+</div>
+
+{% if wrequest.partner_is_member and not wrequest.partner_consented %}
+<div class="card card-body mb-3 border-warning">
+  <h5 class="text-warning">⏳ Partner Confirmation Required</h5>
+  <p>Share this link with your partner so they can confirm their participation:</p>
+  <div class="input-group mb-2">
+    <input type="text" class="form-control" value="{{ invite_url }}" id="inviteLink" readonly>
+    <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(document.getElementById('inviteLink').value)">Copy</button>
+  </div>
+  <small class="text-muted">The link is unique to this request. Your partner must be logged in to confirm.</small>
+</div>
+{% endif %}
+
+{% if wrequest.admin_comment %}
+<div class="alert alert-info">
+  <strong>Admin Note:</strong> {{ wrequest.admin_comment }}
+</div>
+{% endif %}
+
+<a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">&larr; Back to Dashboard</a>
+{% endblock %}

@@ -1,138 +1,524 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 <style>
-  .reject-modal-backdrop {
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1050;
+  .dr-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
   }
-
-  .reject-modal {
-    z-index: 1060;
-    width: min(92vw, 540px);
+  .dr-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: border-color 0.3s, box-shadow 0.3s;
   }
-
-  .floating-download-btn {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    z-index: 1080;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+  .dr-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 56px rgba(0, 0, 0, 0.05);
   }
-
-  @media (max-width: 576px) {
-    .floating-download-btn {
-      right: 12px;
-      bottom: 12px;
-    }
+  .dr-card-sm {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .dr-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .dr-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .dr-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+  .dr-value {
+    font-size: 0.95rem;
+    color: #1a202c;
+    font-weight: 500;
+  }
+  .dr-btn-primary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dr-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .dr-btn-primary:active { transform: translateY(0); }
+  .dr-btn-outline {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dr-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .dr-btn-danger {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #fc5c7d, #e74c3c);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dr-btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(231, 76, 60, 0.30);
+    color: #fff;
+  }
+  .dr-btn-success {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dr-btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(46, 204, 113, 0.30);
+    color: #fff;
+  }
+  .dr-btn-warning {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .dr-btn-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.30);
+    color: #fff;
+  }
+  .dr-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .dr-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .dr-select {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+  .dr-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .dr-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .dr-icon-lg { width: 28px; height: 28px; }
+  .dr-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .dr-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .dr-modal-content {
+    border-radius: 1.25rem;
+    border: 0;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+  }
+  .dr-modal-header {
+    border-radius: 1.25rem 1.25rem 0 0;
+    background: #f7f9fc;
+    border-bottom: 1px solid #eef2f7;
+    padding: 1.25rem 1.5rem;
+  }
+  .dr-modal-body { padding: 1.5rem; }
+  .dr-modal-footer {
+    border-top: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
   }
 </style>
-<h3>Dedication Review - {{ item.child }}</h3>
-<div class="row g-3 mb-3">
-  <div class="col-lg-4">
-    <div class="card card-body h-100">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <h5 class="mb-0">Child Details</h5>
-        <div class="d-flex align-items-center gap-2">
-          <span class="badge text-bg-primary">{{ item.status }}</span>
-          <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editChildModal">Edit</button>
+
+<div class="dr-page">
+  <!-- Header -->
+  <div class="dr-card mb-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0" style="color: #1a202c; font-weight: 700;">
+          {{ item.child.first_name }} {{ item.child.last_name }}
+        </h3>
+        <div class="dr-gradient-accent"></div>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <span class="dr-status-badge
+          {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+          {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+          {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+          {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+          {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+          {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+          {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">
+          <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          {{ item.status }}
+        </span>
+        <a href="{% url 'admin_dedication_list' %}" class="dr-btn-outline" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+          <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info Cards -->
+  <div class="row g-3 mb-3">
+    <!-- Child -->
+    <div class="col-lg-4">
+      <div class="dr-card h-100" style="border-left: 4px solid #667eea;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div class="d-flex align-items-center gap-2">
+            <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.8">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <strong style="color:#2d3748;">Child</strong>
+          </div>
+          <button type="button" class="dr-btn-outline" style="padding:0.3rem 0.7rem;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#editChildModal">
+            <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+        </div>
+        <div class="row g-2">
+          <div class="col-12"><div class="dr-field-group"><span class="dr-label">Full Name</span><span class="dr-value" style="font-size:1.05rem;">{{ item.child.first_name }} {{ item.child.last_name }}</span></div></div>
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Gender</span><span class="dr-value">{{ item.child.gender|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Date of Birth</span><span class="dr-value">{{ item.child.date_of_birth|date:'M d, Y'|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Age</span><span class="dr-value">{% if child_age is not None %}{{ child_age }} years{% else %}-{% endif %}</span></div></div>
         </div>
       </div>
-      <hr>
-      <p class="mb-2"><strong>Full Name:</strong> {{ item.child }}</p>
-      <p class="mb-2"><strong>Gender:</strong> {{ item.child.gender|default:'-' }}</p>
-      <p class="mb-2"><strong>Date of Birth:</strong> {{ item.child.date_of_birth|date:'F d, Y'|default:'-' }}</p>
-      <p class="mb-0"><strong>Age:</strong> {% if child_age is not None %}{{ child_age }} years{% else %}-{% endif %}</p>
+    </div>
+
+    <!-- Father -->
+    <div class="col-lg-4">
+      <div class="dr-card h-100" style="border-left: 4px solid #667eea;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="dr-icon-svg dr-icon-lg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div>
+            <div class="dr-label">Father</div>
+            <div class="dr-value" style="font-size:1.05rem;">{{ item.father|default:'Not set' }}</div>
+          </div>
+          <div class="ms-auto">
+            <button type="button" class="dr-btn-outline" style="padding:0.3rem 0.7rem;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#editFamilyModal">
+              <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Phone</span><span class="dr-value">{{ item.father.phone|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Email</span><span class="dr-value">{{ item.father.email|default:'-' }}</span></div></div>
+          <div class="col-12"><div class="dr-field-group"><span class="dr-label">Address</span><span class="dr-value" style="font-size:0.85rem;">{{ item.father.address|default:'-' }}</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mother -->
+    <div class="col-lg-4">
+      <div class="dr-card h-100" style="border-left: 4px solid #ec4899;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="dr-icon-svg dr-icon-lg" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div>
+            <div class="dr-label">Mother</div>
+            <div class="dr-value" style="font-size:1.05rem;">{{ item.mother|default:'Not set' }}</div>
+          </div>
+          <div class="ms-auto">
+            <button type="button" class="dr-btn-outline" style="padding:0.3rem 0.7rem;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#editFamilyModal">
+              <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Phone</span><span class="dr-value">{{ item.mother.phone|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="dr-field-group"><span class="dr-label">Email</span><span class="dr-value">{{ item.mother.email|default:'-' }}</span></div></div>
+          <div class="col-12"><div class="dr-field-group"><span class="dr-label">Address</span><span class="dr-value" style="font-size:0.85rem;">{{ item.mother.address|default:'-' }}</span></div></div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="col-lg-4">
-    <div class="card card-body h-100">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <h5 class="mb-0">Family Details</h5>
-        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editFamilyModal">Edit</button>
+
+  <!-- Request Details -->
+  <div class="dr-card-sm mb-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div class="dr-section-title mb-0">
+        <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        Dedication Request Details
       </div>
-      <hr>
-      <p class="mb-2"><strong>Father:</strong> {{ item.father|default:'-' }}</p>
-      <p class="mb-2"><strong>Father Contact:</strong> {{ item.father.phone|default:'-' }}</p>
-      <p class="mb-2"><strong>Mother:</strong> {{ item.mother|default:'-' }}</p>
-      <p class="mb-2"><strong>Mother Contact:</strong> {{ item.mother.phone|default:'-' }}</p>
-      <p class="mb-0"><strong>Address:</strong>
-        {% if item.father.address %}
-          {{ item.father.address }}
-        {% elif item.mother.address %}
-          {{ item.mother.address }}
-        {% else %}
-          -
+      <button type="button" class="dr-btn-outline" style="padding:0.3rem 0.7rem;font-size:0.75rem;" data-bs-toggle="modal" data-bs-target="#editRequestModal">
+        <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit
+      </button>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-3"><div class="dr-field-group"><span class="dr-label">Request Date</span><span class="dr-value">{{ item.request_date|date:'M d, Y' }}</span></div></div>
+      <div class="col-md-3"><div class="dr-field-group"><span class="dr-label">Scheduled Date</span><span class="dr-value">{{ item.dedication_date|date:'M d, Y'|default:'Not set' }}</span></div></div>
+      <div class="col-md-3"><div class="dr-field-group"><span class="dr-label">Officiant</span><span class="dr-value">{{ item.officiant|default:'Not assigned' }}</span></div></div>
+      <div class="col-md-3"><div class="dr-field-group"><span class="dr-label">Admin Comment</span><span class="dr-value">{{ item.admin_comment|default:'None' }}</span></div></div>
+      <div class="col-md-6"><div class="dr-field-group"><span class="dr-label">Scripture</span><span class="dr-value">{{ item.scripture_reference|default:'-' }}</span></div></div>
+      <div class="col-md-6"><div class="dr-field-group"><span class="dr-label">Verse</span><span class="dr-value" style="font-style:italic;">{{ item.scripture_text|default:'-' }}</span></div></div>
+    </div>
+  </div>
+
+  <!-- Actions Panel -->
+  <div class="dr-card mb-3" style="border: 1.5px solid rgba(102, 126, 234, 0.2);">
+    <div class="dr-section-title">
+      <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Actions
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if item.status == 'Approved' %}
+      <div style="background:#f7f9fc;border-radius:0.85rem;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e2e8f0;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <strong style="color:#2d3748;">Schedule Dedication</strong>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="dr-label">Service Date</label>
+            <input type="date" name="service_date" class="dr-input" value="{{ item.dedication_date|date:'Y-m-d' }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="dr-label">Officiant</label>
+            <select name="officiant_id" class="dr-select" required>
+              <option value="">Select officiant</option>
+              {% for officiant in officiants %}
+              <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button class="dr-btn-primary w-100" name="action" value="schedule">
+              <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Schedule
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="d-flex gap-2 flex-wrap">
+        {% if item.status == 'Pending' %}
+          <button class="dr-btn-success" name="action" value="approve">
+            <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Approve
+          </button>
+          <button type="button" class="dr-btn-danger" id="openDedicationRejectModalBtn">
+            <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Scheduled' %}
+          <button class="dr-btn-success" name="action" value="complete">
+            <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Complete
+          </button>
+        {% elif item.status == 'Completed' %}
+          <span style="color:#718096;font-size:0.9rem;">This dedication is completed. No further actions.</span>
+        {% elif item.status == 'Rejected' or item.status == 'Cancelled' %}
+          <span style="color:#718096;font-size:0.9rem;">This request is {{ item.status|lower }}. No workflow action available.</span>
         {% endif %}
-      </p>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="card card-body h-100">
-      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-        <h5 class="mb-0">Request Details</h5>
-        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editRequestModal">Edit</button>
       </div>
-      <hr>
-      <p class="mb-2"><strong>Date of Request:</strong> {{ item.request_date|date:'F d, Y' }}</p>
-      <p class="mb-2"><strong>Scripture:</strong> {{ item.scripture_reference|default:'-' }}</p>
-      <p class="mb-2"><strong>Verse:</strong> {{ item.scripture_text|default:'-' }}</p>
-      <p class="mb-2"><strong>Scheduled Date:</strong> {{ item.dedication_date|date:'F d, Y'|default:'-' }}</p>
-      <p class="mb-2"><strong>Officiant:</strong> {{ item.officiant|default:'-' }}</p>
-      <p class="mb-0"><strong>Admin Comment:</strong> {{ item.admin_comment|default:'-' }}</p>
+
+      <div class="mt-3">
+        <label class="dr-label">Admin Comment</label>
+        <textarea name="admin_comment" class="dr-input" rows="2" placeholder="Add a note or rejection reason...">{{ item.admin_comment }}</textarea>
+      </div>
+    </form>
+  </div>
+
+  <!-- Certificate Section -->
+  {% if item.status == 'Scheduled' or item.status == 'Completed' %}
+  <div class="dr-card-sm mb-3">
+    <div class="dr-section-title">
+      <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Certificate
+    </div>
+    <p style="color:#718096;font-size:0.85rem;margin-bottom:1rem;">Generate, preview, or download the dedication certificate.</p>
+    <div class="d-flex gap-3 flex-wrap align-items-end">
+      <form method="post" action="{% url 'admin_generate_dedication_certificate' item.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button class="dr-btn-primary" type="submit">
+          <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          {% if latest_certificate %}Regenerate{% else %}Generate{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'admin_preview_dedication_certificate' item.id %}" target="_blank" style="display:inline;">
+        {% csrf_token %}
+        <button class="dr-btn-outline" type="submit">
+          <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </form>
+      {% if latest_certificate and latest_certificate.certificate_file %}
+      <a class="dr-btn-outline" href="{{ latest_certificate.certificate_file.url }}" target="_blank">
+        <svg class="dr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+      {% endif %}
     </div>
   </div>
+  {% endif %}
 </div>
 
+<!-- Edit Child Modal -->
 <div class="modal fade" id="editChildModal" tabindex="-1" aria-labelledby="editChildModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content dr-modal-content">
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_child">
-        <div class="modal-header">
+        <div class="dr-modal-header">
           <h5 class="modal-title" id="editChildModalLabel">Edit Child Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="dr-modal-body">
           <div class="row g-3">
-            <div class="col-md-6"><label class="form-label">First Name</label><input name="child_first_name" class="form-control" value="{{ item.child.first_name }}" required></div>
-            <div class="col-md-6"><label class="form-label">Last Name</label><input name="child_last_name" class="form-control" value="{{ item.child.last_name }}" required></div>
+            <div class="col-md-6"><label class="dr-label">First Name</label><input name="child_first_name" class="dr-input" value="{{ item.child.first_name }}" required></div>
+            <div class="col-md-6"><label class="dr-label">Last Name</label><input name="child_last_name" class="dr-input" value="{{ item.child.last_name }}" required></div>
             <div class="col-md-6">
-              <label class="form-label">Gender</label>
-              <select name="child_gender" class="form-select" required>
+              <label class="dr-label">Gender</label>
+              <select name="child_gender" class="dr-select" required>
                 <option value="">Select</option>
                 <option value="Male" {% if item.child.gender == 'Male' %}selected{% endif %}>Male</option>
                 <option value="Female" {% if item.child.gender == 'Female' %}selected{% endif %}>Female</option>
                 <option value="Other" {% if item.child.gender == 'Other' %}selected{% endif %}>Other</option>
               </select>
             </div>
-            <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" name="child_date_of_birth" class="form-control" value="{{ item.child.date_of_birth|date:'Y-m-d' }}" required></div>
+            <div class="col-md-6"><label class="dr-label">Date of Birth</label><input type="date" name="child_date_of_birth" class="dr-input" value="{{ item.child.date_of_birth|date:'Y-m-d' }}" required></div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">Save Child Details</button>
+        <div class="dr-modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="dr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button class="dr-btn-primary" type="submit">Save</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Edit Family Modal -->
 <div class="modal fade" id="editFamilyModal" tabindex="-1" aria-labelledby="editFamilyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content dr-modal-content">
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_family">
-        <div class="modal-header">
+        <div class="dr-modal-header">
           <h5 class="modal-title" id="editFamilyModalLabel">Edit Family Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="dr-modal-body">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">Select Father (from database)</label>
-              <select name="father_id" class="form-select" required>
+              <label class="dr-label">Select Father (from database)</label>
+              <select name="father_id" class="dr-select" required>
                 <option value="">Select father</option>
                 {% for parent in parent_choices %}
                 <option value="{{ parent.id }}" {% if item.father.id == parent.id %}selected{% endif %}>{{ parent }}</option>
@@ -140,8 +526,8 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Select Mother (from database)</label>
-              <select name="mother_id" class="form-select" required>
+              <label class="dr-label">Select Mother (from database)</label>
+              <select name="mother_id" class="dr-select" required>
                 <option value="">Select mother</option>
                 {% for parent in parent_choices %}
                 <option value="{{ parent.id }}" {% if item.mother.id == parent.id %}selected{% endif %}>{{ parent }}</option>
@@ -149,159 +535,72 @@
               </select>
             </div>
           </div>
-          <div class="alert alert-info mt-3 mb-0">
+          <div class="alert alert-info mt-3 mb-0" style="border-radius:0.65rem;">
             Parent not found?
             <a href="{% url 'admin_member_create' %}" target="_blank" class="alert-link">Create member</a>
             and return here to select them.
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">Save Family Details</button>
+        <div class="dr-modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="dr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button class="dr-btn-primary" type="submit">Save</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Edit Request Modal -->
 <div class="modal fade" id="editRequestModal" tabindex="-1" aria-labelledby="editRequestModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-content dr-modal-content">
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="update_request">
-        <div class="modal-header">
+        <div class="dr-modal-header">
           <h5 class="modal-title" id="editRequestModalLabel">Edit Request Details</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body">
+        <div class="dr-modal-body">
           <div class="row g-3">
-            <div class="col-md-4"><label class="form-label">Request Date</label><input type="date" name="request_date" class="form-control" value="{{ item.request_date|date:'Y-m-d' }}" required></div>
-            <div class="col-md-8"><label class="form-label">Scripture Reference</label><input name="scripture_reference" class="form-control" value="{{ item.scripture_reference }}" required></div>
-            <div class="col-md-12"><label class="form-label">Scripture Verse</label><textarea name="scripture_text" rows="4" class="form-control" required>{{ item.scripture_text }}</textarea></div>
-            <div class="col-md-12"><label class="form-label">Admin Comment</label><textarea name="request_admin_comment" rows="3" class="form-control">{{ item.admin_comment }}</textarea></div>
+            <div class="col-md-4"><label class="dr-label">Request Date</label><input type="date" name="request_date" class="dr-input" value="{{ item.request_date|date:'Y-m-d' }}" required></div>
+            <div class="col-md-8"><label class="dr-label">Scripture Reference</label><input name="scripture_reference" class="dr-input" value="{{ item.scripture_reference }}" required></div>
+            <div class="col-md-12"><label class="dr-label">Scripture Verse</label><textarea name="scripture_text" rows="4" class="dr-input" required>{{ item.scripture_text }}</textarea></div>
+            <div class="col-md-12"><label class="dr-label">Admin Comment</label><textarea name="request_admin_comment" rows="3" class="dr-input">{{ item.admin_comment }}</textarea></div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">Save Request Details</button>
+        <div class="dr-modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="dr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button class="dr-btn-primary" type="submit">Save</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-{% if item.status == 'Pending' %}
-<form method="post" class="card card-body">
-{% csrf_token %}
-<h5 class="mb-2">Approval Step</h5>
-<p class="text-muted mb-3">This request is new. Choose to approve it or reject it with a reason.</p>
-<div class="mt-3 d-flex gap-2">
-  <button class="btn btn-success" name="action" value="approve">Approve</button>
-  <button type="button" class="btn btn-danger" id="openDedicationRejectModalBtn">Reject</button>
-</div>
-</form>
-{% elif item.status == 'Approved' %}
-<form method="post" class="card card-body">
-{% csrf_token %}
-<h5 class="mb-2">Schedule Dedication</h5>
-<p class="text-muted mb-3">Set an available dedication date and assign the officiant.</p>
-<div class="row g-3">
-  <div class="col-md-4">
-    <label class="form-label">Service Date</label>
-    <input type="date" name="service_date" class="form-control" value="{{ item.dedication_date|date:'Y-m-d' }}" required>
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Officiant</label>
-    <select name="officiant_id" class="form-select" required>
-      <option value="">Select officiant</option>
-      {% for officiant in officiants %}
-      <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-12">
-    <label class="form-label">Admin Comment (Optional)</label>
-    <textarea name="admin_comment" class="form-control" rows="3">{{ item.admin_comment }}</textarea>
-  </div>
-</div>
-<div class="mt-3 d-flex gap-2">
-  <button class="btn btn-warning" name="action" value="schedule">Schedule Dedication</button>
-</div>
-</form>
-{% elif item.status == 'Scheduled' %}
-<form method="post" class="card card-body">
-{% csrf_token %}
-<h5 class="mb-2">Dedication Scheduled</h5>
-<p class="text-muted mb-2">Dedication Date: <strong>{{ item.dedication_date|date:'F d, Y'|default:'-' }}</strong></p>
-<p class="text-muted mb-3">Officiant: <strong>{{ item.officiant|default:'-' }}</strong></p>
-<div class="row g-3">
-  <div class="col-md-12">
-    <label class="form-label">Admin Comment (Optional)</label>
-    <textarea name="admin_comment" class="form-control" rows="3">{{ item.admin_comment }}</textarea>
-  </div>
-</div>
-<div class="mt-3 d-flex gap-2">
-  <button class="btn btn-secondary" name="action" value="complete">Complete Dedication</button>
-</div>
-</form>
-{% else %}
-<form method="post" class="card card-body">
-{% csrf_token %}
-<h5 class="mb-2">No Pending Actions</h5>
-<p class="text-muted mb-0">This request is {{ item.status|lower }}. No workflow action is available here.</p>
-</form>
-{% endif %}
-
-<div id="dedicationRejectModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none reject-modal-backdrop"></div>
-<div id="dedicationRejectModal" class="position-fixed top-50 start-50 translate-middle d-none reject-modal">
-  <div class="card shadow-lg border-0">
-    <div class="card-body p-4">
-      <div class="d-flex align-items-start justify-content-between mb-3">
-        <h5 class="mb-0">Reject Dedication Request</h5>
-        <button type="button" id="closeDedicationRejectModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+<!-- Reject Modal (custom, not Bootstrap) -->
+<div id="dedicationRejectModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background:rgba(0,0,0,0.5);z-index:1050;"></div>
+<div id="dedicationRejectModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index:1060;width:min(92vw,540px);">
+  <div class="dr-card-sm" style="border:0;box-shadow:0 25px 60px rgba(0,0,0,0.15);">
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <h5 class="mb-0">Reject Dedication Request</h5>
+      <button type="button" id="closeDedicationRejectModalBtn" class="dr-btn-outline" style="padding:0.2rem 0.5rem;font-size:0.8rem;" aria-label="Close">✕</button>
+    </div>
+    <p style="color:#718096;font-size:0.85rem;margin-bottom:1rem;">Provide a reason for rejection. This will be saved as admin comment.</p>
+    <form method="post" id="dedicationRejectForm">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reject">
+      <div class="mb-3">
+        <label class="dr-label">Rejection Reason</label>
+        <textarea name="admin_comment" id="dedicationRejectComment" class="dr-input" rows="4" required></textarea>
       </div>
-      <p class="text-muted mb-3">Provide a reason for rejection. This will be saved as admin comment.</p>
-      <form method="post" id="dedicationRejectForm">
-        {% csrf_token %}
-        <input type="hidden" name="action" value="reject">
-        <div class="mb-3">
-          <label class="form-label">Rejection Reason</label>
-          <textarea name="admin_comment" id="dedicationRejectComment" class="form-control" rows="4" required></textarea>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-          <button type="button" id="cancelDedicationRejectBtn" class="btn btn-outline-secondary">Cancel</button>
-          <button type="submit" class="btn btn-danger">Reject Request</button>
-        </div>
-      </form>
-    </div>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" id="cancelDedicationRejectBtn" class="dr-btn-outline">Cancel</button>
+        <button type="submit" class="dr-btn-danger">Reject Request</button>
+      </div>
+    </form>
   </div>
 </div>
-
-{% if item.status == 'Scheduled' or item.status == 'Completed' %}
-<form method="post" action="{% url 'admin_generate_dedication_certificate' item.id %}" class="card card-body mt-3">
-{% csrf_token %}
-<h5 class="mb-2">Certificate</h5>
-<p class="text-muted mb-3">Generate, preview, or download the dedication certificate.</p>
-<div class="row g-3 align-items-end">
-  <div class="col-md-3">
-    <button class="btn btn-primary w-100" type="submit">Generate Certificate</button>
-  </div>
-  <div class="col-md-3">
-    <button class="btn btn-outline-secondary w-100" type="submit" formaction="{% url 'admin_preview_dedication_certificate' item.id %}" formtarget="_blank">Preview Certificate</button>
-  </div>
-  {% if latest_certificate and latest_certificate.certificate_file %}
-  <div class="col-md-3">
-    <a class="btn btn-outline-primary w-100" href="{{ latest_certificate.certificate_file.url }}" target="_blank">Download Certificate</a>
-  </div>
-  {% endif %}
-</div>
-</form>
-{% endif %}
-
-{% if latest_certificate and latest_certificate.certificate_file %}
-<a class="btn btn-primary floating-download-btn" href="{{ latest_certificate.certificate_file.url }}" target="_blank">Download Certificate</a>
-{% endif %}
 
 <script>
   (() => {
@@ -311,31 +610,19 @@
     const closeBtn = document.getElementById('closeDedicationRejectModalBtn');
     const cancelBtn = document.getElementById('cancelDedicationRejectBtn');
     const commentBox = document.getElementById('dedicationRejectComment');
-
-    if (!openBtn || !modal || !backdrop) {
-      return;
-    }
-
+    if (!openBtn || !modal || !backdrop) return;
     function openModal() {
       modal.classList.remove('d-none');
       backdrop.classList.remove('d-none');
-      if (commentBox) {
-        setTimeout(() => commentBox.focus(), 0);
-      }
+      if (commentBox) setTimeout(() => commentBox.focus(), 0);
     }
-
     function closeModal() {
       modal.classList.add('d-none');
       backdrop.classList.add('d-none');
     }
-
     openBtn.addEventListener('click', openModal);
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeModal);
-    }
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', closeModal);
-    }
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
     backdrop.addEventListener('click', closeModal);
   })();
 </script>

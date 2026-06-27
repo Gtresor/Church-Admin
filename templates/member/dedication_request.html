@@ -11,6 +11,26 @@
   <div class="col-md-4"><label>Mother Full Name</label><input name="mother_name" class="form-control" required></div>
   <div class="col-md-4"><label>Scripture Reference</label><input name="scripture_reference" class="form-control" placeholder="e.g. Proverbs 22:6" required></div>
   <div class="col-md-8"><label>Scripture Verse</label><textarea name="scripture_text" class="form-control" rows="3" required></textarea></div>
+  
+  <div class="col-12">
+    {% if available_slots %}
+      <div class="alert alert-info">
+        <p><strong>Available Dates:</strong> Select an available date for the dedication (optional).</p>
+      </div>
+      <label for="available_slot" class="form-label">Select Available Date</label>
+      <select name="available_slot" id="available_slot" class="form-select">
+        <option value="">-- Choose a date (optional) --</option>
+        {% for slot in available_slots %}
+          <option value="{{ slot.id }}">{{ slot.date }} {% if slot.time %}at {{ slot.time|time:"H:i" }}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <small class="form-text text-muted">Select a date if you prefer, or leave blank to submit a request.</small>
+    {% else %}
+      <div class="alert alert-warning">
+        <p><strong>No Available Dates:</strong> There are currently no available dates for dedication. You can still submit a request, and the admin will schedule you when dates become available.</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
 <button class="btn btn-primary mt-3">Submit Request</button>
 </form>

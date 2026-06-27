@@ -20,6 +20,7 @@ urlpatterns = [
     path("portal/admin/members/create/", views.member_create, name="admin_member_create"),
     path("portal/admin/members/<uuid:person_id>/edit/", views.member_edit, name="admin_member_edit"),
     path("portal/admin/members/<uuid:person_id>/delete/", views.member_delete, name="admin_member_delete"),
+    path("portal/admin/persons/<uuid:person_id>/edit/", views.admin_person_edit, name="admin_person_edit"),
 
     path("portal/admin/kids/", views.KidsListView.as_view(), name="admin_kid_list"),
     path("portal/admin/kids/create/", views.kid_create, name="admin_kid_create"),
@@ -27,18 +28,25 @@ urlpatterns = [
     path("portal/admin/kids/<uuid:person_id>/delete/", views.kid_delete, name="admin_kid_delete"),
 
     path("portal/admin/baptisms/", views.BaptismListView.as_view(), name="admin_baptism_list"),
+    path("portal/admin/baptisms/create/", views.admin_baptism_create, name="admin_baptism_create"),
     path("portal/admin/baptisms/<uuid:baptism_id>/", views.admin_baptism_review, name="admin_baptism_review"),
     path("portal/admin/baptisms/<uuid:baptism_id>/certificate/", views.admin_generate_baptism_certificate, name="admin_generate_baptism_certificate"),
+    path("portal/admin/baptisms/<uuid:baptism_id>/certificate/preview/", views.admin_preview_baptism_certificate, name="admin_preview_baptism_certificate"),
+    path("portal/admin/baptisms/<uuid:baptism_id>/cancel/", views.admin_baptism_cancel, name="admin_baptism_cancel"),
 
     path("portal/admin/dedications/", views.DedicationListView.as_view(), name="admin_dedication_list"),
     path("portal/admin/dedications/<uuid:dedication_id>/", views.admin_dedication_review, name="admin_dedication_review"),
     path("portal/admin/dedications/<uuid:dedication_id>/certificate/", views.admin_generate_dedication_certificate, name="admin_generate_dedication_certificate"),
     path("portal/admin/dedications/<uuid:dedication_id>/certificate/preview/", views.admin_preview_dedication_certificate, name="admin_preview_dedication_certificate"),
+    path("portal/admin/dedications/<uuid:dedication_id>/cancel/", views.admin_dedication_cancel, name="admin_dedication_cancel"),
 
     path("portal/admin/weddings/", views.WeddingListView.as_view(), name="admin_wedding_list"),
     path("portal/admin/weddings/create/", views.admin_wedding_create, name="admin_wedding_create"),
     path("portal/admin/weddings/<uuid:wedding_id>/", views.admin_wedding_review, name="admin_wedding_review"),
+    path("portal/admin/weddings/<uuid:wedding_id>/edit/", views.admin_wedding_edit, name="admin_wedding_edit"),
     path("portal/admin/weddings/<uuid:wedding_id>/certificate/", views.admin_generate_wedding_certificate, name="admin_generate_wedding_certificate"),
+    path("portal/admin/weddings/<uuid:wedding_id>/certificate/preview/", views.admin_preview_wedding_certificate, name="admin_preview_wedding_certificate"),
+    path("portal/admin/weddings/<uuid:wedding_id>/cancel/", views.admin_wedding_cancel, name="admin_wedding_cancel"),
 
     path("portal/admin/officiants/", views.OfficiantListView.as_view(), name="admin_officiant_list"),
     path("portal/admin/officiants/create/", views.admin_officiant_create, name="admin_officiant_create"),
@@ -46,9 +54,12 @@ urlpatterns = [
     path("portal/admin/officiants/<uuid:officiant_id>/delete/", views.admin_officiant_delete, name="admin_officiant_delete"),
 
     path("portal/admin/certificates/", views.CertificateListView.as_view(), name="admin_certificate_list"),
+    path("portal/admin/certificates/authenticate/", views.admin_certificate_authenticate, name="admin_certificate_authenticate"),
     path("portal/admin/certificates/<uuid:certificate_id>/revoke/", views.admin_revoke_certificate, name="admin_revoke_certificate"),
+    path("portal/admin/scheduling/", views.admin_scheduling, name="admin_scheduling"),
     path("portal/admin/calendar/", views.admin_calendar, name="admin_calendar"),
     path("portal/admin/reports/", views.admin_reports, name="admin_reports"),
+    path("portal/admin/reports/download/", views.admin_report_download, name="admin_report_download"),
     path("portal/admin/reports/ai/", views.admin_ai_reports, name="admin_ai_reports"),
     path("portal/admin/reports/ai/chat/", views.admin_ai_reports_chat_api, name="admin_ai_reports_chat_api"),
     path("portal/admin/export/csv/", views.export_services_csv, name="export_services_csv"),
@@ -59,6 +70,9 @@ urlpatterns = [
     path("portal/member/profile/", views.member_profile, name="member_profile"),
     path("portal/member/baptism/request/", views.member_baptism_request, name="member_baptism_request"),
     path("portal/member/dedication/request/", views.member_dedication_request, name="member_dedication_request"),
+    path("portal/member/wedding/request/", views.member_wedding_request, name="member_wedding_request"),
+    path("portal/member/wedding/request/<uuid:request_id>/status/", views.member_wedding_status, name="member_wedding_status"),
+    path("portal/wedding/invite/<uuid:invite_code>/", views.member_wedding_consent, name="member_wedding_consent"),
     path("portal/member/dedication/<uuid:dedication_id>/edit/", views.member_dedication_edit, name="member_dedication_edit"),
     path("portal/member/certificates/", views.MemberCertificateListView.as_view(), name="member_certificate_list"),
 ]

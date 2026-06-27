@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Wedding Registration Request</h3>
+
+{% if active_request_exists %}
+<div class="alert alert-info">
+  You already have an active wedding request in progress. Please wait for admin feedback from the church office.
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data" class="card card-body">
+{% csrf_token %}
+
+<div class="alert alert-light border mb-4">
+  <h5 class="mb-2">Before You Continue</h5>
+  <p class="mb-2">Please read this carefully:</p>
+  <ul class="mb-3">
+    <li>This request is sent to church administration for review.</li>
+    <li>The admin may call both of you for clarification before final approval.</li>
+    <li>If one partner is not a church member, provide their full details, home location, and church information.</li>
+    <li>After review, admin will respond with approval, guidance, or next instructions.</li>
+  </ul>
+  <div class="form-check">
+    <input class="form-check-input" type="checkbox" id="has_read" name="has_read" required>
+    <label class="form-check-label" for="has_read">I have read and understood the process</label>
+  </div>
+</div>
+
+<fieldset id="wedding_request_fields" disabled>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <label class="form-label">I am the</label>
+      <select name="owner_role" id="owner_role" class="form-select" required>
+        <option value="">Select role</option>
+        <option value="groom">Groom</option>
+        <option value="bride">Bride</option>
+      </select>
+    </div>
+    
+    {% if available_slots %}
+      <div class="col-md-8">
+        <div class="alert alert-info">
+          <p><strong>Available Time Slots:</strong> Weddings have 3 available slots per day (12:00 PM, 2:00 PM, 4:00 PM). Select an available slot:</p>
+        </div>
+        <label for="available_slot" class="form-label">Select Wedding Date & Time</label>
+        <select name="available_slot" id="available_slot" class="form-select">
+          <option value="">-- Choose a date & time --</option>
+          {% for slot in available_slots %}
+            <option value="{{ slot.id }}">{{ slot.date }} at {{ slot.time|time:"H:i" }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    {% else %}
+      <div class="col-12">
+        <div class="alert alert-warning">
+          <p><strong>No Available Slots:</strong> There are currently no available wedding slots. You can still submit a request, and the admin will schedule you when slots become available.</p>
+        </div>
+      </div>
+    {% endif %}
+    
+  <div class="col-12">
+    <hr>
+    <h5 class="mb-2">Couple Photo</h5>
+    <p class="text-muted small mb-2">Upload a photo of the couple that will appear on the certificate.</p>
+    <input type="file" name="couple_photo" class="form-control" accept="image/*">
+  </div>
+
+  <div class="col-md-12"><hr></div>
+
+    <div class="col-12">
+      <h5 class="mb-2">Partner Information</h5>
+      <p class="text-muted small mb-3">If your partner is a church member, select them below. Otherwise, fill the non-member section.</p>
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label" id="partner_member_label">Church Member Partner (Optional)</label>
+      <input id="partner_member_search" class="form-control mb-2" placeholder="Search member by name" autocomplete="off">
+      <small id="partner_member_search_feedback" class="text-muted d-block mb-2">Type to search members.</small>
+      <select name="partner_member_id" id="partner_member_id" class="form-select">
+        <option value="">-- Partner is not listed as member --</option>
+        {% for person in member_choices %}
+        <option value="{{ person.id }}">{{ person }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-12">
+      <div class="border rounded p-3 bg-light-subtle" id="non_member_partner_section">
+        <h6 class="mb-3" id="non_member_role_title">Non-member Partner Details</h6>
+        <div class="row g-2">
+          <div class="col-md-4"><label class="form-label">First Name</label><input name="partner_first_name" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Last Name</label><input name="partner_last_name" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Gender</label><select name="partner_gender" class="form-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+          <div class="col-md-4"><label class="form-label">Date of Birth</label><input type="date" name="partner_date_of_birth" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Phone</label><input name="partner_phone" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Email</label><input type="email" name="partner_email" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Current Church</label><input name="partner_church_name" class="form-control" placeholder="Church of partner"></div>
+          <div class="col-md-6"><label class="form-label">Address</label><input name="partner_address" class="form-control"></div>
+
+          <div class="col-md-4"><label class="form-label">Province</label><input name="partner_province" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">District</label><input name="partner_district" class="form-control"></div>
+          <div class="col-md-4"><label class="form-label">Sector</label><input name="partner_sector" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Cell</label><input name="partner_cell" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Village</label><input name="partner_village" class="form-control"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary mt-3" {% if active_request_exists %}disabled{% endif %}>Submit Wedding Request</button>
+</fieldset>
+</form>
+
+<script>
+const hasRead = document.getElementById('has_read');
+const requestFields = document.getElementById('wedding_request_fields');
+const ownerRole = document.getElementById('owner_role');
+const partnerMemberSelect = document.getElementById('partner_member_id');
+const partnerMemberSearch = document.getElementById('partner_member_search');
+const partnerMemberLabel = document.getElementById('partner_member_label');
+const nonMemberRoleTitle = document.getElementById('non_member_role_title');
+const partnerMemberSearchFeedback = document.getElementById('partner_member_search_feedback');
+const nonMemberSection = document.getElementById('non_member_partner_section');
+
+function toggleRequestForm() {
+  requestFields.disabled = !hasRead.checked;
+}
+
+function toggleNonMemberSection() {
+  if (partnerMemberSelect.value) {
+    nonMemberSection.classList.add('d-none');
+  } else {
+    nonMemberSection.classList.remove('d-none');
+  }
+}
+
+function updatePartnerRoleLabels() {
+  if (ownerRole.value === 'groom') {
+    partnerMemberLabel.textContent = 'Select Bride (Church Member, Optional)';
+    partnerMemberSearch.placeholder = 'Search bride by name';
+    nonMemberRoleTitle.textContent = 'Non-member Bride Details';
+    return;
+  }
+  if (ownerRole.value === 'bride') {
+    partnerMemberLabel.textContent = 'Select Groom (Church Member, Optional)';
+    partnerMemberSearch.placeholder = 'Search groom by name';
+    nonMemberRoleTitle.textContent = 'Non-member Groom Details';
+    return;
+  }
+  partnerMemberLabel.textContent = 'Church Member Partner (Optional)';
+  partnerMemberSearch.placeholder = 'Search member by name';
+  nonMemberRoleTitle.textContent = 'Non-member Partner Details';
+}
+
+function filterPartnerOptions() {
+  const search = partnerMemberSearch.value.trim().toLowerCase();
+  const options = partnerMemberSelect.querySelectorAll('option');
+  let visibleCount = 0;
+  let firstVisibleOption = null;
+
+  options.forEach((option, index) => {
+    if (index === 0) {
+      option.hidden = false;
+      return;
+    }
+    const matches = option.textContent.toLowerCase().includes(search);
+    option.hidden = !matches;
+    if (matches) {
+      visibleCount += 1;
+      if (!firstVisibleOption) {
+        firstVisibleOption = option;
+      }
+    }
+  });
+
+  if (!search) {
+    partnerMemberSearchFeedback.textContent = 'Type to search members.';
+  } else if (visibleCount === 0) {
+    partnerMemberSearchFeedback.textContent = 'No matching member found. Use non-member details below.';
+  } else if (visibleCount === 1) {
+    partnerMemberSearchFeedback.textContent = `1 match found. Press Enter to select ${firstVisibleOption.textContent}.`;
+  } else {
+    partnerMemberSearchFeedback.textContent = `${visibleCount} matches found. Use ↓ to jump to partner list.`;
+  }
+
+  if (partnerMemberSelect.value) {
+    const selected = partnerMemberSelect.options[partnerMemberSelect.selectedIndex];
+    if (selected && selected.hidden) {
+      partnerMemberSelect.value = '';
+      toggleNonMemberSection();
+    }
+  }
+}
+
+function focusFirstVisibleMemberOption() {
+  const options = partnerMemberSelect.querySelectorAll('option');
+  for (let index = 1; index < options.length; index += 1) {
+    const option = options[index];
+    if (!option.hidden) {
+      partnerMemberSelect.value = option.value;
+      break;
+    }
+  }
+  partnerMemberSelect.focus();
+  toggleNonMemberSection();
+}
+
+hasRead.addEventListener('change', toggleRequestForm);
+partnerMemberSelect.addEventListener('change', toggleNonMemberSection);
+partnerMemberSearch.addEventListener('input', filterPartnerOptions);
+partnerMemberSearch.addEventListener('keydown', function (event) {
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    focusFirstVisibleMemberOption();
+    return;
+  }
+
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const visibleOptions = Array.from(partnerMemberSelect.querySelectorAll('option')).filter((option, index) => index > 0 && !option.hidden);
+    if (visibleOptions.length === 1) {
+      partnerMemberSelect.value = visibleOptions[0].value;
+      toggleNonMemberSection();
+      partnerMemberSearchFeedback.textContent = `${visibleOptions[0].textContent} selected.`;
+      partnerMemberSelect.focus();
+    }
+  }
+});
+ownerRole.addEventListener('change', updatePartnerRoleLabels);
+
+toggleRequestForm();
+toggleNonMemberSection();
+updatePartnerRoleLabels();
+filterPartnerOptions();
+</script>
+{% endblock %}

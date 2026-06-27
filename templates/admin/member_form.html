@@ -25,7 +25,7 @@
     margin: 0 auto;
   }
 </style>
-<h3 class="mb-3">{% if person %}Edit Member{% else %}Create Member{% endif %}</h3>
+<h3 class="mb-3">{% if is_edit %}Edit Member{% else %}Create Member{% endif %}</h3>
 <form method="post" class="card card-body">
 {% csrf_token %}
 <div class="row g-3">
@@ -82,7 +82,7 @@
     </div>
   </div>
 
-  {% if not person %}
+  {% if not is_edit %}
   <div class="col-12">
     <div class="info-card">
       <h6>Account Access</h6>

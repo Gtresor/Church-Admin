@@ -2,33 +2,13 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3>Reports</h3>
-  <div class="d-flex gap-2">
-    <a href="{% url 'export_services_csv' %}?start_year={{ selected_start_year }}&end_year={{ selected_end_year }}" class="btn btn-outline-success">Export CSV</a>
-    <a href="{% url 'export_services_pdf' %}?start_year={{ selected_start_year }}&end_year={{ selected_end_year }}" class="btn btn-outline-danger">Export PDF</a>
-    <a href="{% url 'export_certificate_log_pdf' %}?start_year={{ selected_start_year }}&end_year={{ selected_end_year }}" class="btn btn-outline-secondary">Certificate Log PDF</a>
+  <div>
+    <a href="{% url 'admin_report_download' %}" class="btn btn-outline-primary">
+      Download Reports
+    </a>
   </div>
 </div>
-<form method="get" class="row g-2 mb-3">
-  <div class="col-md-3">
-    <label class="form-label">Start Year</label>
-    <select name="start_year" class="form-select">
-      {% for year in available_years %}
-      <option value="{{ year }}" {% if year == selected_start_year %}selected{% endif %}>{{ year }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label class="form-label">End Year</label>
-    <select name="end_year" class="form-select">
-      {% for year in available_years %}
-      <option value="{{ year }}" {% if year == selected_end_year %}selected{% endif %}>{{ year }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-2 d-flex align-items-end">
-    <button class="btn btn-primary w-100">Apply</button>
-  </div>
-</form>
+
 <div class="row g-3">
   <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="servicesByMonth"></canvas></div></div></div>
   <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="certsByMonth"></canvas></div></div></div>
@@ -36,6 +16,7 @@
   <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="approvalRate"></canvas></div></div></div>
   <div class="col-12"><div class="card"><div class="card-body"><canvas id="servicesByYear"></canvas></div></div></div>
 </div>
+
 {{ month_labels|json_script:"r-month-labels" }}
 {{ year_labels|json_script:"r-year-labels" }}
 {{ baptisms_monthly|json_script:"r-baptisms" }}

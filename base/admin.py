@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import AdminProfile, BabyDedication, Baptism, Certificate, MemberAccount, Officiant, Person, Wedding
+from django.utils.html import format_html
+from .models import AdminProfile, AvailableSlot, BabyDedication, Baptism, BlackoutDate, Certificate, MemberAccount, Officiant, Person, Wedding
 
 
 @admin.register(Person)
@@ -28,16 +29,39 @@ class OfficiantAdmin(admin.ModelAdmin):
 	search_fields = ("name", "title")
 
 
+@admin.register(BlackoutDate)
+class BlackoutDateAdmin(admin.ModelAdmin):
+	list_display = ("date", "reason", "activity_type")
+	list_filter = ("activity_type", "date")
+	search_fields = ("reason",)
+	ordering = ("-date",)
+
+
+@admin.register(AvailableSlot)
+class AvailableSlotAdmin(admin.ModelAdmin):
+	list_display = ("activity_type", "date", "time", "is_available")
+	list_filter = ("activity_type", "date", "is_available")
+	search_fields = ("activity_type", "date")
+	ordering = ("-date", "time")
+
+
 @admin.register(Baptism)
 class BaptismAdmin(admin.ModelAdmin):
-	list_display = ("person", "status", "baptism_date", "certificate_generated")
+	list_display = ("person", "status", "available_slot", "baptism_date", "certificate_generated")
 	list_filter = ("status", "certificate_generated")
 	search_fields = ("person__first_name", "person__last_name", "officiant")
+	readonly_fields = ("baptism_date",)
+	fieldsets = (
+		("Personal Details", {"fields": ("person",)}),
+		("Scheduling", {"fields": ("available_slot",)}),
+		("Status", {"fields": ("status", "baptism_date", "officiant", "admin_comment")}),
+		("Certificate", {"fields": ("certificate_generated",)}),
+	)
 
 
 @admin.register(BabyDedication)
 class BabyDedicationAdmin(admin.ModelAdmin):
-	list_display = ("child", "father", "mother", "status", "dedication_date", "certificate_generated")
+	list_display = ("child", "father", "mother", "status", "available_slot", "dedication_date", "certificate_generated")
 	list_filter = ("status", "certificate_generated")
 	search_fields = (
 		"child__first_name",
@@ -45,13 +69,30 @@ class BabyDedicationAdmin(admin.ModelAdmin):
 		"father__first_name",
 		"mother__first_name",
 	)
+	readonly_fields = ("dedication_date",)
+	fieldsets = (
+		("People", {"fields": ("child", "father", "mother")}),
+		("Scripture", {"fields": ("scripture_reference", "scripture_text")}),
+		("Scheduling", {"fields": ("available_slot",)}),
+		("Status", {"fields": ("status", "dedication_date", "officiant", "admin_comment")}),
+		("Certificate", {"fields": ("certificate_generated",)}),
+	)
 
 
 @admin.register(Wedding)
 class WeddingAdmin(admin.ModelAdmin):
-	list_display = ("groom", "bride", "wedding_date", "status", "certificate_generated")
+	list_display = ("groom", "bride", "status", "available_slot", "wedding_date", "certificate_generated")
 	list_filter = ("status", "certificate_generated")
 	search_fields = ("groom__first_name", "bride__first_name", "officiant")
+	# Removed readonly_fields to make all fields editable
+	fieldsets = (
+		("People", {"fields": ("groom", "bride")}),
+		("Church Names", {"fields": ("groom_church_name", "bride_church_name")}),
+		("Scheduling", {"fields": ("available_slot", "wedding_date")}),
+		("Status", {"fields": ("status", "officiant", "marriage_resolution", "admin_comment")}),
+		("Health Documents", {"fields": ("groom_health_document", "bride_health_document")}),
+		("Certificate", {"fields": ("certificate_generated",)}),
+	)
 
 
 @admin.register(Certificate)

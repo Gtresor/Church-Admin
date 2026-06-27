@@ -1,13 +1,295 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Baptism Requests</h3>
-<form class="row g-2 mb-3">
-  <div class="col-md-4"><input name="q" value="{{ q }}" class="form-control" placeholder="Search name"></div>
-  <div class="col-md-3"><select name="status" class="form-select"><option value="">All Status</option>{% for val, label in status_choices %}<option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
-  <div class="col-md-2"><button class="btn btn-outline-primary">Filter</button></div>
-</form>
-<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Person</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody>
-{% for item in page_obj %}<tr><td>{{ item.person }}</td><td>{{ item.status }}</td><td>{{ item.baptism_date|default:item.request_date }}</td><td><a class="btn btn-sm btn-primary" href="{% url 'admin_baptism_review' item.id %}">Manage</a></td></tr>{% empty %}<tr><td colspan="4">No records.</td></tr>{% endfor %}
-</tbody></table></div></div>
-{% include 'partials/pagination.html' with page_query=page_query %}
+<style>
+  .bl-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .bl-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .bl-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .bl-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+  }
+  .bl-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .bl-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .bl-select {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+  .bl-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .bl-btn-primary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .bl-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .bl-btn-outline {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .bl-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .bl-icon-svg {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .bl-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .bl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .bl-table thead th {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #eef2f7;
+    white-space: nowrap;
+  }
+  .bl-table thead th a {
+    color: #718096;
+    text-decoration: none;
+  }
+  .bl-table thead th a:hover {
+    color: #667eea;
+  }
+  .bl-table tbody td {
+    padding: 0.75rem 0.85rem;
+    border-bottom: 1px solid #f0f2f5;
+    color: #1a202c;
+    vertical-align: middle;
+  }
+  .bl-table tbody tr:hover {
+    background: #f8faff;
+  }
+  .bl-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .bl-dropdown-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.55rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .bl-dropdown-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.25);
+    color: #fff;
+  }
+  .bl-empty {
+    text-align: center;
+    color: #a0aec0;
+    padding: 2.5rem 0;
+    font-size: 0.9rem;
+  }
+</style>
+
+<div class="bl-page">
+  <!-- Header -->
+  <div class="bl-card mb-3" style="border-left: 4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Baptism Requests</h4>
+        <div class="bl-gradient-accent"></div>
+      </div>
+      <a href="{% url 'admin_baptism_create' %}" class="bl-btn-primary">
+        <svg class="bl-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Register Baptism
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="bl-card mb-3">
+    <form class="row g-2" method="get">
+      <div class="col-md-5">
+        <label class="bl-label">Search</label>
+        <input name="q" value="{{ q }}" class="bl-input" placeholder="Search by person name...">
+      </div>
+      <div class="col-md-3">
+        <label class="bl-label">Status</label>
+        <select name="status" class="bl-select">
+          <option value="">All Statuses</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="bl-btn-primary w-100">Filter</button>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <a href="{% url 'admin_baptism_list' %}" class="bl-btn-outline w-100">Clear</a>
+      </div>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="dir" value="{{ dir }}">
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="bl-card">
+    <div class="table-responsive">
+      <table class="bl-table">
+        <thead>
+          <tr>
+            <th>
+              <a href="?{% if sort == 'person' and dir == 'asc' %}sort=person&dir=desc{% else %}sort=person&dir=asc{% endif %}&q={{ q }}&status={{ status }}">
+                Person {% if sort == 'person' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'status' and dir == 'asc' %}sort=status&dir=desc{% else %}sort=status&dir=asc{% endif %}&q={{ q }}&status={{ status }}">
+                Status {% if sort == 'status' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'date' and dir == 'asc' %}sort=date&dir=desc{% else %}sort=date&dir=asc{% endif %}&q={{ q }}&status={{ status }}">
+                Date {% if sort == 'date' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'officiant' and dir == 'asc' %}sort=officiant&dir=desc{% else %}sort=officiant&dir=asc{% endif %}&q={{ q }}&status={{ status }}">
+                Officiant {% if sort == 'officiant' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr>
+            <td><strong>{{ item.person }}</strong></td>
+            <td>
+              <span class="bl-status-badge
+                {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+                {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+                {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+                {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+                {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+                {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+                {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">{{ item.status }}</span>
+            </td>
+            <td>{{ item.baptism_date|default:item.request_date|default:"-" }}</td>
+            <td>{{ item.officiant|default:"-" }}</td>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="bl-dropdown-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="{% url 'admin_baptism_review' item.id %}">Manage</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <form method="post" action="{% url 'admin_baptism_cancel' item.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Cancel this baptism record?')">Cancel</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5"><div class="bl-empty">No baptism records found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include 'partials/pagination.html' with page_query=page_query %}
+</div>
 {% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3>Wedding Request Confirmation</h3>
+
+<div class="card card-body mb-3">
+  <h5 class="mb-3">You have been invited to confirm a wedding request</h5>
+  <table class="table table-sm">
+    <tr><th>Requested by</th><td>{{ wrequest.submitter }}</td></tr>
+    <tr><th>Your Role</th>
+      <td>{% if wrequest.submitter_role == 'groom' %}Bride{% else %}Groom{% endif %}</td>
+    </tr>
+    <tr><th>Partner (Submitter)</th><td>{{ wrequest.submitter }}</td></tr>
+    <tr><th>Status</th>
+      <td>
+        {% if wrequest.partner_consented %}
+          <span class="text-success">✓ Already Confirmed</span>
+        {% else %}
+          <span class="text-warning">⏳ Awaiting your confirmation</span>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+{% if not wrequest.partner_consented %}
+<form method="post" enctype="multipart/form-data" class="card card-body">
+  {% csrf_token %}
+
+  <div class="alert alert-light border mb-4">
+    <h5 class="mb-2">Confirmation</h5>
+    <p>By confirming, you agree to the following:</p>
+    <ul class="mb-3">
+      <li>You consent to marry {{ wrequest.submitter }} at this church.</li>
+      <li>The information provided in this request is accurate to the best of your knowledge.</li>
+      <li>You understand that church administration will review this request and may contact you for further information.</li>
+    </ul>
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="agree" name="agree" required>
+      <label class="form-check-label" for="agree">I confirm my agreement to marry {{ wrequest.submitter }} and consent to this wedding request.</label>
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label">Upload Your Health Document (required)</label>
+    <input type="file" name="partner_health_document" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
+    <small class="text-muted">Accepted: PDF, PNG, JPG (max 5MB)</small>
+  </div>
+
+  <button type="submit" class="btn btn-success">Confirm & Submit</button>
+</form>
+{% else %}
+<div class="alert alert-success">
+  <strong>Already Confirmed!</strong> You have already confirmed this wedding request. No further action is needed.
+</div>
+<a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">&larr; Back to Dashboard</a>
+{% endif %}
+{% endblock %}

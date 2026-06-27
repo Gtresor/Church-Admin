@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">Register Baptism</h3>
+  <span class="badge bg-primary-subtle text-primary-emphasis">Walk-in Registration</span>
+</div>
+
+<form method="post" class="card shadow-sm border-0">
+{% csrf_token %}
+<div class="card-body">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+        <h5 class="mb-1">Use Existing Person</h5>
+        <p class="text-muted small mb-3">Search and select someone already in your records.</p>
+        <label class="form-label">Existing Person</label>
+        <select id="person_id" name="person_id" class="form-select">
+          <option value="">-- Select Person --</option>
+          {% for person in people %}
+          <option value="{{ person.id }}">{{ person }} {% if person.is_member %}(Member){% else %}(Guest){% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
+        <h5 class="mb-1">Manual Walk-in</h5>
+        <p class="text-muted small mb-3">If not in system, create a quick profile now.</p>
+        <div class="row g-2">
+          <div class="col-md-6"><label class="form-label">First Name</label><input name="first_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Last Name</label><input name="last_name" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Gender</label><select name="gender" class="form-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+          <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Phone</label><input name="phone" class="form-control"></div>
+          <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div>
+          <div class="col-12"><label class="form-label">Address</label><input name="address" class="form-control"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">Admin Note (Optional)</label>
+      <textarea name="admin_comment" class="form-control" rows="3" placeholder="Example: Registered at office desk after Sunday service."></textarea>
+    </div>
+  </div>
+
+  <div class="mt-4 d-flex justify-content-end gap-2">
+    <a href="{% url 'admin_baptism_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    <button class="btn btn-primary px-4">Save Registration</button>
+  </div>
+</div>
+</form>
+{% endblock %}

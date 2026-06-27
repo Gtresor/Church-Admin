@@ -20,37 +20,40 @@
           <a href="{% url 'admin_officiant_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_officiant_list' or current_url == 'admin_officiant_create' or current_url == 'admin_officiant_edit' %}active{% endif %}">Officiants</a>
         </div>
 
-        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#sacramentsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}true{% else %}false{% endif %}">
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_create' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#sacramentsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_create' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}true{% else %}false{% endif %}">
           Sacraments
         </button>
-        <div id="sacramentsNav{{ suffix }}" class="collapse {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}show{% endif %}">
-          <a href="{% url 'admin_baptism_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_review' %}active{% endif %}">Baptisms</a>
+        <div id="sacramentsNav{{ suffix }}" class="collapse {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_create' or current_url == 'admin_baptism_review' or current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' or current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}show{% endif %}">
+          <a href="{% url 'admin_baptism_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_baptism_list' or current_url == 'admin_baptism_create' or current_url == 'admin_baptism_review' %}active{% endif %}">Baptisms</a>
           <a href="{% url 'admin_dedication_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_dedication_list' or current_url == 'admin_dedication_review' %}active{% endif %}">Dedications</a>
           <a href="{% url 'admin_wedding_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_wedding_list' or current_url == 'admin_wedding_create' or current_url == 'admin_wedding_review' %}active{% endif %}">Weddings</a>
         </div>
 
-        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#recordsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}true{% else %}false{% endif %}">
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'admin_certificate_list' or current_url == 'admin_scheduling' or current_url == 'admin_calendar' or current_url == 'admin_reports' or current_url == 'admin_report_download' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#recordsNav{{ suffix }}" aria-expanded="{% if current_url == 'admin_certificate_list' or current_url == 'admin_scheduling' or current_url == 'admin_calendar' or current_url == 'admin_reports' or current_url == 'admin_report_download' %}true{% else %}false{% endif %}">
           Records & Reports
         </button>
-        <div id="recordsNav{{ suffix }}" class="collapse {% if current_url == 'admin_certificate_list' or current_url == 'admin_calendar' or current_url == 'admin_reports' %}show{% endif %}">
+        <div id="recordsNav{{ suffix }}" class="collapse {% if current_url == 'admin_certificate_list' or current_url == 'admin_scheduling' or current_url == 'admin_calendar' or current_url == 'admin_reports' or current_url == 'admin_report_download' %}show{% endif %}">
           <a href="{% url 'admin_certificate_list' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_certificate_list' %}active{% endif %}">Certificates</a>
+          <a href="{% url 'admin_scheduling' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_scheduling' %}active{% endif %}">Scheduling</a>
           <a href="{% url 'admin_calendar' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_calendar' %}active{% endif %}">Calendar</a>
-          <a href="{% url 'admin_reports' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_reports' %}active{% endif %}">Reports</a>
+          <a href="{% url 'admin_report_download' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'admin_report_download' %}active{% endif %}">Download Reports</a>
         </div>
       {% else %}
         <a href="{% url 'member_dashboard' %}" class="list-group-item list-group-item-action side-link {% if current_url == 'member_dashboard' %}active{% endif %}">Dashboard</a>
 
-        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#memberRequests{{ suffix }}" aria-expanded="{% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}true{% else %}false{% endif %}">
+        <button class="list-group-item list-group-item-action side-group-toggle {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' or current_url == 'member_wedding_request' %}is-open{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#memberRequests{{ suffix }}" aria-expanded="{% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' or current_url == 'member_wedding_request' %}true{% else %}false{% endif %}">
           Requests
         </button>
-        <div id="memberRequests{{ suffix }}" class="collapse {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}show{% endif %}">
+        <div id="memberRequests{{ suffix }}" class="collapse {% if current_url == 'member_baptism_request' or current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' or current_url == 'member_wedding_request' %}show{% endif %}">
           <a href="{% url 'member_baptism_request' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'member_baptism_request' %}active{% endif %}">Baptism Request</a>
           <a href="{% url 'member_dedication_request' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'member_dedication_request' or current_url == 'member_dedication_edit' %}active{% endif %}">Dedication Request</a>
+          <a href="{% url 'member_wedding_request' %}" class="list-group-item list-group-item-action side-sublink {% if current_url == 'member_wedding_request' %}active{% endif %}">Wedding Request</a>
         </div>
 
         <a href="{% url 'member_certificate_list' %}" class="list-group-item list-group-item-action side-link {% if current_url == 'member_certificate_list' %}active{% endif %}">Certificates</a>
       {% endif %}
     </div>
+
   </div>
 </div>
 {% endwith %}

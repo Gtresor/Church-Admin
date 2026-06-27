@@ -12,11 +12,31 @@
 </div>
 
 <div class="row row-cols-1 row-cols-md-2 row-cols-xxl-5 g-3 mb-4">
-  <div class="col"><div class="stat-card stat-1 h-100"><div class="card-body"><div class="label">Total Members</div><p class="value">{{ total_members }}</p></div></div></div>
-  <div class="col"><div class="stat-card stat-2 h-100"><div class="card-body"><div class="label">Pending Baptisms</div><p class="value">{{ pending_baptisms }}</p></div></div></div>
-  <div class="col"><div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">Pending Dedications</div><p class="value">{{ pending_dedications }}</p></div></div></div>
-  <div class="col"><div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Total Weddings</div><p class="value">{{ total_weddings }}</p></div></div></div>
-  <div class="col"><div class="stat-card stat-5 h-100"><div class="card-body"><div class="label">Certificates Issued</div><p class="value">{{ certificates_issued }}</p></div></div></div>
+  <div class="col">
+    <a href="{% url 'admin_member_list' %}" class="text-decoration-none">
+      <div class="stat-card stat-1 h-100"><div class="card-body"><div class="label">Total Members</div><p class="value">{{ total_members }}</p></div></div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admin_baptism_list' %}?status=Pending" class="text-decoration-none">
+      <div class="stat-card stat-2 h-100"><div class="card-body"><div class="label">Pending Baptisms</div><p class="value">{{ pending_baptisms }}</p></div></div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admin_dedication_list' %}?status=Pending" class="text-decoration-none">
+      <div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">Pending Dedications</div><p class="value">{{ pending_dedications }}</p></div></div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admin_wedding_list' %}" class="text-decoration-none">
+      <div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Total Weddings</div><p class="value">{{ total_weddings }}</p></div></div>
+    </a>
+  </div>
+  <div class="col">
+    <a href="{% url 'admin_certificate_list' %}" class="text-decoration-none">
+      <div class="stat-card stat-5 h-100"><div class="card-body"><div class="label">Certificates Issued</div><p class="value">{{ certificates_issued }}</p></div></div>
+    </a>
+  </div>
 </div>
 
 <div class="row g-3 mb-4">
@@ -51,7 +71,7 @@
         <div class="mb-2"><strong>Baptisms</strong></div>
         <ul class="small ps-3 mb-3">
           {% for item in recent_requests.baptisms %}
-            <li>{{ item.person }} - {{ item.status }}</li>
+            <li><a href="{% url 'admin_baptism_review' item.id %}">{{ item.person }} - {{ item.status }}</a></li>
           {% empty %}
             <li>No baptism requests.</li>
           {% endfor %}
@@ -59,7 +79,7 @@
         <div class="mb-2"><strong>Dedications</strong></div>
         <ul class="small ps-3 mb-0">
           {% for item in recent_requests.dedications %}
-            <li>{{ item.child }} - {{ item.status }}</li>
+            <li><a href="{% url 'admin_dedication_review' item.id %}">{{ item.child }} - {{ item.status }}</a></li>
           {% empty %}
             <li>No dedication requests.</li>
           {% endfor %}

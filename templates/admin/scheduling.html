@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="dashboard-wrap">
+<div class="dashboard-hero hero-admin mb-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h3 class="mb-1">Scheduling Interface</h3>
+      <p class="mb-0 opacity-75">Manage available dates, blackout dates, and view scheduled services.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'admin_calendar' %}?year={{ year }}&month={{ month }}" class="btn btn-sm btn-outline-secondary">View Calendar</a>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Add Available Slot -->
+  <div class="col-lg-4 col-md-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title"><i class="fas fa-plus-circle text-success"></i> Add Available Slot</h5>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="add_slot">
+          <div class="mb-2">
+            <select name="activity_type" class="form-select form-select-sm" required>
+              <option value="">Select Activity</option>
+              {% for val, label in activity_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <input type="date" name="date" class="form-control form-control-sm" required>
+          </div>
+          <div class="mb-2">
+            <input type="time" name="time" class="form-control form-control-sm" placeholder="Time (weddings only)">
+            <small class="text-muted">Only for weddings (12:00, 14:00, 16:00)</small>
+          </div>
+          <button class="btn btn-sm btn-success w-100">Create Slot</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Blackout Date -->
+  <div class="col-lg-4 col-md-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title"><i class="fas fa-ban text-danger"></i> Add Blackout Date</h5>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="add_blackout">
+          <div class="mb-2">
+            <input type="date" name="date" class="form-control form-control-sm" required>
+          </div>
+          <div class="mb-2">
+            <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason (e.g. Easter Sunday)">
+          </div>
+          <div class="mb-2">
+            <select name="activity_type" class="form-select form-select-sm">
+              {% for val, label in blackout_activity_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            <small class="text-muted">Applies to all activities by default</small>
+          </div>
+          <button class="btn btn-sm btn-danger w-100">Add Blackout</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Create -->
+  <div class="col-lg-4 col-md-12">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title"><i class="fas fa-calendar-alt text-primary"></i> Bulk Create Slots</h5>
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="bulk_create">
+          <div class="mb-2">
+            <select name="activity_type" class="form-select form-select-sm" required>
+              <option value="">Select Activity</option>
+              {% for val, label in activity_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row g-1 mb-2">
+            <div class="col-6"><input type="date" name="start_date" class="form-control form-control-sm" required></div>
+            <div class="col-6"><input type="date" name="end_date" class="form-control form-control-sm" required></div>
+          </div>
+          <small class="text-muted d-block mb-2">Creates slots for each day in the range.</small>
+          <button class="btn btn-sm btn-primary w-100">Bulk Create</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar -->
+<div class="glass-card mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="section-title mb-0">
+        <i class="fas fa-calendar"></i> {{ month_name }} {{ year }}
+        <span class="badge bg-secondary ms-2">{{ events|length }} event(s)</span>
+      </h5>
+      <div class="btn-group btn-group-sm">
+        {% if month == 1 %}
+          <a href="?year={{ year|add:"-1" }}&month=12" class="btn btn-outline-secondary">&laquo; Prev</a>
+        {% else %}
+          <a href="?year={{ year }}&month={{ month|add:"-1" }}" class="btn btn-outline-secondary">&laquo; Prev</a>
+        {% endif %}
+        {% if month == 12 %}
+          <a href="?year={{ year|add:"1" }}&month=1" class="btn btn-outline-secondary">Next &raquo;</a>
+        {% else %}
+          <a href="?year={{ year }}&month={{ month|add:"1" }}" class="btn btn-outline-secondary">Next &raquo;</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-bordered table-sm mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for week_row in month_rows %}
+            <tr>
+              {% for day_num in week_row %}
+                <td class="{% if day_num == 0 %}bg-light{% endif %}" style="height:80px;vertical-align:top;width:14%;">
+                  {% if day_num > 0 %}
+                    <strong>{{ day_num }}</strong>
+                    {% for event in events %}
+                      {% if event.day == day_num %}
+                        <div class="small rounded px-1 mb-1" style="background:{{ event.color }}20;border-left:3px solid {{ event.color }};font-size:11px;">
+                          {{ event.label }}
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-2 d-flex gap-3 small">
+      <span><span class="badge bg-primary">Baptism</span></span>
+      <span><span class="badge bg-warning text-dark">Dedication</span></span>
+      <span><span class="badge bg-secondary">Wedding</span></span>
+      <span><span class="badge bg-danger">Blackout</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- Upcoming Slots & Blackouts -->
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title"><i class="fas fa-check-circle text-success"></i> Upcoming Available Slots</h5>
+        <div class="table-responsive">
+          <table class="table table-sm soft-table mb-0">
+            <thead><tr><th>Type</th><th>Date</th><th>Time</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for slot in upcoming_slots %}
+                <tr>
+                  <td><span class="badge bg-{% if slot.activity_type == 'Baptism' %}primary{% elif slot.activity_type == 'Dedication' %}warning text-dark{% else %}secondary{% endif %}">{{ slot.activity_type }}</span></td>
+                  <td>{{ slot.date }}</td>
+                  <td>{% if slot.time %}{{ slot.time|time:"H:i" }}{% else %}-{% endif %}</td>
+                  <td>
+                    <form method="post" class="d-inline">{% csrf_token %}
+                      <input type="hidden" name="action" value="toggle_slot">
+                      <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                      <button class="btn btn-sm btn-outline-danger" title="Disable slot">Disable</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-muted">No upcoming slots.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <small class="text-muted">Total slots loaded for this month: {{ available_slots|length }}</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="glass-card h-100">
+      <div class="card-body">
+        <h5 class="section-title"><i class="fas fa-calendar-times text-danger"></i> Upcoming Blackout Dates</h5>
+        <div class="table-responsive">
+          <table class="table table-sm soft-table mb-0">
+            <thead><tr><th>Date</th><th>Reason</th><th>Activity</th><th>Action</th></tr></thead>
+            <tbody>
+              {% for bd in upcoming_blackouts %}
+                <tr>
+                  <td>{{ bd.date }}</td>
+                  <td>{{ bd.reason|default:"-" }}</td>
+                  <td><span class="badge bg-danger">{{ bd.activity_type }}</span></td>
+                  <td>
+                    <form method="post" class="d-inline">{% csrf_token %}
+                      <input type="hidden" name="action" value="delete_blackout">
+                      <input type="hidden" name="blackout_id" value="{{ bd.id }}">
+                      <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this blackout date?')">Remove</button>
+                    </form>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="4" class="text-muted">No blackout dates set.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

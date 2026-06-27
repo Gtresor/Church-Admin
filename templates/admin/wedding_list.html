@@ -1,8 +1,337 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between mb-3"><h3>Weddings</h3><a class="btn btn-primary" href="{% url 'admin_wedding_create' %}">Create Wedding</a></div>
-<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Couple</th><th>Date</th><th>Health Docs</th><th>Status</th><th></th></tr></thead><tbody>
-{% for item in page_obj %}<tr><td>{{ item.groom }} & {{ item.bride }}</td><td>{{ item.wedding_date }}</td><td>{% if item.groom_health_document and item.bride_health_document %}<span class="badge bg-success">Complete</span>{% else %}<span class="badge bg-warning text-dark">Missing</span>{% endif %}</td><td>{{ item.status }}</td><td><a class="btn btn-sm btn-primary" href="{% url 'admin_wedding_review' item.id %}">Manage</a></td></tr>{% empty %}<tr><td colspan="5">No weddings.</td></tr>{% endfor %}
-</tbody></table></div></div>
-{% include 'partials/pagination.html' with page_query=page_query %}
+<style>
+  .wl-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .wl-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .wl-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .wl-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+  }
+  .wl-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .wl-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .wl-select {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+  .wl-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .wl-btn-primary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .wl-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .wl-btn-outline {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .wl-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .wl-icon-svg {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .wl-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .wl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .wl-table thead th {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #eef2f7;
+    white-space: nowrap;
+  }
+  .wl-table thead th a {
+    color: #718096;
+    text-decoration: none;
+  }
+  .wl-table thead th a:hover {
+    color: #667eea;
+  }
+  .wl-table tbody td {
+    padding: 0.75rem 0.85rem;
+    border-bottom: 1px solid #f0f2f5;
+    color: #1a202c;
+    vertical-align: middle;
+  }
+  .wl-table tbody tr:hover {
+    background: #f8faff;
+  }
+  .wl-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .wl-dropdown-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.55rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .wl-dropdown-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.25);
+    color: #fff;
+  }
+  .wl-empty {
+    text-align: center;
+    color: #a0aec0;
+    padding: 2.5rem 0;
+    font-size: 0.9rem;
+  }
+  .wl-member-tag {
+    display: inline-flex;align-items:center;gap:0.2rem;
+    padding:0.15rem 0.45rem;border-radius:999px;font-size:0.7rem;font-weight:600;
+  }
+</style>
+
+<div class="wl-page">
+  <!-- Header -->
+  <div class="wl-card mb-3" style="border-left: 4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Weddings</h4>
+        <div class="wl-gradient-accent"></div>
+      </div>
+      <a class="wl-btn-primary" href="{% url 'admin_wedding_create' %}">
+        <svg class="wl-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Wedding
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="wl-card mb-3">
+    <form class="row g-2" method="get">
+      <div class="col-md-4">
+        <label class="wl-label">Search</label>
+        <input name="q" value="{{ q }}" class="wl-input" placeholder="Search groom or bride...">
+      </div>
+      <div class="col-md-3">
+        <label class="wl-label">Couple Type</label>
+        <select name="couple_type" class="wl-select">
+          <option value="all" {% if couple_type == 'all' %}selected{% endif %}>All Couples</option>
+          <option value="members" {% if couple_type == 'members' %}selected{% endif %}>Members Only</option>
+          <option value="non_members" {% if couple_type == 'non_members' %}selected{% endif %}>Non-members Only</option>
+          <option value="mixed" {% if couple_type == 'mixed' %}selected{% endif %}>Mixed Couples</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="wl-btn-primary w-100">Filter</button>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <a href="{% url 'admin_wedding_list' %}" class="wl-btn-outline w-100">Clear</a>
+      </div>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="dir" value="{{ dir }}">
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="wl-card">
+    <div class="table-responsive">
+      <table class="wl-table">
+        <thead>
+          <tr>
+            <th>
+              <a href="?{% if sort == 'groom' and dir == 'asc' %}sort=groom&dir=desc{% else %}sort=groom&dir=asc{% endif %}&q={{ q }}&couple_type={{ couple_type }}">
+                Groom {% if sort == 'groom' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'bride' and dir == 'asc' %}sort=bride&dir=desc{% else %}sort=bride&dir=asc{% endif %}&q={{ q }}&couple_type={{ couple_type }}">
+                Bride {% if sort == 'bride' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'date' and dir == 'asc' %}sort=date&dir=desc{% else %}sort=date&dir=asc{% endif %}&q={{ q }}&couple_type={{ couple_type }}">
+                Date {% if sort == 'date' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>Church</th>
+            <th>Health Docs</th>
+            <th>
+              <a href="?{% if sort == 'status' and dir == 'asc' %}sort=status&dir=desc{% else %}sort=status&dir=asc{% endif %}&q={{ q }}&couple_type={{ couple_type }}">
+                Status {% if sort == 'status' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr>
+            <td>
+              <strong>{{ item.groom }}</strong>
+              <br>
+              <small style="color:#a0aec0;">{% if item.groom.is_member %}
+                <span class="wl-member-tag" style="background:#d1fae5;color:#065f46;">Member</span>
+              {% else %}
+                <span class="wl-member-tag" style="background:#dbeafe;color:#1e40af;">Non-member{% if item.groom_church_name %} · {{ item.groom_church_name }}{% endif %}</span>
+              {% endif %}</small>
+            </td>
+            <td>
+              <strong>{{ item.bride }}</strong>
+              <br>
+              <small style="color:#a0aec0;">{% if item.bride.is_member %}
+                <span class="wl-member-tag" style="background:#d1fae5;color:#065f46;">Member</span>
+              {% else %}
+                <span class="wl-member-tag" style="background:#dbeafe;color:#1e40af;">Non-member{% if item.bride_church_name %} · {{ item.bride_church_name }}{% endif %}</span>
+              {% endif %}</small>
+            </td>
+            <td>{{ item.wedding_date }}</td>
+            <td>
+              <small style="color:#718096;">
+              {% if item.groom.is_member or item.bride.is_member %}
+                {% if item.groom_church_name %}{{ item.groom_church_name }}{% endif %}
+                {% if item.bride_church_name %}{{ item.bride_church_name }}{% endif %}
+                {% if not item.groom_church_name and not item.bride_church_name %}Member{% endif %}
+              {% else %}
+                {{ item.groom_church_name|default:"-" }} / {{ item.bride_church_name|default:"-" }}
+              {% endif %}
+              </small>
+            </td>
+            <td>
+              {% if item.groom_health_document and item.bride_health_document %}
+                <span class="wl-status-badge" style="background:#d1fae5;color:#065f46;">Complete</span>
+              {% else %}
+                <span class="wl-status-badge" style="background:#fef3c7;color:#92400e;">Missing</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="wl-status-badge
+                {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+                {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+                {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+                {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+                {% elif item.status == 'Married' %}" style="background:#d1fae5;color:#065f46;
+                {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+                {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+                {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">{{ item.status }}</span>
+            </td>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="wl-dropdown-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="{% url 'admin_wedding_review' item.id %}">Manage</a></li>
+                  <li><a class="dropdown-item" href="{% url 'admin_wedding_edit' item.id %}">Edit</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <form method="post" action="{% url 'admin_wedding_cancel' item.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Cancel this wedding record?')">Cancel</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7"><div class="wl-empty">No weddings found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include 'partials/pagination.html' with page_query=page_query %}
+</div>
 {% endblock %}

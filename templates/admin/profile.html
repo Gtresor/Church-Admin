@@ -1,211 +1,442 @@
 {% extends 'base.html' %}
 {% block content %}
 <style>
-  .profile-preview-box {
-    height: 230px;
-    background: #eef2ff;
-    overflow: hidden;
+  .pr-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
   }
-
-  .profile-preview-box img {
+  .pr-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .pr-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 56px rgba(0, 0, 0, 0.05);
+  }
+  .pr-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .pr-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2rem;
+  }
+  .pr-value {
+    font-size: 0.95rem;
+    color: #1a202c;
+    font-weight: 500;
+  }
+  .pr-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .pr-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .pr-input:disabled {
+    background: #eef2f7;
+    color: #718096;
+    cursor: not-allowed;
+  }
+  .pr-btn-primary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pr-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .pr-btn-primary:active { transform: translateY(0); }
+  .pr-btn-warning {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pr-btn-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.30);
+    color: #fff;
+  }
+  .pr-btn-outline {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pr-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .pr-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .pr-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .pr-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 999px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    background: #f0f4ff;
+    border: 3px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+  }
+  .pr-avatar img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
   }
-
-  .password-toggle-btn {
-    min-width: 48px;
-    line-height: 1;
+  .pr-avatar-initials {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #667eea;
   }
-
-  .password-toggle-btn svg {
+  .pr-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .pr-modal-content {
+    border-radius: 1.25rem;
+    border: 0;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+  }
+  .pr-modal-header {
+    border-radius: 1.25rem 1.25rem 0 0;
+    background: #f7f9fc;
+    border-bottom: 1px solid #eef2f7;
+    padding: 1.25rem 1.5rem;
+  }
+  .pr-modal-body { padding: 1.5rem; }
+  .pr-modal-footer {
+    border-top: 1px solid #eef2f7;
+    padding: 1rem 1.5rem;
+  }
+  .pr-photo-upload-box {
+    background: #f7f9fc;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    border: 1px solid #e2e8f0;
+  }
+  .pr-password-toggle {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid #e2e8f0;
+    border-left: 0;
+    border-radius: 0 0.65rem 0.65rem 0;
+    background: #f7f9fc;
+    color: #a0aec0;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+  }
+  .pr-password-toggle:hover {
+    color: #4a5568;
+    background: #eef2f7;
+  }
+  .pr-password-toggle svg {
     width: 18px;
     height: 18px;
     display: block;
-    margin: 0 auto;
+  }
+  .pr-input-group {
+    display: flex;
+    width: 100%;
+  }
+  .pr-input-group .pr-input {
+    border-radius: 0.65rem 0 0 0.65rem;
+    border-right: 0;
+  }
+  .pr-input-group .pr-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    border-right: 0;
   }
 </style>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Admin Profile</h3>
-</div>
 
-<div class="card border-0 shadow-sm">
-  <div class="card-body">
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <input type="hidden" name="action" value="profile">
-      <div class="row g-4 align-items-start">
-        <div class="col-lg-4">
-          <label class="form-label fw-semibold">Profile Picture</label>
-          <div class="border rounded-4 p-3 bg-light-subtle">
-            <div id="profilePreviewBox" class="d-flex align-items-center justify-content-center rounded-3 mb-3 profile-preview-box" style="color: #475569; font-weight: 600;">
-              <img
-                id="profilePreviewImage"
-                src="{% if profile.profile_photo %}{{ profile.profile_photo.url }}{% endif %}"
-                alt="Admin profile photo"
-                class="{% if not profile.profile_photo %}d-none{% endif %}"
-                data-original-src="{% if profile.profile_photo %}{{ profile.profile_photo.url }}{% endif %}"
-              >
-              <span id="profilePreviewPlaceholder" class="{% if profile.profile_photo %}d-none{% endif %}">No Photo</span>
-            </div>
-            <input id="profilePhotoInput" type="file" name="profile_photo" class="form-control" accept="image/*">
-            {% if profile.profile_photo %}
-              <div class="form-check mt-2">
-                <input class="form-check-input" type="checkbox" name="remove_photo" id="removePhotoCheck">
-                <label class="form-check-label" for="removePhotoCheck">Remove current photo</label>
-              </div>
-            {% endif %}
-            <div class="form-text mt-2">Allowed: image files, maximum size 5MB.</div>
-          </div>
-        </div>
-
-        <div class="col-lg-8">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" value="{{ user.email|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">First Name</label>
-              <input type="text" name="first_name" class="form-control" value="{{ user.first_name|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Last Name</label>
-              <input type="text" name="last_name" class="form-control" value="{{ user.last_name|default:'' }}">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Role</label>
-              <input type="text" class="form-control" value="Administrator" disabled>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Account Status</label>
-              <input type="text" class="form-control" value="{% if user.is_active %}Active{% else %}Inactive{% endif %}" disabled>
-            </div>
-          </div>
-        </div>
+<div class="pr-page">
+  <!-- Header -->
+  <div class="pr-card mb-3" style="border-left: 4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0" style="color: #1a202c; font-weight: 700;">Admin Profile</h3>
+        <div class="pr-gradient-accent"></div>
       </div>
-
-      <div class="d-flex justify-content-end mt-4">
-        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
-      </div>
-    </form>
+      <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#d1fae5;color:#065f46;padding:0.35rem 0.85rem;border-radius:999px;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:0.03em;">
+        <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        {% if user.is_staff %}Administrator{% else %}Staff{% endif %}
+      </span>
+    </div>
   </div>
-</div>
 
-<div class="card border-0 shadow-sm mt-3">
-  <div class="card-body">
-    <h5 class="mb-3">Security: Change Password</h5>
+  <!-- Profile Card (read-only) -->
+  <div class="pr-card mb-3">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div class="pr-section-title mb-0">
+        <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        Account Details
+      </div>
+      <button type="button" class="pr-btn-primary" style="padding:0.4rem 0.9rem;font-size:0.8rem;" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+        <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Profile
+      </button>
+    </div>
+
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-3">
+        <div class="pr-avatar">
+          {% if profile.profile_photo %}
+            <img src="{{ profile.profile_photo.url }}" alt="Profile photo">
+          {% else %}
+            <span class="pr-avatar-initials">{{ user.first_name|first|default:'A' }}{{ user.last_name|first|default:'U' }}</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-9">
+        <div class="row g-3">
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">Username</span><span class="pr-value">{{ user.username }}</span></div></div>
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">Email</span><span class="pr-value">{{ user.email|default:'Not set' }}</span></div></div>
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">First Name</span><span class="pr-value">{{ user.first_name|default:'Not set' }}</span></div></div>
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">Last Name</span><span class="pr-value">{{ user.last_name|default:'Not set' }}</span></div></div>
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">Role</span><span class="pr-value" style="display:inline-flex;align-items:center;gap:0.4rem;">{% if user.is_staff %}Admin{% else %}Staff{% endif %} <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#d1fae5;color:#065f46;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;"><svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Verified</span></span></div></div>
+          <div class="col-md-6"><div class="pr-field-group"><span class="pr-label">Account Status</span><span class="pr-value">{% if user.is_active %}Active{% else %}Inactive{% endif %}</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Password Card -->
+  <div class="pr-card">
+    <div class="pr-section-title">
+      <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+      Security: Change Password
+    </div>
     <form method="post">
       {% csrf_token %}
       <input type="hidden" name="action" value="password">
       <div class="row g-3">
         <div class="col-md-4">
-          <label class="form-label">Current Password</label>
-          <div class="input-group">
-            <input id="adminCurrentPasswordInput" type="password" name="current_password" class="form-control" required>
-            <button id="toggleAdminCurrentPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="adminCurrentPasswordInput" data-eye-open-id="adminCurrentEyeOpenIcon" data-eye-closed-id="adminCurrentEyeClosedIcon">
-              <svg id="adminCurrentEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              <svg id="adminCurrentEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          <label class="pr-label">Current Password</label>
+          <div class="pr-input-group">
+            <input id="adminCurrentPasswordInput" type="password" name="current_password" class="pr-input" required>
+            <button id="toggleAdminCurrentPasswordBtn" class="pr-password-toggle" type="button" aria-label="Show password" aria-pressed="false">
+              <svg id="adminCurrentEyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="adminCurrentEyeClosedIcon" class="d-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
         </div>
         <div class="col-md-4">
-          <label class="form-label">New Password</label>
-          <div class="input-group">
-            <input id="adminNewPasswordInput" type="password" name="new_password" class="form-control" required>
-            <button id="toggleAdminNewPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="adminNewPasswordInput" data-eye-open-id="adminNewEyeOpenIcon" data-eye-closed-id="adminNewEyeClosedIcon">
-              <svg id="adminNewEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              <svg id="adminNewEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          <label class="pr-label">New Password</label>
+          <div class="pr-input-group">
+            <input id="adminNewPasswordInput" type="password" name="new_password" class="pr-input" required>
+            <button id="toggleAdminNewPasswordBtn" class="pr-password-toggle" type="button" aria-label="Show password" aria-pressed="false">
+              <svg id="adminNewEyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="adminNewEyeClosedIcon" class="d-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
         </div>
         <div class="col-md-4">
-          <label class="form-label">Confirm New Password</label>
-          <div class="input-group">
-            <input id="adminConfirmPasswordInput" type="password" name="confirm_password" class="form-control" required>
-            <button id="toggleAdminConfirmPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="adminConfirmPasswordInput" data-eye-open-id="adminConfirmEyeOpenIcon" data-eye-closed-id="adminConfirmEyeClosedIcon">
-              <svg id="adminConfirmEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              <svg id="adminConfirmEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          <label class="pr-label">Confirm New Password</label>
+          <div class="pr-input-group">
+            <input id="adminConfirmPasswordInput" type="password" name="confirm_password" class="pr-input" required>
+            <button id="toggleAdminConfirmPasswordBtn" class="pr-password-toggle" type="button" aria-label="Show password" aria-pressed="false">
+              <svg id="adminConfirmEyeOpenIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg id="adminConfirmEyeClosedIcon" class="d-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
         </div>
       </div>
-      <button class="btn btn-warning mt-3">Change Password</button>
+      <div class="mt-3">
+        <button class="pr-btn-warning" type="submit">
+          <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Change Password
+        </button>
+      </div>
     </form>
   </div>
 </div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content pr-modal-content">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="profile">
+        <div class="pr-modal-header">
+          <h5 class="modal-title" id="editProfileModalLabel">Edit Profile</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="pr-modal-body">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="pr-photo-upload-box">
+                <div class="pr-avatar mb-3">
+                  {% if profile.profile_photo %}
+                    <img id="modalProfilePreview" src="{{ profile.profile_photo.url }}" alt="Profile photo">
+                  {% else %}
+                    <span id="modalProfilePreview" class="pr-avatar-initials">{{ user.first_name|first|default:'A' }}{{ user.last_name|first|default:'U' }}</span>
+                  {% endif %}
+                </div>
+                <input id="modalProfilePhotoInput" type="file" name="profile_photo" class="pr-input" accept="image/*">
+                {% if profile.profile_photo %}
+                  <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" name="remove_photo" id="modalRemovePhotoCheck">
+                    <label class="form-check-label" for="modalRemovePhotoCheck" style="font-size:0.85rem;color:#4a5568;">Remove current photo</label>
+                  </div>
+                {% endif %}
+                <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.5rem;">Allowed: image files, max 5MB.</div>
+              </div>
+            </div>
+            <div class="col-lg-8">
+              <div class="row g-3">
+                <div class="col-md-6"><label class="pr-label">Username</label><input type="text" name="username" class="pr-input" value="{{ user.username }}" required></div>
+                <div class="col-md-6"><label class="pr-label">Email</label><input type="email" name="email" class="pr-input" value="{{ user.email|default:'' }}"></div>
+                <div class="col-md-6"><label class="pr-label">First Name</label><input type="text" name="first_name" class="pr-input" value="{{ user.first_name|default:'' }}"></div>
+                <div class="col-md-6"><label class="pr-label">Last Name</label><input type="text" name="last_name" class="pr-input" value="{{ user.last_name|default:'' }}"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="pr-modal-footer d-flex justify-content-end gap-2">
+          <button type="button" class="pr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pr-btn-primary">
+            <svg class="pr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
   (() => {
-    const fileInput = document.getElementById('profilePhotoInput');
-    const previewImage = document.getElementById('profilePreviewImage');
-    const previewPlaceholder = document.getElementById('profilePreviewPlaceholder');
-    const removePhotoCheck = document.getElementById('removePhotoCheck');
-    if (!fileInput || !previewImage || !previewPlaceholder) {
-      return;
-    }
-
-    const originalSrc = previewImage.dataset.originalSrc || '';
-    let previewObjectUrl = null;
-
-    function showImage(src) {
-      previewImage.src = src;
-      previewImage.classList.remove('d-none');
-      previewPlaceholder.classList.add('d-none');
-    }
-
-    function showPlaceholder() {
-      previewImage.classList.add('d-none');
-      previewPlaceholder.classList.remove('d-none');
-    }
-
-    function clearObjectUrl() {
-      if (previewObjectUrl) {
-        URL.revokeObjectURL(previewObjectUrl);
-        previewObjectUrl = null;
+    // Modal photo preview
+    const modalFileInput = document.getElementById('modalProfilePhotoInput');
+    const modalPreview = document.getElementById('modalProfilePreview');
+    const modalRemoveCheck = document.getElementById('modalRemovePhotoCheck');
+    if (modalFileInput && modalPreview) {
+      const originalSrc = modalPreview.tagName === 'IMG' ? modalPreview.src : null;
+      let previewObjectUrl = null;
+      function showImage(src) {
+        if (modalPreview.tagName === 'IMG') { modalPreview.src = src; modalPreview.classList.remove('d-none'); }
+        else { const img = document.createElement('img'); img.id = 'modalProfilePreview'; img.src = src; img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;'; modalPreview.parentNode.replaceChild(img, modalPreview); }
+      }
+      function showInitials() {
+        if (originalSrc) { if (modalPreview.tagName === 'IMG') modalPreview.src = originalSrc; return; }
+        if (modalPreview.tagName !== 'IMG') return;
+        const span = document.createElement('span'); span.id = 'modalProfilePreview'; span.className = 'pr-avatar-initials';
+        span.textContent = '{{ user.first_name|first|default:"A" }}{{ user.last_name|first|default:"U" }}';
+        modalPreview.parentNode.replaceChild(span, modalPreview);
+      }
+      modalFileInput.addEventListener('change', () => {
+        if (previewObjectUrl) { URL.revokeObjectURL(previewObjectUrl); previewObjectUrl = null; }
+        const file = modalFileInput.files && modalFileInput.files[0];
+        if (file) { previewObjectUrl = URL.createObjectURL(file); showImage(previewObjectUrl); if (modalRemoveCheck) modalRemoveCheck.checked = false; }
+      });
+      if (modalRemoveCheck) {
+        modalRemoveCheck.addEventListener('change', () => {
+          if (modalFileInput.files && modalFileInput.files[0]) return;
+          if (modalRemoveCheck.checked) showInitials();
+          else if (originalSrc) showImage(originalSrc);
+        });
       }
     }
 
-    fileInput.addEventListener('change', () => {
-      clearObjectUrl();
-      const file = fileInput.files && fileInput.files[0];
-      if (file) {
-        previewObjectUrl = URL.createObjectURL(file);
-        showImage(previewObjectUrl);
-        if (removePhotoCheck) {
-          removePhotoCheck.checked = false;
-        }
-        return;
-      }
-
-      if (removePhotoCheck && removePhotoCheck.checked) {
-        showPlaceholder();
-      } else if (originalSrc) {
-        showImage(originalSrc);
-      } else {
-        showPlaceholder();
+    // Password toggles
+    document.querySelectorAll('[id^="toggleAdmin"]').forEach(btn => {
+      const isCurrent = btn.id.includes('Current');
+      const isNew = btn.id.includes('New');
+      const isConfirm = btn.id.includes('Confirm');
+      let targetId = '';
+      if (isCurrent) targetId = 'adminCurrentPasswordInput';
+      else if (isNew) targetId = 'adminNewPasswordInput';
+      else if (isConfirm) targetId = 'adminConfirmPasswordInput';
+      const suffix = isCurrent ? 'Current' : (isNew ? 'New' : 'Confirm');
+      const target = document.getElementById(targetId);
+      const eyeOpen = document.getElementById('admin' + suffix + 'EyeOpenIcon');
+      const eyeClosed = document.getElementById('admin' + suffix + 'EyeClosedIcon');
+      if (btn && target) {
+        btn.addEventListener('click', function() {
+          const showing = target.type === 'text';
+          target.type = showing ? 'password' : 'text';
+          if (eyeOpen && eyeClosed) { eyeOpen.classList.toggle('d-none', !showing); eyeClosed.classList.toggle('d-none', showing); }
+          btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+          btn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+        });
       }
     });
-
-    if (removePhotoCheck) {
-      removePhotoCheck.addEventListener('change', () => {
-        const selectedFile = fileInput.files && fileInput.files[0];
-        if (selectedFile) {
-          return;
-        }
-        if (removePhotoCheck.checked) {
-          showPlaceholder();
-        } else if (originalSrc) {
-          showImage(originalSrc);
-        } else {
-          showPlaceholder();
-        }
-      });
-    }
-
   })();
 </script>
 {% endblock %}

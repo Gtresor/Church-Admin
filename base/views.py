@@ -1,7 +1,7 @@
 import calendar
 import csv
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -22,18 +22,26 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from .decorators import member_required, staff_required
-from .models import AdminProfile, BabyDedication, Baptism, Certificate, MemberAccount, Officiant, Person, SacramentStatus, Wedding
+from .models import (
+	AdminProfile, AvailableSlot, BabyDedication, Baptism, BlackoutDate,
+	Certificate, MemberAccount, Officiant, Person, SacramentStatus, Wedding,
+	WeddingCeremony, WeddingRequest, WeddingCertificateExtra,
+)
 from .services.certificates import (
 	get_design_options,
 	generate_baptism_certificate,
 	generate_dedication_certificate,
 	generate_wedding_certificate,
+	render_baptism_preview_pdf,
 	render_dedication_preview_pdf,
+	render_wedding_preview_pdf,
 )
 from .services.ai_reports import CHAT_EXAMPLES, answer_system_chat, generate_ai_report
 
 
 DEDICATION_FIXED_DESIGN_TEMPLATE = "dedication_new_life"
+BAPTISM_FIXED_DESIGN_TEMPLATE = "baptism_blue_cross"
+WEDDING_FIXED_DESIGN_TEMPLATE = "wedding_og"
 
 
 def home(request):
@@ -79,6 +87,37 @@ def _validate_email_value(email_value):
 	except ValidationError:
 		return "Email address is invalid."
 	return None
+
+
+def _empty_member_form_data():
+	return {
+		"first_name": "",
+		"last_name": "",
+		"gender": "",
+		"date_of_birth": "",
+		"phone": "",
+		"email": "",
+		"address": "",
+		"nationality": "",
+		"country": "",
+		"province": "",
+		"district": "",
+		"cell": "",
+		"village": "",
+		"marital_status": "Single",
+		"spouse_name": "",
+		"occupation": "",
+		"emergency_contact_name": "",
+		"emergency_contact_phone": "",
+		"username": "",
+	}
+
+
+def _member_form_data_from_post(post_data):
+	form_data = _empty_member_form_data()
+	if post_data:
+		form_data.update({key: value for key, value in post_data.items()})
+	return form_data
 
 
 def _validate_health_document(uploaded_file, role_label):
@@ -940,8 +979,14 @@ def kid_delete(request, person_id):
 @login_required
 @staff_required
 def member_create(request):
-	base_context = {"marital_status_choices": Person.MARITAL_STATUS_CHOICES}
+	base_context = {
+		"person": _empty_member_form_data(),
+		"form_data": _empty_member_form_data(),
+		"marital_status_choices": Person.MARITAL_STATUS_CHOICES,
+		"is_edit": False,
+	}
 	if request.method == "POST":
+		form_data = _member_form_data_from_post(request.POST)
 		first_name = request.POST.get("first_name", "").strip()
 		last_name = request.POST.get("last_name", "").strip()
 		gender = request.POST.get("gender", "").strip()
@@ -968,25 +1013,25 @@ def member_create(request):
 
 		if date_of_birth and date_of_birth > timezone.localdate():
 			messages.error(request, "Date of birth cannot be in the future.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if not first_name or not last_name or not gender or dob_error or not username or len(password) < 8:
 			messages.error(request, dob_error or "Fill all required fields and use a password with at least 8 characters.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if email_error or phone_error:
 			messages.error(request, email_error or phone_error)
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if emergency_phone_error:
 			messages.error(request, emergency_phone_error.replace("Phone", "Emergency contact phone"))
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if marital_status not in {"Single", "Married", "Widowed", "Divorced"}:
 			messages.error(request, "Select a valid marital status.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if marital_status == "Married" and not spouse_name:
 			messages.error(request, "Spouse name is required when marital status is married.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if User.objects.filter(username=username).exists():
 			messages.error(request, "Username already exists.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 
 		person = Person.objects.create(
 			first_name=first_name,
@@ -1022,8 +1067,14 @@ def member_create(request):
 @staff_required
 def member_edit(request, person_id):
 	person = get_object_or_404(Person, id=person_id, is_member=True)
-	base_context = {"person": person, "marital_status_choices": Person.MARITAL_STATUS_CHOICES}
+	base_context = {
+		"person": person,
+		"form_data": _empty_member_form_data(),
+		"marital_status_choices": Person.MARITAL_STATUS_CHOICES,
+		"is_edit": True,
+	}
 	if request.method == "POST":
+		form_data = _member_form_data_from_post(request.POST)
 		first_name = request.POST.get("first_name", "").strip()
 		last_name = request.POST.get("last_name", "").strip()
 		gender = request.POST.get("gender", "").strip()
@@ -1046,22 +1097,22 @@ def member_edit(request, person_id):
 		emergency_phone_error = _validate_phone(emergency_contact_phone)
 		if not first_name or not last_name or not gender or dob_error:
 			messages.error(request, dob_error or "Required fields are missing.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if date_of_birth and date_of_birth > timezone.localdate():
 			messages.error(request, "Date of birth cannot be in the future.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if email_error or phone_error:
 			messages.error(request, email_error or phone_error)
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if emergency_phone_error:
 			messages.error(request, emergency_phone_error.replace("Phone", "Emergency contact phone"))
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if marital_status not in {"Single", "Married", "Widowed", "Divorced"}:
 			messages.error(request, "Select a valid marital status.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		if marital_status == "Married" and not spouse_name:
 			messages.error(request, "Spouse name is required when marital status is married.")
-			return render(request, "admin/member_form.html", {**base_context, "form_data": request.POST})
+			return render(request, "admin/member_form.html", {**base_context, "form_data": form_data})
 		person.first_name = first_name
 		person.last_name = last_name
 		person.gender = gender
@@ -1085,6 +1136,52 @@ def member_edit(request, person_id):
 		messages.success(request, "Member updated.")
 		return redirect("admin_member_list")
 	return render(request, "admin/member_form.html", base_context)
+
+
+@login_required
+@staff_required
+def admin_person_edit(request, person_id):
+	person = get_object_or_404(Person, id=person_id)
+
+	if request.method == "POST":
+		first_name = request.POST.get("first_name", "").strip()
+		last_name = request.POST.get("last_name", "").strip()
+		gender = request.POST.get("gender", "").strip()
+		date_of_birth, dob_error = _parse_date(request.POST.get("date_of_birth", ""), "Date of birth")
+		email = request.POST.get("email", "").strip()
+		phone = request.POST.get("phone", "").strip()
+		address = request.POST.get("address", "").strip()
+		email_error = _validate_email_value(email)
+		phone_error = _validate_phone(phone)
+
+		if not first_name or not last_name or not gender or dob_error:
+			messages.error(request, dob_error or "First name, last name, gender and date of birth are required.")
+			return render(request, "admin/person_edit.html", {"person": person})
+
+		if date_of_birth and date_of_birth > timezone.localdate():
+			messages.error(request, "Date of birth cannot be in the future.")
+			return render(request, "admin/person_edit.html", {"person": person})
+
+		if email_error or phone_error:
+			messages.error(request, email_error or phone_error)
+			return render(request, "admin/person_edit.html", {"person": person})
+
+		person.first_name = first_name
+		person.last_name = last_name
+		person.gender = gender
+		person.date_of_birth = date_of_birth
+		person.email = email
+		person.phone = phone
+		person.address = address
+		person.save(update_fields=["first_name", "last_name", "gender", "date_of_birth", "email", "phone", "address", "updated_at"])
+
+		messages.success(request, f"Profile for {person} updated successfully.")
+		referrer = request.POST.get("referrer", "")
+		if referrer:
+			return redirect(referrer)
+		return redirect("admin_member_list")
+
+	return render(request, "admin/person_edit.html", {"person": person})
 
 
 @login_required
@@ -1220,15 +1317,29 @@ class BaptismListView(TemplateView):
 		context = super().get_context_data(**kwargs)
 		query = self.request.GET.get("q", "").strip()
 		status = self.request.GET.get("status", "")
+		sort = self.request.GET.get("sort", "person")
+		dir = self.request.GET.get("dir", "asc")
 		baptisms = Baptism.objects.select_related("person").all()
 		if query:
 			baptisms = baptisms.filter(Q(person__first_name__icontains=query) | Q(person__last_name__icontains=query))
 		if status:
 			baptisms = baptisms.filter(status=status)
+		sort_map = {
+			"person": "person__first_name",
+			"status": "status",
+			"date": "baptism_date",
+			"officiant": "officiant",
+		}
+		order_field = sort_map.get(sort, "person__first_name")
+		if dir == "desc":
+			order_field = f"-{order_field}"
+		baptisms = baptisms.order_by(order_field)
 		paginator = Paginator(baptisms, 10)
 		context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
 		context["q"] = query
 		context["status"] = status
+		context["sort"] = sort
+		context["dir"] = dir
 		context["status_choices"] = SacramentStatus.CHOICES
 		context["page_query"] = _query_without_page(self.request)
 		return context
@@ -1236,49 +1347,171 @@ class BaptismListView(TemplateView):
 
 @login_required
 @staff_required
+def admin_baptism_create(request):
+	people = Person.objects.filter(is_active=True).order_by("last_name", "first_name")
+
+	def _resolve_existing_person(person_id):
+		if not person_id:
+			return None
+		try:
+			return Person.objects.get(id=person_id)
+		except (ValueError, Person.DoesNotExist):
+			return None
+
+	def _create_person_from_manual_form():
+		first_name = request.POST.get("first_name", "").strip()
+		last_name = request.POST.get("last_name", "").strip()
+		gender = request.POST.get("gender", "").strip()
+		dob_raw = request.POST.get("date_of_birth", "")
+		phone = request.POST.get("phone", "").strip()
+		email = request.POST.get("email", "").strip()
+		address = request.POST.get("address", "").strip()
+
+		if not first_name and not last_name and not gender and not dob_raw:
+			return None, "Select an existing person or provide full manual details."
+
+		dob, dob_error = _parse_date(dob_raw, "Date of birth")
+		if not first_name or not last_name or not gender or dob_error:
+			return None, dob_error or "First name, last name, gender, and date of birth are required."
+		if dob > timezone.localdate():
+			return None, "Date of birth cannot be in the future."
+
+		email_error = _validate_email_value(email)
+		phone_error = _validate_phone(phone)
+		if email_error or phone_error:
+			return None, email_error or phone_error
+
+		person = Person.objects.create(
+			first_name=first_name,
+			last_name=last_name,
+			gender=gender,
+			date_of_birth=dob,
+			phone=phone,
+			email=email,
+			address=address,
+			is_member=False,
+			is_active=True,
+		)
+		return person, None
+
+	if request.method == "POST":
+		selected_person_id = request.POST.get("person_id", "").strip()
+		person = _resolve_existing_person(selected_person_id)
+
+		if person is None:
+			person, person_error = _create_person_from_manual_form()
+			if person_error:
+				messages.error(request, person_error)
+				return render(request, "admin/baptism_form.html", {"people": people})
+
+		if Baptism.objects.filter(person=person).exists():
+			messages.error(request, f"{person} already has a baptism record.")
+			return render(request, "admin/baptism_form.html", {"people": people})
+
+		admin_comment = request.POST.get("admin_comment", "").strip()
+		Baptism.objects.create(
+			person=person,
+			status=SacramentStatus.PENDING,
+			admin_comment=admin_comment,
+		)
+		messages.success(request, "Baptism registration created successfully.")
+		return redirect("admin_baptism_list")
+
+	return render(request, "admin/baptism_form.html", {"people": people})
+
+
+@login_required
+@staff_required
 def admin_baptism_review(request, baptism_id):
 	baptism = get_object_or_404(Baptism.objects.select_related("person"), id=baptism_id)
 	officiants = _active_officiants()
+	baptism_slots = AvailableSlot.objects.filter(activity_type=AvailableSlot.ACTIVITY_BAPTISM, is_available=True).order_by("date")
 	if request.method == "POST":
 		action = request.POST.get("action")
 		comment = request.POST.get("admin_comment", "").strip()
 		officiant_obj = _resolve_selected_officiant(request.POST.get("officiant_id", "").strip())
-		service_date_raw = request.POST.get("service_date", "")
+		slot_id = request.POST.get("available_slot", "").strip()
+
 		if action == "approve":
+			if baptism.status != SacramentStatus.PENDING:
+				messages.error(request, "Only pending requests can be approved.")
+				return redirect("admin_baptism_review", baptism_id=baptism.id)
 			baptism.status = SacramentStatus.APPROVED
+
 		elif action == "reject":
+			if baptism.status != SacramentStatus.PENDING:
+				messages.error(request, "Only pending requests can be rejected.")
+				return redirect("admin_baptism_review", baptism_id=baptism.id)
 			if not comment:
 				messages.error(request, "Rejection reason is required.")
 				return redirect("admin_baptism_review", baptism_id=baptism.id)
 			baptism.status = SacramentStatus.REJECTED
-		elif action == "schedule":
-			service_date, error = _parse_date(service_date_raw, "Baptism date")
-			if error:
-				messages.error(request, error)
+
+		elif action == "cancel":
+			if not comment:
+				messages.error(request, "Provide a reason or instruction when cancelling a request.")
 				return redirect("admin_baptism_review", baptism_id=baptism.id)
-			if service_date < timezone.localdate():
-				messages.error(request, "Baptism date cannot be in the past.")
+			# Release slot if previously assigned
+			if baptism.available_slot:
+				baptism.available_slot.is_available = True
+				baptism.available_slot.save(update_fields=["is_available"])
+				baptism.available_slot = None
+			baptism.status = SacramentStatus.CANCELLED
+
+		elif action == "schedule":
+			if baptism.status != SacramentStatus.APPROVED:
+				messages.error(request, "Only approved requests can be scheduled.")
+				return redirect("admin_baptism_review", baptism_id=baptism.id)
+			if not slot_id:
+				messages.error(request, "Select an available baptism slot.")
+				return redirect("admin_baptism_review", baptism_id=baptism.id)
+			try:
+				selected_slot = AvailableSlot.objects.get(id=slot_id, activity_type=AvailableSlot.ACTIVITY_BAPTISM, is_available=True)
+			except (ValueError, AvailableSlot.DoesNotExist):
+				messages.error(request, "Invalid or already taken slot selected.")
 				return redirect("admin_baptism_review", baptism_id=baptism.id)
 			if not officiant_obj:
 				messages.error(request, "Select an officiant from the officiants database.")
 				return redirect("admin_baptism_review", baptism_id=baptism.id)
-			baptism.baptism_date = service_date
+			# Mark slot as taken
+			selected_slot.is_available = False
+			selected_slot.save(update_fields=["is_available"])
+			baptism.available_slot = selected_slot
+			baptism.baptism_date = selected_slot.date
 			baptism.officiant = str(officiant_obj)
 			baptism.status = SacramentStatus.SCHEDULED
+
 		elif action == "complete":
+			if baptism.status != SacramentStatus.SCHEDULED:
+				messages.error(request, "Only scheduled requests can be marked completed.")
+				return redirect("admin_baptism_review", baptism_id=baptism.id)
 			baptism.status = SacramentStatus.COMPLETED
+
+		else:
+			messages.error(request, "Invalid action.")
+			return redirect("admin_baptism_review", baptism_id=baptism.id)
 		if comment:
 			baptism.admin_comment = comment
 		baptism.save()
 		messages.success(request, "Baptism request updated.")
 		return redirect("admin_baptism_review", baptism_id=baptism.id)
+	latest_certificate = (
+		Certificate.objects.filter(
+			service_type=Certificate.BAPTISM,
+			object_id=baptism.id,
+		)
+		.exclude(certificate_file="")
+		.order_by("-issued_date", "-created_at")
+		.first()
+	)
 	return render(
 		request,
 		"admin/baptism_review.html",
 		{
 			"item": baptism,
-			"design_options": get_design_options(Certificate.BAPTISM),
 			"officiants": officiants,
+			"baptism_slots": baptism_slots,
+			"latest_certificate": latest_certificate,
 		},
 	)
 
@@ -1289,17 +1522,75 @@ def admin_generate_baptism_certificate(request, baptism_id):
 	baptism = get_object_or_404(Baptism, id=baptism_id)
 	if request.method != "POST":
 		raise Http404
+	if baptism.status not in {SacramentStatus.SCHEDULED, SacramentStatus.COMPLETED}:
+		messages.error(request, "Certificates can only be generated for scheduled or completed baptisms.")
+		return redirect("admin_baptism_review", baptism_id=baptism.id)
 	if not baptism.baptism_date:
 		messages.error(request, "Set baptism date before generating certificate.")
 		return redirect("admin_baptism_review", baptism_id=baptism.id)
-	design_template = request.POST.get("design_template", "")
-	valid_designs = {code for code, _ in get_design_options(Certificate.BAPTISM)}
-	if design_template not in valid_designs:
-		messages.error(request, "Select a valid baptism certificate design.")
-		return redirect("admin_baptism_review", baptism_id=baptism.id)
-	generate_baptism_certificate(baptism, design_template=design_template)
+	generate_baptism_certificate(baptism, design_template=BAPTISM_FIXED_DESIGN_TEMPLATE)
 	messages.success(request, "Baptism certificate generated.")
 	return redirect("admin_baptism_review", baptism_id=baptism.id)
+
+
+@login_required
+@staff_required
+def admin_preview_baptism_certificate(request, baptism_id):
+	baptism = get_object_or_404(Baptism, id=baptism_id)
+	if request.method != "POST":
+		raise Http404
+	pdf_data = render_baptism_preview_pdf(baptism, design_template=BAPTISM_FIXED_DESIGN_TEMPLATE)
+	response = HttpResponse(pdf_data, content_type="application/pdf")
+	response["Content-Disposition"] = f'inline; filename="baptism-preview-{baptism.id}.pdf"'
+	return response
+
+
+@login_required
+@staff_required
+def admin_baptism_cancel(request, baptism_id):
+	if request.method != "POST":
+		raise Http404
+	baptism = get_object_or_404(Baptism, id=baptism_id)
+	if baptism.available_slot:
+		baptism.available_slot.is_available = True
+		baptism.available_slot.save(update_fields=["is_available"])
+		baptism.available_slot = None
+	baptism.status = SacramentStatus.CANCELLED
+	baptism.save(update_fields=["status", "available_slot", "updated_at"])
+	messages.success(request, f"Baptism for {baptism.person} has been cancelled.")
+	return redirect("admin_baptism_list")
+
+
+@login_required
+@staff_required
+def admin_dedication_cancel(request, dedication_id):
+	if request.method != "POST":
+		raise Http404
+	dedication = get_object_or_404(BabyDedication, id=dedication_id)
+	if dedication.available_slot:
+		dedication.available_slot.is_available = True
+		dedication.available_slot.save(update_fields=["is_available"])
+		dedication.available_slot = None
+	dedication.status = SacramentStatus.CANCELLED
+	dedication.save(update_fields=["status", "available_slot", "updated_at"])
+	messages.success(request, f"Dedication for {dedication.child} has been cancelled.")
+	return redirect("admin_dedication_list")
+
+
+@login_required
+@staff_required
+def admin_wedding_cancel(request, wedding_id):
+	if request.method != "POST":
+		raise Http404
+	wedding = get_object_or_404(Wedding, id=wedding_id)
+	if wedding.available_slot:
+		wedding.available_slot.is_available = True
+		wedding.available_slot.save(update_fields=["is_available"])
+		wedding.available_slot = None
+	wedding.status = SacramentStatus.CANCELLED
+	wedding.save(update_fields=["status", "available_slot", "updated_at"])
+	messages.success(request, f"Wedding for {wedding.groom} & {wedding.bride} has been cancelled.")
+	return redirect("admin_wedding_list")
 
 
 @method_decorator([login_required, staff_required], name="dispatch")
@@ -1309,12 +1600,31 @@ class DedicationListView(TemplateView):
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
 		query = self.request.GET.get("q", "").strip()
+		sort = self.request.GET.get("sort", "child")
+		dir = self.request.GET.get("dir", "asc")
 		dedications = BabyDedication.objects.select_related("child", "father", "mother")
 		if query:
-			dedications = dedications.filter(Q(child__first_name__icontains=query) | Q(child__last_name__icontains=query))
+			dedications = dedications.filter(
+				Q(child__first_name__icontains=query) | Q(child__last_name__icontains=query) |
+				Q(father__first_name__icontains=query) | Q(father__last_name__icontains=query) |
+				Q(mother__first_name__icontains=query) | Q(mother__last_name__icontains=query)
+			)
+		sort_map = {
+			"child": "child__first_name",
+			"father": "father__first_name",
+			"mother": "mother__first_name",
+			"status": "status",
+			"date": "dedication_date",
+		}
+		order_field = sort_map.get(sort, "child__first_name")
+		if dir == "desc":
+			order_field = f"-{order_field}"
+		dedications = dedications.order_by(order_field)
 		paginator = Paginator(dedications, 10)
 		context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
 		context["q"] = query
+		context["sort"] = sort
+		context["dir"] = dir
 		context["page_query"] = _query_without_page(self.request)
 		return context
 
@@ -1475,6 +1785,18 @@ def admin_generate_dedication_certificate(request, dedication_id):
 
 @login_required
 @staff_required
+def admin_preview_wedding_certificate(request, wedding_id):
+	wedding = get_object_or_404(Wedding, id=wedding_id)
+	if request.method != "POST":
+		raise Http404
+	pdf_data = render_wedding_preview_pdf(wedding, design_template=WEDDING_FIXED_DESIGN_TEMPLATE)
+	response = HttpResponse(pdf_data, content_type="application/pdf")
+	response["Content-Disposition"] = f'inline; filename="wedding-preview-{wedding.id}.pdf"'
+	return response
+
+
+@login_required
+@staff_required
 def admin_preview_dedication_certificate(request, dedication_id):
 	dedication = get_object_or_404(BabyDedication, id=dedication_id)
 	if request.method != "POST":
@@ -1491,9 +1813,46 @@ class WeddingListView(TemplateView):
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
+		couple_type = self.request.GET.get("couple_type", "all").strip().lower() or "all"
+		query = self.request.GET.get("q", "").strip()
+		sort = self.request.GET.get("sort", "date")
+		dir = self.request.GET.get("dir", "desc")
 		weddings = Wedding.objects.select_related("groom", "bride").all()
+
+		if couple_type == "members":
+			weddings = weddings.filter(groom__is_member=True, bride__is_member=True)
+		elif couple_type == "non_members":
+			weddings = weddings.filter(groom__is_member=False, bride__is_member=False)
+		elif couple_type == "mixed":
+			weddings = weddings.filter(
+				(Q(groom__is_member=True, bride__is_member=False) | Q(groom__is_member=False, bride__is_member=True))
+			)
+		else:
+			couple_type = "all"
+
+		if query:
+			weddings = weddings.filter(
+				Q(groom__first_name__icontains=query) | Q(groom__last_name__icontains=query) |
+				Q(bride__first_name__icontains=query) | Q(bride__last_name__icontains=query)
+			)
+
+		sort_map = {
+			"groom": "groom__first_name",
+			"bride": "bride__first_name",
+			"date": "wedding_date",
+			"status": "status",
+		}
+		order_field = sort_map.get(sort, "wedding_date")
+		if dir == "desc":
+			order_field = f"-{order_field}"
+		weddings = weddings.order_by(order_field)
+
 		paginator = Paginator(weddings, 10)
 		context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
+		context["q"] = query
+		context["sort"] = sort
+		context["dir"] = dir
+		context["couple_type"] = couple_type
 		context["page_query"] = _query_without_page(self.request)
 		return context
 
@@ -1674,6 +2033,12 @@ def admin_wedding_create(request):
 		bride_person_id = request.POST.get("bride_person_id", "").strip()
 		groom_health_document = request.FILES.get("groom_health_document")
 		bride_health_document = request.FILES.get("bride_health_document")
+		groom_church_name = request.POST.get("groom_church_name", "").strip() or request.POST.get(
+			"groom_existing_church_name", ""
+		).strip()
+		bride_church_name = request.POST.get("bride_church_name", "").strip() or request.POST.get(
+			"bride_existing_church_name", ""
+		).strip()
 		wedding_date, error = _parse_date(request.POST.get("wedding_date", ""), "Wedding date")
 		officiant_obj = _resolve_selected_officiant(request.POST.get("officiant_id", "").strip())
 
@@ -1703,6 +2068,18 @@ def admin_wedding_create(request):
 			messages.error(request, "Groom and bride must be different people.")
 			return render(request, "admin/wedding_form.html", {"people": people, "officiants": officiants})
 
+		if not groom.is_member and not groom_church_name:
+			messages.error(request, "Provide church name for a non-member groom.")
+			return render(request, "admin/wedding_form.html", {"people": people, "officiants": officiants})
+		if not bride.is_member and not bride_church_name:
+			messages.error(request, "Provide church name for a non-member bride.")
+			return render(request, "admin/wedding_form.html", {"people": people, "officiants": officiants})
+
+		if groom.is_member:
+			groom_church_name = ""
+		if bride.is_member:
+			bride_church_name = ""
+
 		document_error = _validate_health_document(groom_health_document, "Groom") or _validate_health_document(
 			bride_health_document, "Bride"
 		)
@@ -1713,6 +2090,8 @@ def admin_wedding_create(request):
 		Wedding.objects.create(
 			groom=groom,
 			bride=bride,
+			groom_church_name=groom_church_name,
+			bride_church_name=bride_church_name,
 			wedding_date=wedding_date,
 			officiant=str(officiant_obj),
 			groom_health_document=groom_health_document,
@@ -1732,9 +2111,42 @@ def admin_wedding_review(request, wedding_id):
 	if request.method == "POST":
 		action = request.POST.get("action")
 		comment = request.POST.get("admin_comment", "").strip()
-		if action == "complete":
+		if action == "mark_divorced":
+			wedding.marriage_resolution = Wedding.RESOLUTION_DIVORCED
+			if not comment:
+				comment = "Marriage marked as divorced by admin."
+		elif action == "mark_annulled":
+			wedding.marriage_resolution = Wedding.RESOLUTION_ANNULLED
+			if not comment:
+				comment = "Marriage marked as annulled by admin."
+		elif action == "mark_married":
+			wedding.status = SacramentStatus.MARRIED
+			if not comment:
+				comment = "Marriage status set to Married by admin."
+		elif action == "generate_certificate":
+			# This action is handled by the separate certificate generation form
+			# But we can redirect to show the form if needed
+			messages.info(request, "Please select a certificate design and click Generate Certificate.")
+			return redirect("admin_wedding_review", wedding_id=wedding.id)
+		elif action == "approve":
+			if wedding.status not in {SacramentStatus.PENDING, SacramentStatus.REJECTED}:
+				messages.error(request, "Only pending or rejected wedding requests can be approved.")
+				return redirect("admin_wedding_review", wedding_id=wedding.id)
+			wedding.status = SacramentStatus.APPROVED
+		elif action == "reject":
+			if wedding.status not in {SacramentStatus.PENDING, SacramentStatus.APPROVED}:
+				messages.error(request, "Only pending or approved wedding requests can be rejected.")
+				return redirect("admin_wedding_review", wedding_id=wedding.id)
+			if not comment:
+				messages.error(request, "Provide a reason or instruction when rejecting a request.")
+				return redirect("admin_wedding_review", wedding_id=wedding.id)
+			wedding.status = SacramentStatus.REJECTED
+		elif action == "complete":
 			wedding.status = SacramentStatus.COMPLETED
 		elif action == "schedule":
+			if wedding.status not in {SacramentStatus.PENDING, SacramentStatus.APPROVED, SacramentStatus.REJECTED}:
+				messages.error(request, "Wedding must be in Pending, Approved, or Rejected status to be scheduled.")
+				return redirect("admin_wedding_review", wedding_id=wedding.id)
 			service_date, error = _parse_date(request.POST.get("service_date", ""), "Wedding date")
 			officiant_obj = _resolve_selected_officiant(request.POST.get("officiant_id", "").strip())
 			if error:
@@ -1749,20 +2161,113 @@ def admin_wedding_review(request, wedding_id):
 			wedding.wedding_date = service_date
 			wedding.officiant = str(officiant_obj)
 			wedding.status = SacramentStatus.SCHEDULED
+		else:
+			messages.error(request, "Invalid action.")
+			return redirect("admin_wedding_review", wedding_id=wedding.id)
 		if comment:
 			wedding.admin_comment = comment
 		wedding.save()
 		messages.success(request, "Wedding updated.")
 		return redirect("admin_wedding_review", wedding_id=wedding.id)
+	latest_certificate = (
+		Certificate.objects.filter(
+			service_type=Certificate.WEDDING,
+			object_id=wedding.id,
+		)
+		.exclude(certificate_file="")
+		.order_by("-issued_date", "-created_at")
+		.first()
+	)
 	return render(
 		request,
 		"admin/wedding_review.html",
 		{
 			"item": wedding,
-			"design_options": get_design_options(Certificate.WEDDING),
 			"officiants": officiants,
+			"latest_certificate": latest_certificate,
 		},
 	)
+
+
+@login_required
+@staff_required
+def admin_wedding_edit(request, wedding_id):
+	wedding = get_object_or_404(Wedding.objects.select_related("groom", "bride"), id=wedding_id)
+	people = Person.objects.filter(is_active=True).order_by("last_name", "first_name")
+	officiants = _active_officiants()
+
+	# Resolve which officiant is currently assigned
+	current_officiant_name = wedding.officiant
+	selected_officiant_id = ""
+	for o in officiants:
+		if str(o) == current_officiant_name:
+			selected_officiant_id = o.id
+			break
+
+	if request.method == "POST":
+		groom_church_name = request.POST.get("groom_church_name", "").strip() or request.POST.get(
+			"groom_existing_church_name", ""
+		).strip()
+		bride_church_name = request.POST.get("bride_church_name", "").strip() or request.POST.get(
+			"bride_existing_church_name", ""
+		).strip()
+		wedding_date, error = _parse_date(request.POST.get("wedding_date", ""), "Wedding date")
+		officiant_obj = _resolve_selected_officiant(request.POST.get("officiant_id", "").strip())
+		admin_comment = request.POST.get("admin_comment", "").strip()
+
+		if error or not officiant_obj:
+			messages.error(request, error or "Wedding date and officiant are required.")
+			return render(request, "admin/wedding_form.html", {
+				"wedding": wedding, "people": people, "officiants": officiants, "is_edit": True,
+				"selected_officiant_id": selected_officiant_id,
+			})
+		if wedding_date < timezone.localdate():
+			messages.error(request, "Wedding date cannot be in the past.")
+			return render(request, "admin/wedding_form.html", {
+				"wedding": wedding, "people": people, "officiants": officiants, "is_edit": True,
+				"selected_officiant_id": selected_officiant_id,
+			})
+
+		if not wedding.groom.is_member and not groom_church_name:
+			messages.error(request, "Provide church name for a non-member groom.")
+			return render(request, "admin/wedding_form.html", {
+				"wedding": wedding, "people": people, "officiants": officiants, "is_edit": True,
+				"selected_officiant_id": selected_officiant_id,
+			})
+		if not wedding.bride.is_member and not bride_church_name:
+			messages.error(request, "Provide church name for a non-member bride.")
+			return render(request, "admin/wedding_form.html", {
+				"wedding": wedding, "people": people, "officiants": officiants, "is_edit": True,
+				"selected_officiant_id": selected_officiant_id,
+			})
+
+		# Update health documents if new ones uploaded
+		groom_health = request.FILES.get("groom_health_document")
+		bride_health = request.FILES.get("bride_health_document")
+		couple_photo = request.FILES.get("couple_photo")
+		if groom_health:
+			wedding.groom_health_document = groom_health
+		if bride_health:
+			wedding.bride_health_document = bride_health
+		if couple_photo:
+			wedding.couple_photo = couple_photo
+
+		wedding.groom_church_name = groom_church_name if not wedding.groom.is_member else ""
+		wedding.bride_church_name = bride_church_name if not wedding.bride.is_member else ""
+		wedding.wedding_date = wedding_date
+		wedding.officiant = str(officiant_obj)
+		wedding.admin_comment = admin_comment
+		wedding.save()
+		messages.success(request, "Wedding updated successfully.")
+		return redirect("admin_wedding_review", wedding_id=wedding.id)
+
+	return render(request, "admin/wedding_form.html", {
+		"wedding": wedding,
+		"people": people,
+		"officiants": officiants,
+		"is_edit": True,
+		"selected_officiant_id": selected_officiant_id,
+	})
 
 
 @login_required
@@ -1771,12 +2276,23 @@ def admin_generate_wedding_certificate(request, wedding_id):
 	wedding = get_object_or_404(Wedding, id=wedding_id)
 	if request.method != "POST":
 		raise Http404
-	design_template = request.POST.get("design_template", "")
-	valid_designs = {code for code, _ in get_design_options(Certificate.WEDDING)}
-	if design_template not in valid_designs:
-		messages.error(request, "Select a valid wedding certificate design.")
+	admin_override = request.POST.get("admin_override") == "true"
+
+	# Check if wedding is scheduled and date validation
+	if wedding.status != SacramentStatus.SCHEDULED:
+		messages.error(request, "Certificate can only be generated for scheduled weddings.")
 		return redirect("admin_wedding_review", wedding_id=wedding.id)
-	generate_wedding_certificate(wedding, design_template=design_template)
+
+	today = timezone.localdate()
+
+	if wedding.wedding_date > today and not admin_override:
+		messages.warning(request, f"Wedding date ({wedding.wedding_date}) is in the future. Certificate generation is not allowed yet. Check 'Admin Override' to proceed anyway.")
+		return redirect("admin_wedding_review", wedding_id=wedding.id)
+	elif wedding.wedding_date < today and not admin_override:
+		messages.warning(request, f"Wedding date ({wedding.wedding_date}) has passed. Normally certificates should be generated on or after the wedding date. Check 'Admin Override' to proceed anyway.")
+		return redirect("admin_wedding_review", wedding_id=wedding.id)
+
+	generate_wedding_certificate(wedding, design_template=WEDDING_FIXED_DESIGN_TEMPLATE)
 	messages.success(request, "Wedding certificate generated.")
 	return redirect("admin_wedding_review", wedding_id=wedding.id)
 
@@ -1787,11 +2303,61 @@ class CertificateListView(TemplateView):
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
+		query = self.request.GET.get("q", "").strip()
 		certificates = Certificate.objects.select_related("content_type").order_by("-issued_date")
+		if query:
+			certificates = certificates.filter(certificate_number__icontains=query)
 		paginator = Paginator(certificates, 15)
 		context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
+		context["q"] = query
 		context["page_query"] = _query_without_page(self.request)
+		# Authentication result
+		auth_number = self.request.GET.get("auth", "").strip()
+		context["auth_certificate"] = None
+		if auth_number:
+			context["auth_certificate"] = Certificate.objects.filter(certificate_number__iexact=auth_number).first()
 		return context
+
+
+def _certificate_source_url(certificate):
+	"""Get the admin review URL for the sacrament linked to a certificate."""
+	linked = certificate.linked_object
+	if not linked:
+		return None
+	if certificate.service_type == Certificate.BAPTISM:
+		return reverse("admin_baptism_review", kwargs={"baptism_id": linked.id})
+	elif certificate.service_type == Certificate.DEDICATION:
+		return reverse("admin_dedication_review", kwargs={"dedication_id": linked.id})
+	elif certificate.service_type == Certificate.WEDDING:
+		return reverse("admin_wedding_review", kwargs={"wedding_id": linked.id})
+	return None
+
+
+def _certificate_source_name(certificate):
+	"""Get the display name for the person/couple linked to a certificate."""
+	linked = certificate.linked_object
+	if not linked:
+		return "-"
+	if certificate.service_type == Certificate.BAPTISM:
+		return str(linked.person)
+	elif certificate.service_type == Certificate.DEDICATION:
+		return str(linked.child)
+	elif certificate.service_type == Certificate.WEDDING:
+		return f"{linked.groom} & {linked.bride}"
+	return "-"
+
+
+@login_required
+@staff_required
+def admin_certificate_authenticate(request):
+	"""Admin-side certificate authentication."""
+	if request.method != "POST":
+		raise Http404
+	certificate_number = request.POST.get("certificate_number", "").strip()
+	if not certificate_number:
+		messages.error(request, "Enter a certificate number to authenticate.")
+		return redirect("admin_certificate_list")
+	return redirect(f"{reverse('admin_certificate_list')}?auth={certificate_number}")
 
 
 @login_required
@@ -1836,6 +2402,160 @@ def admin_calendar(request):
 			"days": list(range(1, total_days + 1)),
 			"events": events,
 			"month_name": calendar.month_name[month],
+		},
+	)
+
+
+@login_required
+@staff_required
+def admin_scheduling(request):
+	today = timezone.localdate()
+	year = int(request.GET.get("year", today.year))
+	month = int(request.GET.get("month", today.month))
+	_, total_days = calendar.monthrange(year, month)
+
+	if request.method == "POST":
+		action = request.POST.get("action", "")
+
+		if action == "add_slot":
+			activity_type = request.POST.get("activity_type", "").strip()
+			slot_date, date_error = _parse_date(request.POST.get("date", ""), "Date")
+			slot_time_str = request.POST.get("time", "").strip()
+
+			if date_error or not activity_type:
+				messages.error(request, date_error or "Activity type and date are required.")
+				return redirect("admin_scheduling")
+
+			slot_time = None
+			if activity_type == AvailableSlot.ACTIVITY_WEDDING and slot_time_str:
+				try:
+					slot_time = datetime.strptime(slot_time_str, "%H:%M").time()
+				except ValueError:
+					messages.error(request, "Invalid time format. Use HH:MM (e.g. 14:00).")
+					return redirect("admin_scheduling")
+
+			AvailableSlot.objects.get_or_create(
+				activity_type=activity_type,
+				date=slot_date,
+				time=slot_time,
+				defaults={"is_available": True},
+			)
+			messages.success(request, f"{activity_type} slot created for {slot_date}.")
+			return redirect("admin_scheduling")
+
+		elif action == "add_blackout":
+			blackout_date, date_error = _parse_date(request.POST.get("date", ""), "Date")
+			reason = request.POST.get("reason", "").strip()
+			activity_type = request.POST.get("activity_type", "All").strip()
+
+			if date_error:
+				messages.error(request, date_error)
+				return redirect("admin_scheduling")
+
+			BlackoutDate.objects.get_or_create(
+				date=blackout_date,
+				activity_type=activity_type,
+				defaults={"reason": reason},
+			)
+			messages.success(request, f"Blackout date added for {blackout_date}.")
+			return redirect("admin_scheduling")
+
+		elif action == "bulk_create":
+			activity_type = request.POST.get("activity_type", "").strip()
+			start_date, start_error = _parse_date(request.POST.get("start_date", ""), "Start date")
+			end_date, end_error = _parse_date(request.POST.get("end_date", ""), "End date")
+
+			if start_error or end_error or not activity_type:
+				messages.error(request, start_error or end_error or "Activity type, start and end dates are required.")
+				return redirect("admin_scheduling")
+			if start_date > end_date:
+				start_date, end_date = end_date, start_date
+
+			times = [None]
+			if activity_type == AvailableSlot.ACTIVITY_WEDDING:
+				times = [time(12, 0), time(14, 0), time(16, 0)]
+
+			created = 0
+			current = start_date
+			while current <= end_date:
+				for slot_time in times:
+					_, was_created = AvailableSlot.objects.get_or_create(
+						activity_type=activity_type,
+						date=current,
+						time=slot_time,
+						defaults={"is_available": True},
+					)
+					if was_created:
+						created += 1
+				current += timedelta(days=1)
+
+			messages.success(request, f"{created} {activity_type} slot(s) created from {start_date} to {end_date}.")
+			return redirect("admin_scheduling")
+
+		elif action == "toggle_slot":
+			slot_id = request.POST.get("slot_id", "").strip()
+			try:
+				slot = AvailableSlot.objects.get(id=slot_id)
+				slot.is_available = not slot.is_available
+				slot.save(update_fields=["is_available"])
+				messages.success(request, f"Slot {'enabled' if slot.is_available else 'disabled'}.")
+			except (ValueError, AvailableSlot.DoesNotExist):
+				messages.error(request, "Invalid slot.")
+			return redirect("admin_scheduling")
+
+		elif action == "delete_blackout":
+			blackout_id = request.POST.get("blackout_id", "").strip()
+			try:
+				BlackoutDate.objects.get(id=blackout_id).delete()
+				messages.success(request, "Blackout date removed.")
+			except (ValueError, BlackoutDate.DoesNotExist):
+				messages.error(request, "Invalid blackout date.")
+			return redirect("admin_scheduling")
+
+		messages.error(request, "Invalid action.")
+		return redirect("admin_scheduling")
+
+	# GET: Build calendar data
+	# Build month rows for calendar display
+	import calendar as cal_mod
+	cal = cal_mod.Calendar(firstweekday=0)  # Monday first
+	month_rows = []
+	for week in cal.monthdayscalendar(year, month):
+		month_rows.append(week)
+
+	events = []
+	for item in Baptism.objects.filter(baptism_date__year=year, baptism_date__month=month):
+		events.append({"day": item.baptism_date.day, "label": f"Baptism: {item.person}", "color": "#0d6efd", "type": "baptism"})
+	for item in BabyDedication.objects.filter(dedication_date__year=year, dedication_date__month=month):
+		events.append({"day": item.dedication_date.day, "label": f"Dedication: {item.child}", "color": "#fd7e14", "type": "dedication"})
+	for item in Wedding.objects.filter(wedding_date__year=year, wedding_date__month=month):
+		events.append({"day": item.wedding_date.day, "label": f"Wedding: {item.groom} & {item.bride}", "color": "#6f42c1", "type": "wedding"})
+
+	# Blackout dates for the month
+	blackout_dates = BlackoutDate.objects.filter(date__year=year, date__month=month)
+	for bd in blackout_dates:
+		events.append({"day": bd.date.day, "label": f"BLACKOUT: {bd.reason or bd.activity_type}", "color": "#dc3545", "type": "blackout"})
+
+	# Available slots for the month
+	available_slots = AvailableSlot.objects.filter(date__year=year, date__month=month).order_by("date", "time")
+	upcoming_slots = AvailableSlot.objects.filter(date__gte=today, is_available=True).order_by("date", "time")[:20]
+	upcoming_blackouts = BlackoutDate.objects.filter(date__gte=today).order_by("date")[:20]
+
+	return render(
+		request,
+		"admin/scheduling.html",
+		{
+			"year": year,
+			"month": month,
+			"days": list(range(1, total_days + 1)),
+			"events": events,
+			"month_name": calendar.month_name[month],
+			"available_slots": available_slots,
+			"upcoming_slots": upcoming_slots,
+			"upcoming_blackouts": upcoming_blackouts,
+			"activity_choices": AvailableSlot.ACTIVITY_CHOICES,
+			"blackout_activity_choices": BlackoutDate.ACTIVITY_CHOICES,
+			"month_rows": month_rows,
 		},
 	)
 
@@ -1919,6 +2639,180 @@ def admin_reports(request):
 			"approval_rejection": [approved_count, rejected_count],
 		},
 	)
+
+
+@login_required
+@staff_required
+def admin_report_download(request):
+	def _parse_date_safe(value):
+		if not value:
+			return None
+		try:
+			return datetime.strptime(value, "%Y-%m-%d").date()
+		except (ValueError, TypeError):
+			return None
+
+	from_date = _parse_date_safe(request.GET.get("from_date"))
+	to_date = _parse_date_safe(request.GET.get("to_date"))
+	selected_status = request.GET.get("status", "").strip()
+	format_type = request.GET.get("format", "").strip().lower()
+	selected_types = request.GET.getlist("types")
+
+	if not from_date or not to_date:
+		return render(
+			request,
+			"admin/report_download.html",
+			{
+				"baptism_count": Baptism.objects.count(),
+				"dedication_count": BabyDedication.objects.count(),
+				"wedding_count": Wedding.objects.count(),
+				"earliest_date": _get_earliest_date(),
+				"latest_date": _get_latest_date(),
+			},
+		)
+
+	if from_date > to_date:
+		from_date, to_date = to_date, from_date
+
+	if not selected_types:
+		selected_types = ["baptisms", "dedications", "weddings"]
+
+	def _filter_queryset(queryset, date_field):
+		filters = {f"{date_field}__gte": from_date, f"{date_field}__lte": to_date}
+		if selected_status:
+			filters["status"] = selected_status
+		return queryset.filter(**filters)
+
+	rows = []
+	if "baptisms" in selected_types:
+		for b in _filter_queryset(
+			Baptism.objects.select_related("person"), "baptism_date"
+		).order_by("baptism_date"):
+			rows.append((
+				"Baptism",
+				str(b.person),
+				str(b.baptism_date or b.request_date),
+				b.status,
+				b.officiant or "-",
+				str(b.request_date),
+			))
+
+	if "dedications" in selected_types:
+		for d in _filter_queryset(
+			BabyDedication.objects.select_related("child", "father", "mother"), "dedication_date"
+		).order_by("dedication_date"):
+			rows.append((
+				"Dedication",
+				str(d.child),
+				str(d.dedication_date or d.request_date),
+				d.status,
+				f"Father: {d.father}, Mother: {d.mother}",
+				d.scripture_reference or "-",
+			))
+
+	if "weddings" in selected_types:
+		for w in _filter_queryset(
+			Wedding.objects.select_related("groom", "bride"), "wedding_date"
+		).order_by("wedding_date"):
+			rows.append((
+				"Wedding",
+				f"{w.groom} & {w.bride}",
+				str(w.wedding_date),
+				w.status,
+				w.officiant or "-",
+				w.admin_comment or "-",
+			))
+
+	if format_type == "csv":
+		response = HttpResponse(content_type="text/csv")
+		response["Content-Disposition"] = f'attachment; filename="church_records_{from_date}_to_{to_date}.csv"'
+		writer = csv.writer(response)
+		writer.writerow([f"Church Records: {from_date} to {to_date}"])
+		writer.writerow([f"Generated On: {timezone.localdate().isoformat()}"])
+		writer.writerow([])
+		writer.writerow(["Type", "Name", "Date", "Status", "Additional Info", "Notes"])
+		for row in rows:
+			writer.writerow(row)
+		return response
+
+	if format_type == "pdf":
+		response = HttpResponse(content_type="application/pdf")
+		response["Content-Disposition"] = f'attachment; filename="church_records_{from_date}_to_{to_date}.pdf"'
+		pdf = canvas.Canvas(response, pagesize=A4)
+		width, height = A4
+		y = height - 40
+		pdf.setFont("Helvetica-Bold", 14)
+		pdf.drawString(40, y, "Church Records Report")
+		y -= 22
+		pdf.setFont("Helvetica", 10)
+		pdf.drawString(40, y, f"Date Range: {from_date} to {to_date}")
+		y -= 14
+		pdf.drawString(40, y, f"Generated On: {timezone.localdate().isoformat()}")
+		y -= 24
+		pdf.setFont("Helvetica-Bold", 10)
+		pdf.drawString(40, y, "Type")
+		pdf.drawString(100, y, "Name")
+		pdf.drawString(290, y, "Date")
+		pdf.drawString(370, y, "Status")
+		y -= 14
+		pdf.line(40, y, width - 40, y)
+		y -= 14
+		pdf.setFont("Helvetica", 9)
+		if not rows:
+			pdf.drawString(40, y, "No records found for the selected range.")
+		else:
+			for row in rows:
+				if y < 50:
+					pdf.showPage()
+					y = height - 40
+					pdf.setFont("Helvetica-Bold", 10)
+					pdf.drawString(40, y, "Type")
+					pdf.drawString(100, y, "Name")
+					pdf.drawString(290, y, "Date")
+					pdf.drawString(370, y, "Status")
+					y -= 14
+					pdf.line(40, y, width - 40, y)
+					y -= 14
+					pdf.setFont("Helvetica", 9)
+				record_type, name, service_date, status = row[0], row[1], row[2], row[3]
+				trimmed_name = name if len(name) <= 35 else f"{name[:32]}..."
+				pdf.drawString(40, y, record_type)
+				pdf.drawString(100, y, trimmed_name)
+				pdf.drawString(290, y, service_date)
+				pdf.drawString(370, y, status)
+				y -= 13
+		pdf.save()
+		return response
+
+	return redirect("admin_report_download")
+
+
+def _get_earliest_date():
+	dates = []
+	baptism = Baptism.objects.order_by("baptism_date").values_list("baptism_date", flat=True).first()
+	if baptism:
+		dates.append(baptism)
+	dedication = BabyDedication.objects.order_by("dedication_date").values_list("dedication_date", flat=True).first()
+	if dedication:
+		dates.append(dedication)
+	wedding = Wedding.objects.order_by("wedding_date").values_list("wedding_date", flat=True).first()
+	if wedding:
+		dates.append(wedding)
+	return min(dates) if dates else None
+
+
+def _get_latest_date():
+	dates = []
+	baptism = Baptism.objects.order_by("-baptism_date").values_list("baptism_date", flat=True).first()
+	if baptism:
+		dates.append(baptism)
+	dedication = BabyDedication.objects.order_by("-dedication_date").values_list("dedication_date", flat=True).first()
+	if dedication:
+		dates.append(dedication)
+	wedding = Wedding.objects.order_by("-wedding_date").values_list("wedding_date", flat=True).first()
+	if wedding:
+		dates.append(wedding)
+	return max(dates) if dates else None
 
 
 @login_required
@@ -2311,27 +3205,262 @@ def member_profile(request):
 def member_baptism_request(request):
 	person = request.user.member_account.person
 	existing = Baptism.objects.filter(person=person).first()
+	available_slots = AvailableSlot.objects.filter(activity_type=AvailableSlot.ACTIVITY_BAPTISM, is_available=True).order_by("date")
+	
 	if request.method == "POST":
-		if existing and existing.status != SacramentStatus.REJECTED:
-			messages.error(request, "Baptism request already exists and cannot be edited now.")
+		if existing and existing.status != SacramentStatus.CANCELLED:
+			messages.error(request, "You already have a baptism request/record. You can request again only if it is cancelled or removed by admin.")
 			return redirect("member_dashboard")
 
+		slot_id = request.POST.get("available_slot", "").strip()
+		selected_slot = None
+		
+		if slot_id:
+			try:
+				selected_slot = AvailableSlot.objects.get(id=slot_id, activity_type=AvailableSlot.ACTIVITY_BAPTISM, is_available=True)
+			except (ValueError, AvailableSlot.DoesNotExist):
+				messages.error(request, "Invalid slot selected.")
+				return render(request, "member/baptism_request.html", {"existing": existing, "available_slots": available_slots})
+		
 		if existing:
 			existing.status = SacramentStatus.PENDING
+			existing.available_slot = selected_slot
 			existing.admin_comment = ""
-			existing.save(update_fields=["status", "admin_comment", "updated_at"])
+			existing.save(update_fields=["status", "available_slot", "admin_comment", "updated_at"])
 			messages.success(request, "Baptism request resubmitted.")
 		else:
-			Baptism.objects.create(person=person, request_date=timezone.localdate(), status=SacramentStatus.PENDING)
+			Baptism.objects.create(
+				person=person, 
+				request_date=timezone.localdate(), 
+				status=SacramentStatus.PENDING,
+				available_slot=selected_slot
+			)
 			messages.success(request, "Baptism request submitted.")
 		return redirect("member_dashboard")
-	return render(request, "member/baptism_request.html", {"existing": existing})
+	
+	return render(request, "member/baptism_request.html", {
+		"existing": existing, 
+		"available_slots": available_slots
+	})
+
+
+@login_required
+@member_required
+def member_wedding_request(request):
+	"""
+	Submit a wedding request. Stores non-member partner data as JSON
+	and creates a WeddingRequest record with an invite code for partner consent.
+	"""
+	member_person = request.user.member_account.person
+	member_choices = Person.objects.filter(is_member=True, is_active=True).exclude(id=member_person.id).order_by("last_name", "first_name")
+	available_slots = AvailableSlot.objects.filter(
+		activity_type=AvailableSlot.ACTIVITY_WEDDING,
+		is_available=True,
+		date__gte=timezone.localdate(),
+	).order_by("date", "time")
+
+	# Check for existing active WeddingRequest (not just old Wedding)
+	active_request_exists = WeddingRequest.objects.filter(
+		Q(submitter=member_person) | Q(partner=member_person),
+		status__in=[SacramentStatus.PENDING, SacramentStatus.APPROVED],
+	).exists()
+
+	if request.method == "POST":
+		owner_role = request.POST.get("owner_role", "").strip().lower()
+		has_read = request.POST.get("has_read") == "on"
+		partner_member_id = request.POST.get("partner_member_id", "").strip()
+		couple_photo = request.FILES.get("couple_photo")
+
+		if active_request_exists:
+			messages.error(request, "You already have an active wedding request.")
+			return redirect("member_dashboard")
+		if not has_read:
+			messages.error(request, "Please read and acknowledge the process before submitting.")
+			return render(request, "member/wedding_request.html", {
+				"member_choices": member_choices, 
+				"available_slots": available_slots,
+				"active_request_exists": active_request_exists
+			})
+		if owner_role not in {"groom", "bride"}:
+			messages.error(request, "Select whether you are the groom or the bride.")
+			return render(request, "member/wedding_request.html", {
+				"member_choices": member_choices, 
+				"available_slots": available_slots,
+				"active_request_exists": active_request_exists
+			})
+
+		partner = None
+		partner_is_member = bool(partner_member_id)
+		partner_non_member_data = {}
+		partner_gender_expected = "Female" if owner_role == "groom" else "Male"
+
+		if partner_member_id:
+			try:
+				partner = Person.objects.get(id=partner_member_id, is_member=True, is_active=True)
+			except (ValueError, Person.DoesNotExist):
+				partner = None
+			if not partner:
+				messages.error(request, "Select a valid church member partner or provide non-member details.")
+				return render(request, "member/wedding_request.html", {
+					"member_choices": member_choices, 
+					"available_slots": available_slots,
+					"active_request_exists": active_request_exists
+				})
+			if partner.id == member_person.id:
+				messages.error(request, "You cannot submit a wedding request with yourself as both groom and bride.")
+				return render(request, "member/wedding_request.html", {
+					"member_choices": member_choices, 
+					"available_slots": available_slots,
+					"active_request_exists": active_request_exists
+				})
+		else:
+			partner_first_name = request.POST.get("partner_first_name", "").strip()
+			partner_last_name = request.POST.get("partner_last_name", "").strip()
+			partner_gender = request.POST.get("partner_gender", "").strip()
+			partner_dob, partner_dob_error = _parse_date(request.POST.get("partner_date_of_birth", ""), "Partner date of birth")
+			partner_phone = request.POST.get("partner_phone", "").strip()
+			partner_email = request.POST.get("partner_email", "").strip()
+			partner_address = request.POST.get("partner_address", "").strip()
+			partner_church_name = request.POST.get("partner_church_name", "").strip()
+			partner_province = request.POST.get("partner_province", "").strip()
+			partner_district = request.POST.get("partner_district", "").strip()
+			partner_sector = request.POST.get("partner_sector", "").strip()
+			partner_cell = request.POST.get("partner_cell", "").strip()
+			partner_village = request.POST.get("partner_village", "").strip()
+
+			if (
+				not partner_first_name or not partner_last_name or not partner_gender
+				or partner_dob_error or not partner_church_name
+				or not partner_province or not partner_district or not partner_sector
+				or not partner_cell or not partner_village
+			):
+				messages.error(
+					request,
+					partner_dob_error
+					or "Complete non-member partner details, including church and full location (province, district, sector, cell, village).",
+				)
+				return render(request, "member/wedding_request.html", {
+					"member_choices": member_choices, 
+					"available_slots": available_slots,
+					"active_request_exists": active_request_exists
+				})
+			if partner_dob > timezone.localdate():
+				messages.error(request, "Partner date of birth cannot be in the future.")
+				return render(request, "member/wedding_request.html", {
+					"member_choices": member_choices, 
+					"available_slots": available_slots,
+					"active_request_exists": active_request_exists
+				})
+			email_error = _validate_email_value(partner_email)
+			phone_error = _validate_phone(partner_phone)
+			if email_error or phone_error:
+				messages.error(request, email_error or phone_error)
+				return render(request, "member/wedding_request.html", {
+					"member_choices": member_choices, 
+					"available_slots": available_slots,
+					"active_request_exists": active_request_exists
+				})
+
+			partner_non_member_data = {
+				"first_name": partner_first_name,
+				"last_name": partner_last_name,
+				"gender": partner_gender,
+				"date_of_birth": partner_dob.isoformat(),
+				"phone": partner_phone,
+				"email": partner_email,
+				"address": partner_address,
+				"church_name": partner_church_name,
+				"province": partner_province,
+				"district": partner_district,
+				"sector": partner_sector,
+				"cell": partner_cell,
+				"village": partner_village,
+			}
+
+		submitter_health_document = request.FILES.get("submitter_health_document")
+
+		wrequest = WeddingRequest.objects.create(
+			submitter=member_person,
+			partner=partner,
+			partner_is_member=partner_is_member,
+			partner_non_member_data=partner_non_member_data,
+			partner_gender_expected=partner_gender_expected,
+			submitter_role=owner_role,
+			couple_photo=couple_photo,
+			submitter_health_document=submitter_health_document,
+			status=SacramentStatus.PENDING,
+		)
+		messages.success(
+			request,
+			"Wedding request submitted! "
+			+ ("Your partner will receive an invite to confirm." if partner_is_member else "Admin will review your request.")
+		)
+		return redirect("member_wedding_status", request_id=wrequest.id)
+
+	return render(request, "member/wedding_request.html", {
+		"member_choices": member_choices, 
+		"available_slots": available_slots,
+		"active_request_exists": active_request_exists,
+	})
+
+
+@login_required
+@member_required
+def member_wedding_status(request, request_id):
+	"""Show the status of a wedding request and the invite link for partner."""
+	wrequest = get_object_or_404(WeddingRequest, id=request_id)
+	member_person = request.user.member_account.person
+
+	if wrequest.submitter != member_person and wrequest.partner != member_person:
+		raise Http404
+
+	invite_url = request.build_absolute_uri(
+		reverse("member_wedding_consent", kwargs={"invite_code": wrequest.partner_invite_code})
+	)
+
+	return render(request, "member/wedding_status.html", {
+		"wrequest": wrequest,
+		"invite_url": invite_url,
+	})
+
+
+@login_required
+def member_wedding_consent(request, invite_code):
+	"""
+	Partner consent view. The partner opens this via the invite link,
+	confirms they want to marry, and uploads their health document.
+	"""
+	wrequest = get_object_or_404(WeddingRequest, partner_invite_code=invite_code)
+
+	if wrequest.partner_consented:
+		messages.info(request, "You have already confirmed this wedding request.")
+		return redirect("member_dashboard")
+
+	if request.method == "POST":
+		agree = request.POST.get("agree") == "on"
+		if not agree:
+			messages.error(request, "You must confirm your agreement to proceed.")
+			return render(request, "member/wedding_consent.html", {"wrequest": wrequest})
+
+		partner_health = request.FILES.get("partner_health_document")
+		if partner_health:
+			wrequest.partner_health_document = partner_health
+
+		wrequest.partner_consented = True
+		wrequest.partner_consented_at = timezone.now()
+		wrequest.save()
+		messages.success(request, "Thank you! You have confirmed your participation. The request will now be reviewed by admin.")
+		return redirect("member_dashboard")
+
+	return render(request, "member/wedding_consent.html", {"wrequest": wrequest})
 
 
 @login_required
 @member_required
 def member_dedication_request(request):
 	member_person = request.user.member_account.person
+	available_slots = AvailableSlot.objects.filter(activity_type=AvailableSlot.ACTIVITY_DEDICATION, is_available=True).order_by("date")
+	
 	if request.method == "POST":
 		child_first = request.POST.get("child_first_name", "").strip()
 		child_last = request.POST.get("child_last_name", "").strip()
@@ -2341,16 +3470,26 @@ def member_dedication_request(request):
 		mother_name = request.POST.get("mother_name", "").strip()
 		scripture_reference = request.POST.get("scripture_reference", "").strip()
 		scripture_text = request.POST.get("scripture_text", "").strip()
+		slot_id = request.POST.get("available_slot", "").strip()
 
 		if not child_first or not child_last or not child_gender or child_error or not father_name or not mother_name or not scripture_reference or not scripture_text:
 			messages.error(request, child_error or "All fields are required, including scripture and verse.")
-			return render(request, "member/dedication_request.html")
+			return render(request, "member/dedication_request.html", {"available_slots": available_slots})
 		if child_dob and child_dob > timezone.localdate():
 			messages.error(request, "Child date of birth cannot be in the future.")
-			return render(request, "member/dedication_request.html")
+			return render(request, "member/dedication_request.html", {"available_slots": available_slots})
 		if father_name.strip().lower() == mother_name.strip().lower():
 			messages.error(request, "Father and mother names must be different.")
-			return render(request, "member/dedication_request.html")
+			return render(request, "member/dedication_request.html", {"available_slots": available_slots})
+
+		# Validate slot if provided
+		selected_slot = None
+		if slot_id:
+			try:
+				selected_slot = AvailableSlot.objects.get(id=slot_id, activity_type=AvailableSlot.ACTIVITY_DEDICATION, is_available=True)
+			except (ValueError, AvailableSlot.DoesNotExist):
+				messages.error(request, "Invalid slot selected.")
+				return render(request, "member/dedication_request.html", {"available_slots": available_slots})
 
 		father_parts = father_name.split(" ", 1)
 		mother_parts = mother_name.split(" ", 1)
@@ -2394,10 +3533,12 @@ def member_dedication_request(request):
 			scripture_reference=scripture_reference,
 			scripture_text=scripture_text,
 			request_date=timezone.localdate(),
+			available_slot=selected_slot,
 		)
 		messages.success(request, "Dedication request submitted.")
 		return redirect("member_dashboard")
-	return render(request, "member/dedication_request.html")
+	
+	return render(request, "member/dedication_request.html", {"available_slots": available_slots})
 
 
 @login_required

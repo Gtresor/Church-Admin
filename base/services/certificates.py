@@ -24,6 +24,7 @@ CERTIFICATE_DESIGN_OPTIONS = {
         ("dedication_green_leaf", "Green Leaf Blessing"),
     ],
     Certificate.WEDDING: [
+        ("wedding_og", "Wedding OG Classic"),
         ("wedding_ivory_gold", "Ivory Gold Formal"),
         ("wedding_royal_navy", "Royal Navy Signature"),
     ],
@@ -78,6 +79,8 @@ def _render_pdf_bytes(certificate: Certificate, draw_fn) -> bytes:
 
 def _certificate_page_size(certificate: Certificate):
     if certificate.service_type == Certificate.DEDICATION and certificate.design_template == "dedication_new_life":
+        return landscape(A5)
+    if certificate.service_type == Certificate.WEDDING and certificate.design_template == "wedding_og":
         return landscape(A5)
     return landscape(A4)
 
@@ -401,8 +404,145 @@ def _draw_dedication(c, certificate: Certificate):
     _draw_center_wrapped(c, f'"{scripture_text}"', width / 2, height / 2 - 3.8 * cm, max_width=20 * cm, line_height=14)
 
 
+def _draw_wedding_og(c, certificate: Certificate):
+    """Wedding OG Classic design — A5 landscape with pre-designed background and overlay text."""
+    wedding = certificate.linked_object
+    width, height = c._pagesize  # A5 landscape: 595 x 419 pts
+
+    # === BACKGROUND ===
+    bg_path = _design_asset_path("Wedding OG.png")
+    if os.path.exists(bg_path):
+        c.drawImage(bg_path, 0, 0, width=width, height=height, preserveAspectRatio=False, mask="auto")
+    else:
+        c.setFillColor("#FFFDF5")
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+
+    # === COUPLE PHOTO (circular crop) ===
+    if wedding.couple_photo and os.path.exists(wedding.couple_photo.path):
+        try:
+            photo_reader = ImageReader(wedding.couple_photo.path)
+            # Circle center and radius — positioned in the gold circle on the left
+            cx, cy, r = 110, 160, 90
+            # Save state, clip to circle, draw image, restore
+            c.saveState()
+            p = c.beginPath()
+            p.circle(cx, cy, r)
+            c.clipPath(p, stroke=0)
+            # Draw the photo filling the circle bounding box
+            c.drawImage(photo_reader, cx - r, cy - r, width=r * 2, height=r * 2, preserveAspectRatio=True, mask="auto")
+            c.restoreState()
+        except Exception:
+            pass
+
+    # === RIGHT PANEL TEXT OVERLAY ===
+    # Colors
+    dark_color = "#2C2C2C"
+    gold_color = "#C9A84C"
+    gray_color = "#888888"
+
+    # "CERTIFICATE" — large bold serif
+    c.setFillColor(dark_color)
+    c.setFont("Times-Bold", 32)
+    c.drawCentredString(370, 330, "CERTIFICATE")
+
+    # "OF MARRIAGE" — gold spaced uppercase
+    c.setFillColor(gold_color)
+    c.setFont("Times-Bold", 14)
+    c.drawCentredString(370, 310, "O F   M A R R I A G E")
+
+    # Legal text — small gray
+    c.setFillColor(gray_color)
+    c.setFont("Times-Roman", 7)
+    c.drawCentredString(370, 294, "ACCORDING TO THE ORDINANCES OF GOD AND THE")
+    c.drawCentredString(370, 284, "LAWS OF THE REPUBLIC OF RWANDA")
+
+    # Couple names — gold bold italic
+    c.setFillColor(gold_color)
+    c.setFont("Times-BoldItalic", 15)
+    couple_names = f"{wedding.groom} & {wedding.bride}"
+    c.drawCentredString(370, 260, couple_names)
+
+    # Wedding details — dark spaced uppercase
+    c.setFillColor(dark_color)
+    c.setFont("Times-Roman", 8)
+
+    # Format date nicely
+    if wedding.wedding_date:
+        day = wedding.wedding_date.strftime("%d").lstrip("0")
+        month = wedding.wedding_date.strftime("%B").upper()
+        year = wedding.wedding_date.year
+        date_str = f"{day}TH DAY OF {month} THE YEAR OF OUR LORD {year}"
+    else:
+        date_str = "N/A"
+
+    c.drawCentredString(370, 238, f"WERE UNITED IN THE HOLY MATRIMONY ON {date_str},")
+
+    # Church location
+    c.setFont("Times-Roman", 8)
+    c.drawCentredString(370, 225, "AT NEW LIFE")
+
+    # === SIGNATURE SECTION ===
+    sig_y = 105
+    line_width = 65
+
+    # Left column: GROOM + MINISTER
+    # GROOM line
+    c.setStrokeColor(dark_color)
+    c.setLineWidth(0.5)
+    c.line(295, sig_y + 15, 295 + line_width, sig_y + 15)
+    c.setFillColor(gray_color)
+    c.setFont("Times-Roman", 6)
+    c.drawCentredString(295 + line_width / 2, sig_y + 6, "GROOM")
+
+    # MINISTER line
+    c.setStrokeColor(dark_color)
+    c.line(295, sig_y - 10, 295 + line_width, sig_y - 10)
+    c.setFillColor(gray_color)
+    c.setFont("Times-Roman", 6)
+    c.drawCentredString(295 + line_width / 2, sig_y - 19, "MINISTER")
+    # Officiant name below minister
+    c.setFont("Times-Italic", 6)
+    c.drawCentredString(295 + line_width / 2, sig_y - 27, wedding.officiant or "")
+
+    # Right column: BRIDE + WITNESSES
+    # BRIDE line
+    c.setStrokeColor(dark_color)
+    c.setLineWidth(0.5)
+    c.line(375, sig_y + 15, 375 + line_width, sig_y + 15)
+    c.setFillColor(gray_color)
+    c.setFont("Times-Roman", 6)
+    c.drawCentredString(375 + line_width / 2, sig_y + 6, "BRIDE")
+
+    # WITNESSES line
+    c.setStrokeColor(dark_color)
+    c.line(375, sig_y - 10, 375 + line_width, sig_y - 10)
+    c.setFillColor(gray_color)
+    c.setFont("Times-Roman", 6)
+    c.drawCentredString(375 + line_width / 2, sig_y - 19, "WITNESSES")
+    c.setFont("Times-Italic", 6)
+    c.drawCentredString(375 + line_width / 2, sig_y - 27, "1. _________________")
+    c.drawCentredString(375 + line_width / 2, sig_y - 34, "2. _________________")
+
+    # === FOOTER BIBLE VERSE ===
+    c.setFillColor(gray_color)
+    c.setFont("Times-Italic", 6)
+    c.drawCentredString(width / 2, 22, '"What therefore God hath joined together, let no man put asunder."')
+    c.setFont("Times-Roman", 6)
+    c.drawCentredString(width / 2, 14, "— Matthew 19:6")
+
+    # === CERTIFICATE NUMBER (bottom right) ===
+    c.setFont("Times-Roman", 5.5)
+    c.setFillColor(gray_color)
+    c.drawRightString(width - 20, 12, f"No: {certificate.certificate_number}")
+
+
 def _draw_wedding(c, certificate: Certificate):
     wedding = certificate.linked_object
+
+    if certificate.design_template == "wedding_og":
+        _draw_wedding_og(c, certificate)
+        return
+
     if certificate.design_template == "wedding_royal_navy":
         _draw_common(
             c,
@@ -449,6 +589,21 @@ def _create_or_get_certificate(service_type: str, linked_object, design_template
     return certificate
 
 
+def render_baptism_preview_pdf(baptism: Baptism, design_template: str) -> bytes:
+    if not _is_valid_design(Certificate.BAPTISM, design_template):
+        raise ValueError("Invalid design template for selected service type.")
+
+    preview_certificate = Certificate(
+        service_type=Certificate.BAPTISM,
+        design_template=design_template,
+        issued_date=timezone.localdate(),
+    )
+    preview_certificate.certificate_number = f"PREVIEW-{timezone.now().strftime('%H%M%S')}"
+    preview_certificate.linked_object = baptism
+
+    return _render_pdf_bytes(preview_certificate, _draw_baptism)
+
+
 def generate_baptism_certificate(baptism: Baptism, design_template: str = "baptism_blue_cross") -> Certificate:
     certificate = _create_or_get_certificate(Certificate.BAPTISM, baptism, design_template)
     _save_certificate_pdf(certificate, _draw_baptism)
@@ -474,6 +629,21 @@ def generate_wedding_certificate(wedding: Wedding, design_template: str = "weddi
     wedding.status = "Completed" if wedding.status != "Completed" else wedding.status
     wedding.save(update_fields=["certificate_generated", "status", "updated_at"])
     return certificate
+
+
+def render_wedding_preview_pdf(wedding: Wedding, design_template: str) -> bytes:
+    if not _is_valid_design(Certificate.WEDDING, design_template):
+        raise ValueError("Invalid design template for selected service type.")
+
+    preview_certificate = Certificate(
+        service_type=Certificate.WEDDING,
+        design_template=design_template,
+        issued_date=timezone.localdate(),
+    )
+    preview_certificate.certificate_number = f"PREVIEW-{timezone.now().strftime('%H%M%S')}"
+    preview_certificate.linked_object = wedding
+
+    return _render_pdf_bytes(preview_certificate, _draw_wedding)
 
 
 def render_dedication_preview_pdf(dedication: BabyDedication, design_template: str) -> bytes:

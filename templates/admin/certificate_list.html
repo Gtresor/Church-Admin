@@ -1,17 +1,96 @@
 {% extends 'base.html' %}
+{% load certificate_extras %}
 {% block content %}
 <h3>Certificates</h3>
-<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>File</th><th>Action</th></tr></thead><tbody>
+
+{% if auth_certificate %}
+<div class="card border-primary mb-3">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <strong>Certificate Authentication Result</strong>
+    <a class="btn btn-sm btn-light" href="{% url 'admin_certificate_list' %}">Clear</a>
+  </div>
+  <div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-3"><strong>Number:</strong> {{ auth_certificate.certificate_number }}</div>
+      <div class="col-md-3"><strong>Service:</strong> {{ auth_certificate.service_type }}</div>
+      <div class="col-md-3"><strong>Issued:</strong> {{ auth_certificate.issued_date }}</div>
+      <div class="col-md-3">
+        <strong>Status:</strong>
+        {% if auth_certificate.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}
+      </div>
+      <div class="col-md-6"><strong>Recipient:</strong> {{ auth_certificate|certificate_source_name }}</div>
+      <div class="col-md-6"><strong>Design:</strong> {{ auth_certificate.design_template|default:'-' }}</div>
+    </div>
+    {% if auth_certificate.is_valid and auth_certificate.certificate_file %}
+    <div class="mt-2">
+      <a class="btn btn-sm btn-outline-primary" href="{{ auth_certificate.certificate_file.url }}" target="_blank">Download Certificate PDF</a>
+    </div>
+    {% endif %}
+    {% if not auth_certificate.is_valid %}
+    <div class="mt-2"><span class="text-danger">Revoked reason:</span> {{ auth_certificate.revoked_reason }}</div>
+    {% endif %}
+    {% with source_url=auth_certificate|certificate_source_url %}
+    {% if source_url %}
+    <div class="mt-2"><a class="btn btn-sm btn-outline-secondary" href="{{ source_url }}">View Source Record</a></div>
+    {% endif %}
+    {% endwith %}
+  </div>
+</div>
+{% endif %}
+
+<form method="get" class="row g-2 mb-3">
+  <div class="col-md-4">
+    <input type="text" name="auth" class="form-control" placeholder="Authenticate certificate number" value="">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary" type="submit" formaction="{% url 'admin_certificate_authenticate' %}" formmethod="post">Authenticate</button>
+  </div>
+</form>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4">
+    <input type="text" name="q" class="form-control" placeholder="Search by certificate number" value="{{ q }}">
+  </div>
+  <div class="col-md-2">
+    <button class="btn btn-outline-primary">Search</button>
+  </div>
+  {% if q %}
+  <div class="col-md-2">
+    <a class="btn btn-outline-secondary" href="{% url 'admin_certificate_list' %}">Clear</a>
+  </div>
+  {% endif %}
+</form>
+
+<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Number</th><th>Service</th><th>Recipient</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody>
 {% for cert in page_obj %}
+{% with source_url=cert|certificate_source_url %}
+{% with source_name=cert|certificate_source_name %}
 <tr>
-<td>{{ cert.certificate_number }}</td><td>{{ cert.service_type }}</td><td>{{ cert.issued_date }}</td><td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
-<td>{% if cert.certificate_file %}<a href="{{ cert.certificate_file.url }}" class="btn btn-sm btn-outline-primary">Download</a>{% endif %}</td>
+<td><code>{{ cert.certificate_number }}</code></td>
+<td><span class="badge bg-info-subtle text-info-emphasis">{{ cert.service_type }}</span></td>
+<td>{{ source_name }}</td>
+<td>{{ cert.issued_date }}</td>
+<td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
 <td>
-{% if cert.is_valid %}
-<form method="post" action="{% url 'admin_revoke_certificate' cert.id %}" class="d-flex gap-2">{% csrf_token %}<input name="reason" class="form-control form-control-sm" placeholder="Reason" required><button class="btn btn-sm btn-danger">Revoke</button></form>
-{% else %}<small>{{ cert.revoked_reason }}</small>{% endif %}
+  <div class="d-flex gap-1 flex-wrap">
+    {% if source_url %}
+    <a class="btn btn-sm btn-outline-secondary" href="{{ source_url }}">View Source</a>
+    {% endif %}
+    {% if cert.certificate_file %}
+    <a href="{{ cert.certificate_file.url }}" class="btn btn-sm btn-outline-primary">Download</a>
+    {% endif %}
+    {% if cert.is_valid %}
+    <form method="post" action="{% url 'admin_revoke_certificate' cert.id %}" class="d-flex gap-1">{% csrf_token %}<input name="reason" class="form-control form-control-sm" placeholder="Reason" required style="width:120px"><button class="btn btn-sm btn-danger">Revoke</button></form>
+    {% else %}
+    <small class="text-muted">{{ cert.revoked_reason }}</small>
+    {% endif %}
+  </div>
 </td>
 </tr>
+{% endwith %}
+{% endwith %}
+{% empty %}
+<tr><td colspan="6">No certificates found.</td></tr>
 {% endfor %}
 </tbody></table></div></div>
 {% include 'partials/pagination.html' with page_query=page_query %}

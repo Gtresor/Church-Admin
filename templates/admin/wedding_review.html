@@ -1,67 +1,610 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h3>Wedding Review - {{ item.groom }} & {{ item.bride }}</h3>
-<div class="card card-body mb-3">
-  <h5 class="mb-3">Health Documents</h5>
-  <div class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Groom Document</label>
-      <div>
-        {% if item.groom_health_document %}
-          <a href="{{ item.groom_health_document.url }}" target="_blank" class="btn btn-outline-primary btn-sm">View Groom Document</a>
-        {% else %}
-          <span class="text-muted">Not uploaded</span>
-        {% endif %}
-      </div>
-    </div>
-    <div class="col-md-6">
-      <label class="form-label">Bride Document</label>
-      <div>
-        {% if item.bride_health_document %}
-          <a href="{{ item.bride_health_document.url }}" target="_blank" class="btn btn-outline-primary btn-sm">View Bride Document</a>
-        {% else %}
-          <span class="text-muted">Not uploaded</span>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-<form method="post" class="card card-body">
-{% csrf_token %}
-<div class="row g-3">
-  <div class="col-md-4"><label>Wedding Date</label><input type="date" name="service_date" class="form-control" value="{{ item.wedding_date|date:'Y-m-d' }}"></div>
-  <div class="col-md-4">
-    <label>Officiant</label>
-    <select name="officiant_id" class="form-select">
-      <option value="">Select officiant</option>
-      {% for officiant in officiants %}
-      <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-4"><label>Admin Comment</label><textarea name="admin_comment" class="form-control">{{ item.admin_comment }}</textarea></div>
-</div>
-<div class="mt-3 d-flex gap-2">
-  <button class="btn btn-warning" name="action" value="schedule">Reschedule</button>
-  <button class="btn btn-secondary" name="action" value="complete">Mark Completed</button>
-</div>
-</form>
+<style>
+  .wr-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .wr-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .wr-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 56px rgba(0, 0, 0, 0.05);
+  }
+  .wr-card-sm {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .wr-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .wr-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .wr-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+  .wr-value {
+    font-size: 0.95rem;
+    color: #1a202c;
+    font-weight: 500;
+  }
+  .wr-btn-primary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .wr-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .wr-btn-primary:active {
+    transform: translateY(0);
+  }
+  .wr-btn-outline {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .wr-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .wr-btn-danger {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #fc5c7d, #e74c3c);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .wr-btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(231, 76, 60, 0.30);
+    color: #fff;
+  }
+  .wr-btn-success {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .wr-btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(46, 204, 113, 0.30);
+    color: #fff;
+  }
+  .wr-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .wr-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .wr-select {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+  .wr-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .wr-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .wr-icon-lg {
+    width: 28px;
+    height: 28px;
+  }
+  .wr-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .wr-divider {
+    height: 1px;
+    background: #eef2f7;
+    margin: 1.25rem 0;
+  }
+  .wr-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .wr-photo-frame {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .wr-photo-frame img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+</style>
 
-<form method="post" action="{% url 'admin_generate_wedding_certificate' item.id %}" class="card card-body mt-3">
-{% csrf_token %}
-<div class="row g-3 align-items-end">
-  <div class="col-md-6">
-    <label class="form-label">Certificate Design</label>
-    <select name="design_template" class="form-select" required>
-      <option value="">Select design</option>
-      {% for code, label in design_options %}
-      <option value="{{ code }}">{{ label }}</option>
-      {% endfor %}
-    </select>
+<div class="wr-page">
+  <div class="wr-card mb-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0" style="color: #1a202c; font-weight: 700;">
+          {{ item.groom.first_name }} {{ item.groom.last_name }}
+          <span style="color: #a0aec0;">&</span>
+          {{ item.bride.first_name }} {{ item.bride.last_name }}
+        </h3>
+        <div class="wr-gradient-accent"></div>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <!-- Status badge -->
+        <span class="wr-status-badge
+          {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+          {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+          {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+          {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+          {% elif item.status == 'Married' %}" style="background:#d1fae5;color:#065f46;
+          {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+          {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+          {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+          {{ item.status }}
+        </span>
+        {% if item.marriage_resolution %}
+          <span class="wr-status-badge" style="background:#f3f4f6;color:#4b5563;">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            {{ item.marriage_resolution }}
+          </span>
+        {% endif %}
+        <a href="{% url 'admin_wedding_edit' item.id %}" class="wr-btn-outline" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </a>
+      </div>
+    </div>
   </div>
-  <div class="col-md-3">
-    <button class="btn btn-primary w-100" type="submit">Generate Certificate</button>
+
+  <!-- Couple Photo -->
+  {% if item.couple_photo %}
+  <div class="mb-3">
+    <div class="wr-photo-frame">
+      <img src="{{ item.couple_photo.url }}" alt="Couple Photo">
+    </div>
   </div>
+  {% endif %}
+
+  <!-- Profile Cards: Groom & Bride -->
+  <div class="row g-3 mb-3">
+    {% with groom_label=item.groom.gender bride_label=item.bride.gender %}
+    <div class="col-md-6">
+      <div class="wr-card h-100" style="border-left: 4px solid #667eea;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="wr-icon-svg wr-icon-lg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div>
+            <div class="wr-label">{% if groom_label == 'Female' %}Bride{% else %}Groom{% endif %}</div>
+            <div class="wr-value" style="font-size:1.1rem;">{{ item.groom.first_name }} {{ item.groom.last_name }}</div>
+          </div>
+          <div class="ms-auto">
+            {% if item.groom.is_member %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#d1fae5;color:#065f46;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Member
+              </span>
+            {% else %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#dbeafe;color:#1e40af;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                Non-member
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Gender</span><span class="wr-value">{{ item.groom.gender|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Date of Birth</span><span class="wr-value">{{ item.groom.date_of_birth|date:'M d, Y'|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Phone</span><span class="wr-value">{{ item.groom.phone|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Email</span><span class="wr-value">{{ item.groom.email|default:'-' }}</span></div></div>
+          {% if not item.groom.is_member %}
+          <div class="col-12"><div class="wr-field-group"><span class="wr-label">Church</span><span class="wr-value">{{ item.groom_church_name|default:'Not specified' }}</span></div></div>
+          <div class="col-12"><div class="wr-field-group"><span class="wr-label">Location</span><span class="wr-value" style="font-size:0.85rem;">{{ item.groom.province|default:'-' }}, {{ item.groom.district|default:'-' }}, {{ item.groom.sector|default:'-' }}, {{ item.groom.cell|default:'-' }}, {{ item.groom.village|default:'-' }}</span></div></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="wr-card h-100" style="border-left: 4px solid #ec4899;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="wr-icon-svg wr-icon-lg" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div>
+            <div class="wr-label">{% if bride_label == 'Male' %}Groom{% else %}Bride{% endif %}</div>
+            <div class="wr-value" style="font-size:1.1rem;">{{ item.bride.first_name }} {{ item.bride.last_name }}</div>
+          </div>
+          <div class="ms-auto">
+            {% if item.bride.is_member %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#d1fae5;color:#065f46;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Member
+              </span>
+            {% else %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#dbeafe;color:#1e40af;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                Non-member
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="row g-2">
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Gender</span><span class="wr-value">{{ item.bride.gender|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Date of Birth</span><span class="wr-value">{{ item.bride.date_of_birth|date:'M d, Y'|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Phone</span><span class="wr-value">{{ item.bride.phone|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="wr-field-group"><span class="wr-label">Email</span><span class="wr-value">{{ item.bride.email|default:'-' }}</span></div></div>
+          {% if not item.bride.is_member %}
+          <div class="col-12"><div class="wr-field-group"><span class="wr-label">Church</span><span class="wr-value">{{ item.bride_church_name|default:'Not specified' }}</span></div></div>
+          <div class="col-12"><div class="wr-field-group"><span class="wr-label">Location</span><span class="wr-value" style="font-size:0.85rem;">{{ item.bride.province|default:'-' }}, {{ item.bride.district|default:'-' }}, {{ item.bride.sector|default:'-' }}, {{ item.bride.cell|default:'-' }}, {{ item.bride.village|default:'-' }}</span></div></div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+  </div>
+
+  <!-- Health Documents -->
+  <div class="wr-card-sm mb-3">
+    <div class="wr-section-title">
+      <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      Health Documents
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="d-flex align-items-center gap-2">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="wr-value" style="font-size:0.85rem;">{{ item.groom.first_name }}'s Document</span>
+        </div>
+        <div class="mt-1">
+          {% if item.groom_health_document %}
+            <a href="{{ item.groom_health_document.url }}" target="_blank" class="wr-btn-outline" style="padding:0.35rem 0.8rem;font-size:0.8rem;">
+              <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              View Document
+            </a>
+          {% else %}
+            <span style="color:#a0aec0;font-size:0.85rem;">Not uploaded</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="d-flex align-items-center gap-2">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span class="wr-value" style="font-size:0.85rem;">{{ item.bride.first_name }}'s Document</span>
+        </div>
+        <div class="mt-1">
+          {% if item.bride_health_document %}
+            <a href="{{ item.bride_health_document.url }}" target="_blank" class="wr-btn-outline" style="padding:0.35rem 0.8rem;font-size:0.8rem;">
+              <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              View Document
+            </a>
+          {% else %}
+            <span style="color:#a0aec0;font-size:0.85rem;">Not uploaded</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wedding Details + Lifecycle -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-7">
+      <div class="wr-card-sm h-100">
+        <div class="wr-section-title">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Wedding Details
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <div class="wr-field-group">
+              <span class="wr-label">Date</span>
+              <span class="wr-value" style="font-size:1.05rem;">{{ item.wedding_date|date:'M d, Y'|default:'Not set' }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="wr-field-group">
+              <span class="wr-label">Officiant</span>
+              <span class="wr-value">{{ item.officiant|default:'Not assigned' }}</span>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="wr-field-group">
+              <span class="wr-label">Created</span>
+              <span class="wr-value">{{ item.created_at|date:'M d, Y'|default:'-' }}</span>
+            </div>
+          </div>
+        </div>
+        {% if item.admin_comment %}
+        <div class="mt-3 pt-3" style="border-top:1px solid #eef2f7;">
+          <div class="wr-field-group">
+            <span class="wr-label">Admin Note</span>
+            <span class="wr-value" style="font-style:italic;color:#4a5568;">{{ item.admin_comment }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-md-5">
+      <div class="wr-card-sm h-100">
+        <div class="wr-section-title">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Marriage Lifecycle
+        </div>
+        {% if item.marriage_resolution %}
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#f3f4f6;color:#4b5563;padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">{{ item.marriage_resolution }}</span>
+          <p style="font-size:0.8rem;color:#718096;margin-top:0.5rem;">This couple can submit a new wedding request only after this status is set to Divorced or Annulled.</p>
+        {% else %}
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#d1fae5;color:#065f46;padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Active Marriage/Request
+          </span>
+          <p style="font-size:0.8rem;color:#718096;margin-top:0.5rem;">No resolution recorded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions Panel -->
+  <div class="wr-card mb-3" style="border: 1.5px solid rgba(102, 126, 234, 0.2);">
+    <div class="wr-section-title">
+      <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Actions
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Schedule section: visible when NOT already scheduled -->
+      {% if item.status != 'Scheduled' and item.status != 'Completed' and item.status != 'Married' and item.status != 'Cancelled' %}
+      <div style="background:#f7f9fc;border-radius:0.85rem;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e2e8f0;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <strong style="color:#2d3748;">Schedule Wedding</strong>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="wr-label">Wedding Date</label>
+            <input type="date" name="service_date" class="wr-input" value="{{ item.wedding_date|date:'Y-m-d' }}" required>
+          </div>
+          <div class="col-md-4">
+            <label class="wr-label">Officiant</label>
+            <select name="officiant_id" class="wr-select" required>
+              <option value="">Select officiant</option>
+              {% for officiant in officiants %}
+              <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button class="wr-btn-primary w-100" name="action" value="schedule">
+              <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              Schedule
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Status-based action buttons -->
+      <div class="d-flex gap-2 flex-wrap">
+        {% if item.status == 'Pending' or item.status == 'Rejected' %}
+          <button class="wr-btn-success" name="action" value="approve">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Approve
+          </button>
+          <button class="wr-btn-danger" name="action" value="reject">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Approved' %}
+          <button class="wr-btn-danger" name="action" value="reject">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Scheduled' %}
+          <button class="wr-btn-success" name="action" value="complete">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Complete
+          </button>
+          <button class="wr-btn-danger" name="action" value="reject">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Completed' or item.status == 'Married' %}
+          <button class="wr-btn-success" name="action" value="mark_married">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Married
+          </button>
+          <button class="wr-btn-danger" name="action" value="mark_divorced">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Divorced
+          </button>
+          <button class="wr-btn-outline" name="action" value="mark_annulled">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Annulled
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Admin comment -->
+      <div class="mt-3">
+        <label class="wr-label">Admin Comment</label>
+        <textarea name="admin_comment" class="wr-input" rows="2" placeholder="Add a note or rejection reason...">{{ item.admin_comment }}</textarea>
+      </div>
+    </form>
+  </div>
+
+  <!-- Certificate Section -->
+  {% if item.status == 'Scheduled' or item.status == 'Completed' or item.status == 'Married' %}
+  <div class="wr-card-sm">
+    <div class="wr-section-title">
+      <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Certificate
+    </div>
+    <p style="color:#718096;font-size:0.85rem;margin-bottom:1rem;">Generate, preview, or download the wedding certificate.</p>
+    <div class="d-flex gap-3 flex-wrap align-items-end">
+      {% if item.status == 'Scheduled' %}
+      <div>
+        <div class="form-check mb-1">
+          <input class="form-check-input" type="checkbox" name="admin_override" value="true" id="admin_override" form="weddingCertForm">
+          <label class="form-check-label" for="admin_override" style="font-size:0.85rem;color:#4a5568;">Admin Override</label>
+        </div>
+        <small style="font-size:0.75rem;color:#a0aec0;">Allow certificate generation regardless of wedding date</small>
+      </div>
+      {% endif %}
+      <form method="post" action="{% url 'admin_generate_wedding_certificate' item.id %}" id="weddingCertForm" style="display:inline;">
+        {% csrf_token %}
+        <button class="wr-btn-primary" type="submit">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          {% if latest_certificate %}Regenerate{% else %}Generate{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'admin_preview_wedding_certificate' item.id %}" target="_blank" style="display:inline;">
+        {% csrf_token %}
+        <button class="wr-btn-outline" type="submit">
+          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </form>
+      {% if latest_certificate and latest_certificate.certificate_file %}
+      <a class="wr-btn-outline" href="{{ latest_certificate.certificate_file.url }}" target="_blank">
+        <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
-</form>
 {% endblock %}

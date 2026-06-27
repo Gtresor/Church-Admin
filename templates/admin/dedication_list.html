@@ -1,9 +1,272 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Dedication Requests</h3>
-<form class="row g-2 mb-3"><div class="col-md-4"><input name="q" value="{{ q }}" class="form-control" placeholder="Search child"></div><div class="col-md-2"><button class="btn btn-outline-primary">Search</button></div></form>
-<div class="card"><div class="table-responsive"><table class="table mb-0"><thead><tr><th>Child</th><th>Parents</th><th>Status</th><th></th></tr></thead><tbody>
-{% for item in page_obj %}<tr><td>{{ item.child }}</td><td>{{ item.father }} / {{ item.mother }}</td><td>{{ item.status }}</td><td><a class="btn btn-sm btn-primary" href="{% url 'admin_dedication_review' item.id %}">Manage</a></td></tr>{% empty %}<tr><td colspan="4">No records.</td></tr>{% endfor %}
-</tbody></table></div></div>
-{% include 'partials/pagination.html' with page_query=page_query %}
+<style>
+  .dl-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .dl-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .dl-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .dl-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.35rem;
+  }
+  .dl-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.8rem;
+    font-size: 0.85rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .dl-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .dl-btn-primary {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .dl-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .dl-btn-outline {
+    padding: 0.5rem 1rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+  }
+  .dl-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .dl-icon-svg {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .dl-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .dl-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .dl-table thead th {
+    padding: 0.75rem 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid #eef2f7;
+    white-space: nowrap;
+  }
+  .dl-table thead th a {
+    color: #718096;
+    text-decoration: none;
+  }
+  .dl-table thead th a:hover {
+    color: #667eea;
+  }
+  .dl-table tbody td {
+    padding: 0.75rem 0.85rem;
+    border-bottom: 1px solid #f0f2f5;
+    color: #1a202c;
+    vertical-align: middle;
+  }
+  .dl-table tbody tr:hover {
+    background: #f8faff;
+  }
+  .dl-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+  .dl-dropdown-btn {
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.55rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .dl-dropdown-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.25);
+    color: #fff;
+  }
+  .dl-empty {
+    text-align: center;
+    color: #a0aec0;
+    padding: 2.5rem 0;
+    font-size: 0.9rem;
+  }
+</style>
+
+<div class="dl-page">
+  <!-- Header -->
+  <div class="dl-card mb-3" style="border-left: 4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Dedication Requests</h4>
+        <div class="dl-gradient-accent"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter -->
+  <div class="dl-card mb-3">
+    <form class="row g-2" method="get">
+      <div class="col-md-5">
+        <label class="dl-label">Search</label>
+        <input name="q" value="{{ q }}" class="dl-input" placeholder="Search child, father, or mother...">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button class="dl-btn-primary w-100">Filter</button>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <a href="{% url 'admin_dedication_list' %}" class="dl-btn-outline w-100">Clear</a>
+      </div>
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="dir" value="{{ dir }}">
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="dl-card">
+    <div class="table-responsive">
+      <table class="dl-table">
+        <thead>
+          <tr>
+            <th>
+              <a href="?{% if sort == 'child' and dir == 'asc' %}sort=child&dir=desc{% else %}sort=child&dir=asc{% endif %}&q={{ q }}">
+                Child {% if sort == 'child' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'father' and dir == 'asc' %}sort=father&dir=desc{% else %}sort=father&dir=asc{% endif %}&q={{ q }}">
+                Father {% if sort == 'father' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'mother' and dir == 'asc' %}sort=mother&dir=desc{% else %}sort=mother&dir=asc{% endif %}&q={{ q }}">
+                Mother {% if sort == 'mother' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'status' and dir == 'asc' %}sort=status&dir=desc{% else %}sort=status&dir=asc{% endif %}&q={{ q }}">
+                Status {% if sort == 'status' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th>
+              <a href="?{% if sort == 'date' and dir == 'asc' %}sort=date&dir=desc{% else %}sort=date&dir=asc{% endif %}&q={{ q }}">
+                Date {% if sort == 'date' %}{% if dir == 'asc' %}▲{% else %}▼{% endif %}{% endif %}
+              </a>
+            </th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in page_obj %}
+          <tr>
+            <td><strong>{{ item.child }}</strong></td>
+            <td>{{ item.father }}</td>
+            <td>{{ item.mother }}</td>
+            <td>
+              <span class="dl-status-badge
+                {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+                {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+                {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+                {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+                {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+                {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+                {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">{{ item.status }}</span>
+            </td>
+            <td>{{ item.dedication_date|default:item.request_date|default:"-" }}</td>
+            <td class="text-end">
+              <div class="dropdown">
+                <button class="dl-dropdown-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="{% url 'admin_dedication_review' item.id %}">Manage</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <form method="post" action="{% url 'admin_dedication_cancel' item.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Cancel this dedication record?')">Cancel</button>
+                    </form>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6"><div class="dl-empty">No dedication records found.</div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include 'partials/pagination.html' with page_query=page_query %}
+</div>
 {% endblock %}

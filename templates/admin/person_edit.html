@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3>Edit Profile: {{ person }}</h3>
+  <a href="javascript:history.back()" class="btn btn-outline-secondary">&larr; Back</a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="referrer" value="{{ request.META.HTTP_REFERER }}">
+
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">First Name</label>
+          <input name="first_name" class="form-control" value="{{ person.first_name }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Last Name</label>
+          <input name="last_name" class="form-control" value="{{ person.last_name }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Gender</label>
+          <select name="gender" class="form-select" required>
+            <option value="Male" {% if person.gender == 'Male' %}selected{% endif %}>Male</option>
+            <option value="Female" {% if person.gender == 'Female' %}selected{% endif %}>Female</option>
+            <option value="Other" {% if person.gender == 'Other' %}selected{% endif %}>Other</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="date_of_birth" class="form-control" value="{{ person.date_of_birth|date:'Y-m-d' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Email</label>
+          <input type="email" name="email" class="form-control" value="{{ person.email }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Phone</label>
+          <input name="phone" class="form-control" value="{{ person.phone }}">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Address</label>
+          <input name="address" class="form-control" value="{{ person.address }}">
+        </div>
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary">Save Changes</button>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if person.baptism %}
+<div class="card mt-3">
+  <div class="card-body">
+    <h5>Sacramental Records</h5>
+    <ul class="mb-0">
+      {% if person.baptism %}<li>Baptism: {{ person.baptism.status }} ({{ person.baptism.baptism_date|default:"-" }})</li>{% endif %}
+      {% for d in person.father_dedications.all %}<li>Dedication (as father): {{ d.child }} - {{ d.status }}</li>{% endfor %}
+      {% for d in person.mother_dedications.all %}<li>Dedication (as mother): {{ d.child }} - {{ d.status }}</li>{% endfor %}
+      {% for w in person.groom_weddings.all %}<li>Wedding (as groom): {{ w.bride }} - {{ w.status }}</li>{% endfor %}
+      {% for w in person.bride_weddings.all %}<li>Wedding (as bride): {{ w.groom }} - {{ w.status }}</li>{% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

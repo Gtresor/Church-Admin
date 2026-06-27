@@ -1,45 +1,436 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h3>Baptism Review - {{ item.person }}</h3>
-<div class="card card-body mb-3"><p><strong>Status:</strong> {{ item.status }}</p><p><strong>Comment:</strong> {{ item.admin_comment|default:'-' }}</p></div>
-<form method="post" class="card card-body">
-{% csrf_token %}
-<div class="row g-3">
-  <div class="col-md-4"><label>Service Date</label><input type="date" name="service_date" class="form-control" value="{{ item.baptism_date|date:'Y-m-d' }}"></div>
-  <div class="col-md-4">
-    <label>Officiant</label>
-    <select name="officiant_id" class="form-select">
-      <option value="">Select officiant</option>
-      {% for officiant in officiants %}
-      <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-12"><label>Admin Comment</label><textarea name="admin_comment" class="form-control">{{ item.admin_comment }}</textarea></div>
-</div>
-<div class="mt-3 d-flex gap-2">
-  <button class="btn btn-success" name="action" value="approve">Approve</button>
-  <button class="btn btn-danger" name="action" value="reject">Reject</button>
-  <button class="btn btn-warning" name="action" value="schedule">Schedule</button>
-  <button class="btn btn-secondary" name="action" value="complete">Mark Completed</button>
-</div>
-</form>
+<style>
+  .br-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .br-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .br-card:hover {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 56px rgba(0, 0, 0, 0.05);
+  }
+  .br-card-sm {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+  }
+  .br-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .br-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .br-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.15rem;
+  }
+  .br-value {
+    font-size: 0.95rem;
+    color: #1a202c;
+    font-weight: 500;
+  }
+  .br-btn-primary {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .br-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    color: #fff;
+  }
+  .br-btn-primary:active { transform: translateY(0); }
+  .br-btn-outline {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .br-btn-outline:hover {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    color: #667eea;
+  }
+  .br-btn-danger {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #fc5c7d, #e74c3c);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .br-btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(231, 76, 60, 0.30);
+    color: #fff;
+  }
+  .br-btn-success {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #2ecc71, #27ae60);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .br-btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(46, 204, 113, 0.30);
+    color: #fff;
+  }
+  .br-btn-warning {
+    padding: 0.6rem 1.2rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .br-btn-warning:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.30);
+    color: #fff;
+  }
+  .br-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  .br-input:focus {
+    background: #ffffff;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .br-select {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+    color: #1a202c;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+  .br-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  }
+  .br-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+  .br-icon-lg { width: 28px; height: 28px; }
+  .br-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .br-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+  .br-photo-frame {
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    max-width: 200px;
+    margin: 0 auto;
+  }
+  .br-photo-frame img { width: 100%; height: auto; display: block; }
+</style>
 
-<form method="post" action="{% url 'admin_generate_baptism_certificate' item.id %}" class="card card-body mt-3">
-{% csrf_token %}
-<div class="row g-3 align-items-end">
-  <div class="col-md-6">
-    <label class="form-label">Certificate Design</label>
-    <select name="design_template" class="form-select" required>
-      <option value="">Select design</option>
-      {% for code, label in design_options %}
-      <option value="{{ code }}">{{ label }}</option>
-      {% endfor %}
-    </select>
+<div class="br-page">
+  <!-- Header -->
+  <div class="br-card mb-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0" style="color: #1a202c; font-weight: 700;">
+          {{ item.person.first_name }} {{ item.person.last_name }}
+        </h3>
+        <div class="br-gradient-accent"></div>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <span class="br-status-badge
+          {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
+          {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
+          {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
+          {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
+          {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
+          {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
+          {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          {{ item.status }}
+        </span>
+        <a href="{% url 'admin_baptism_list' %}" class="br-btn-outline" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Back
+        </a>
+      </div>
+    </div>
   </div>
-  <div class="col-md-3">
-    <button class="btn btn-primary w-100" type="submit">Generate Certificate</button>
+
+  <!-- Person Profile + Baptism Details -->
+  <div class="row g-3 mb-3">
+    <div class="col-md-6">
+      <div class="br-card h-100" style="border-left: 4px solid #667eea;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="br-icon-svg br-icon-lg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="1.8">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          <div>
+            <div class="br-label">Person</div>
+            <div class="br-value" style="font-size:1.1rem;">{{ item.person.first_name }} {{ item.person.last_name }}</div>
+          </div>
+          <div class="ms-auto">
+            {% if item.person.is_member %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#d1fae5;color:#065f46;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Member
+              </span>
+            {% else %}
+              <span style="display:inline-flex;align-items:center;gap:0.25rem;background:#dbeafe;color:#1e40af;padding:0.2rem 0.6rem;border-radius:999px;font-size:0.75rem;font-weight:600;">
+                Non-member
+              </span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="row g-2">
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Gender</span><span class="br-value">{{ item.person.gender|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Date of Birth</span><span class="br-value">{{ item.person.date_of_birth|date:'M d, Y'|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Age</span><span class="br-value">{{ item.person.date_of_birth|timesince|cut:","|cut:" ago"|default:"-" }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Phone</span><span class="br-value">{{ item.person.phone|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Email</span><span class="br-value">{{ item.person.email|default:'-' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Address</span><span class="br-value" style="font-size:0.85rem;">{{ item.person.address|default:'-' }}</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="br-card h-100" style="border-left: 4px solid #667eea;">
+        <div class="br-section-title">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <path d="M7 21h10M12 3v18M3 7h3a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4H3M17 7h3a4 4 0 0 1 4 4v0a4 4 0 0 1-4 4h-3"/>
+          </svg>
+          Baptism Details
+        </div>
+        <div class="row g-3">
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Request Date</span><span class="br-value">{{ item.request_date|date:'M d, Y' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Baptism Date</span><span class="br-value">{{ item.baptism_date|date:'M d, Y'|default:'Not set' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Officiant</span><span class="br-value">{{ item.officiant|default:'Not assigned' }}</span></div></div>
+          <div class="col-6"><div class="br-field-group"><span class="br-label">Slot</span><span class="br-value">{{ item.available_slot.date|date:'M d, Y'|default:'None' }}{% if item.available_slot.time %} at {{ item.available_slot.time|time:'H:i' }}{% endif %}</span></div></div>
+        </div>
+        {% if item.admin_comment %}
+        <div class="mt-3 pt-3" style="border-top:1px solid #eef2f7;">
+          <div class="br-field-group">
+            <span class="br-label">Admin Note</span>
+            <span class="br-value" style="font-style:italic;color:#4a5568;">{{ item.admin_comment }}</span>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
   </div>
+
+  <!-- Actions Panel -->
+  <div class="br-card mb-3" style="border: 1.5px solid rgba(102, 126, 234, 0.2);">
+    <div class="br-section-title">
+      <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Actions
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <!-- Schedule fields: shown if Approved -->
+      {% if item.status == 'Approved' %}
+      <div style="background:#f7f9fc;border-radius:0.85rem;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e2e8f0;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <strong style="color:#2d3748;">Schedule Baptism</strong>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="br-label">Baptism Slot</label>
+            <select name="available_slot" class="br-select" required>
+              <option value="">-- Select Slot --</option>
+              {% for slot in baptism_slots %}
+              <option value="{{ slot.id }}" {% if item.available_slot_id == slot.id %}selected{% endif %}>{{ slot.date|date:'d M Y' }}</option>
+              {% empty %}
+              <option value="" disabled>No available baptism slots</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="br-label">Officiant</label>
+            <select name="officiant_id" class="br-select" required>
+              <option value="">Select officiant</option>
+              {% for officiant in officiants %}
+              <option value="{{ officiant.id }}" {% if item.officiant == officiant|stringformat:'s' %}selected{% endif %}>{{ officiant }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button class="br-btn-primary w-100" name="action" value="schedule">
+              <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Schedule
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Action buttons -->
+      <div class="d-flex gap-2 flex-wrap">
+        {% if item.status == 'Pending' %}
+          <button class="br-btn-success" name="action" value="approve">
+            <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Approve
+          </button>
+          <button class="br-btn-danger" name="action" value="reject">
+            <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Approved' %}
+          <button class="br-btn-danger" name="action" value="reject">
+            <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject
+          </button>
+        {% elif item.status == 'Scheduled' %}
+          <button class="br-btn-success" name="action" value="complete">
+            <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Complete
+          </button>
+        {% endif %}
+        {% if item.status != 'Completed' and item.status != 'Rejected' and item.status != 'Cancelled' %}
+          <button class="br-btn-danger" name="action" value="cancel">
+            <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Cancel
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Admin comment -->
+      <div class="mt-3">
+        <label class="br-label">Admin Comment</label>
+        <textarea name="admin_comment" class="br-input" rows="2" placeholder="Add a note or rejection reason...">{{ item.admin_comment }}</textarea>
+      </div>
+    </form>
+  </div>
+
+  <!-- Certificate Section -->
+  {% if item.status == 'Scheduled' or item.status == 'Completed' %}
+  <div class="br-card-sm">
+    <div class="br-section-title">
+      <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+      </svg>
+      Certificate
+    </div>
+    <p style="color:#718096;font-size:0.85rem;margin-bottom:1rem;">Generate, preview, or download the baptism certificate.</p>
+    <div class="d-flex gap-3 flex-wrap align-items-end">
+      <form method="post" action="{% url 'admin_generate_baptism_certificate' item.id %}" style="display:inline;">
+        {% csrf_token %}
+        <button class="br-btn-primary" type="submit">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          {% if latest_certificate %}Regenerate{% else %}Generate{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{% url 'admin_preview_baptism_certificate' item.id %}" target="_blank" style="display:inline;">
+        {% csrf_token %}
+        <button class="br-btn-outline" type="submit">
+          <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          Preview
+        </button>
+      </form>
+      {% if latest_certificate and latest_certificate.certificate_file %}
+      <a class="br-btn-outline" href="{{ latest_certificate.certificate_file.url }}" target="_blank">
+        <svg class="br-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
-</form>
 {% endblock %}

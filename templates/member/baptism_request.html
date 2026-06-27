@@ -1,14 +1,49 @@
 {% extends 'base.html' %}
 {% block content %}
 <h3>Baptism Request</h3>
+
 <div class="card card-body">
   {% if existing %}
-    <p><strong>Current Status:</strong> {{ existing.status }}</p>
-    {% if existing.admin_comment %}<div class="alert alert-warning">{{ existing.admin_comment }}</div>{% endif %}
+    <div class="alert alert-{% if existing.status == 'Cancelled' %}warning{% elif existing.status == 'Rejected' %}danger{% else %}info{% endif %} mb-4">
+      <h5 class="alert-heading">Previous Request Status: {{ existing.status }}</h5>
+      {% if existing.available_slot %}
+        <p class="mb-1"><strong>Scheduled Date:</strong> {{ existing.available_slot.date|date:"l, d F Y" }}</p>
+      {% endif %}
+      {% if existing.admin_comment %}
+        <p class="mb-0"><strong>Admin Note:</strong> {{ existing.admin_comment }}</p>
+      {% endif %}
+    </div>
   {% endif %}
+
+  <p class="text-muted">
+    Submit a request for baptism. An admin will review your request and follow up with next steps.
+  </p>
+
   <form method="post">{% csrf_token %}
-    <p class="mb-3">Submit or resubmit your baptism request.</p>
-    <button class="btn btn-primary">Submit Request</button>
+    {% if available_slots %}
+      <div class="mb-3">
+        <label for="available_slot" class="form-label fw-semibold">Preferred Baptism Date</label>
+        <select name="available_slot" id="available_slot" class="form-select">
+          <option value="">-- No specific date (admin will assign) --</option>
+          {% for slot in available_slots %}
+            <option value="{{ slot.id }}">{{ slot.date|date:"l, d F Y" }}{% if slot.time %} at {{ slot.time|time:"H:i" }}{% endif %}</option>
+          {% endfor %}
+        </select>
+        <div class="form-text">Selecting a date helps with planning. If no slots are convenient, leave it blank.</div>
+      </div>
+    {% else %}
+      <div class="alert alert-warning">
+        <i class="fas fa-calendar-alt"></i> <strong>No baptism dates currently available.</strong>
+        <p class="mb-0 mt-1">Don't worry — you can still submit your request. The admin will schedule you once new dates open up.</p>
+      </div>
+    {% endif %}
+
+    <div class="d-flex gap-2">
+      <button class="btn btn-primary px-4">
+        {% if existing %}Resubmit Request{% else %}Submit Request{% endif %}
+      </button>
+      <a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
   </form>
 </div>
 {% endblock %}

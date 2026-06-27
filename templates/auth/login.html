@@ -1,86 +1,315 @@
-{% extends 'base.html' %}
-{% block global_messages %}{% endblock %}
-{% block content %}
-<style>
-  .login-card {
-    border-radius: 1rem;
-    border: 0;
-  }
+<!doctype html>
+{% load static %}
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign In — Church Sacramental System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  .login-card.login-error {
-    border: 1px solid rgba(220, 53, 69, 0.28);
-    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.12), 0 12px 26px rgba(15, 23, 42, 0.1);
-    animation: loginCardShake 0.34s ease-in-out 1;
-  }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+      padding: 1rem;
+    }
 
-  @keyframes loginCardShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
-  }
+    .login-wrapper {
+      width: 100%;
+      max-width: 420px;
+    }
 
-  .password-toggle-btn {
-    min-width: 48px;
-    font-size: 1rem;
-    line-height: 1;
-  }
+    .login-card {
+      background: #ffffff;
+      border-radius: 1.25rem;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 12px 48px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
 
-  .password-toggle-btn svg {
-    width: 18px;
-    height: 18px;
-    display: block;
-    margin: 0 auto;
-  }
-</style>
-<div class="row justify-content-center">
-  <div class="col-md-5">
-    <div class="card shadow-sm login-card {% if login_error %}login-error{% endif %}">
-      <div class="card-body">
-        <h4 class="mb-3">Login</h4>
-        {% include 'partials/messages.html' %}
-        <form method="post" class="needs-validation" novalidate>
-          {% csrf_token %}
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" value="{{ entered_username|default:'' }}" required>
+    .login-card:hover {
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 16px 56px rgba(0, 0, 0, 0.05);
+    }
+
+    .login-card.login-error {
+      border-color: rgba(220, 38, 38, 0.3);
+      animation: loginCardShake 0.34s ease-in-out 1;
+    }
+
+    @keyframes loginCardShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+
+    .login-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      background: #f0f4ff;
+      border: 2px solid #e8edf7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      overflow: hidden;
+    }
+
+    .login-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .login-logo-placeholder {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #4a5568;
+    }
+
+    .login-title {
+      color: #1a202c;
+      font-size: 1.45rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 0.2rem;
+    }
+
+    .login-subtitle {
+      color: #718096;
+      font-size: 0.9rem;
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group .input-wrap {
+      position: relative;
+    }
+
+    .form-group .input-wrap .form-control {
+      width: 100%;
+      background: #f7f9fc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.65rem;
+      padding: 0.75rem 0.85rem;
+      font-size: 0.95rem;
+      color: #1a202c;
+      transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+      outline: none;
+    }
+
+    .form-group .input-wrap .form-control::placeholder {
+      color: #a0aec0;
+    }
+
+    .form-group .input-wrap .form-control:focus {
+      background: #ffffff;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+    }
+
+    .form-group .input-wrap .input-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #a0aec0;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    .form-group .input-wrap .input-icon svg {
+      width: 17px;
+      height: 17px;
+      display: block;
+    }
+
+    .form-group .input-wrap .form-control.pad-icon {
+      padding-left: 2.5rem;
+    }
+
+    .password-toggle-btn {
+      position: absolute;
+      right: 0.5rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 0;
+      color: #a0aec0;
+      padding: 0.35rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .password-toggle-btn:hover {
+      color: #4a5568;
+    }
+
+    .password-toggle-btn svg {
+      width: 18px;
+      height: 18px;
+      display: block;
+    }
+
+    .btn-signin {
+      width: 100%;
+      padding: 0.78rem;
+      border-radius: 0.65rem;
+      border: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .btn-signin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.30);
+    }
+
+    .btn-signin:active {
+      transform: translateY(0);
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #718096;
+      font-size: 0.85rem;
+    }
+
+    .login-footer a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .login-copyright {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #a0aec0;
+      font-size: 0.75rem;
+    }
+
+    .alert-custom {
+      background: #fff5f5;
+      border: 1px solid #fecaca;
+      border-radius: 0.65rem;
+      color: #b91c1c;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .alert-custom.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card {% if login_error %}login-error{% endif %}">
+      <!-- Logo -->
+      <div class="login-logo">
+        <img src="{% static 'images/certificate_designs/NL Logo.png' %}" alt="New Life Logo" onerror="this.parentElement.innerHTML='<span class=\'login-logo-placeholder\'>&#x271E;</span>'">
+      </div>
+
+      <h1 class="login-title">Welcome Back</h1>
+      <p class="login-subtitle">Sign in to your account</p>
+
+      <!-- Error messages -->
+      {% if messages %}
+      <div class="alert-custom show">
+        {% for message in messages %}
+          {{ message }}{% if not forloop.last %}<br>{% endif %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Login Form -->
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="usernameInput">Username</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </span>
+            <input id="usernameInput" type="text" name="username" class="form-control pad-icon" placeholder="Enter your username" value="{{ entered_username|default:'' }}" required autofocus>
           </div>
-          <div class="mb-3">
-            <label class="form-label">Password</label>
-            <div class="input-group">
-              <input id="loginPasswordInput" type="password" name="password" class="form-control" required>
-              <button
-                id="toggleLoginPasswordBtn"
-                class="btn btn-outline-secondary password-toggle-btn"
-                type="button"
-                aria-label="Show password"
-                aria-pressed="false"
-                data-password-toggle="true"
-                data-password-target="loginPasswordInput"
-                data-eye-open-id="eyeOpenIcon"
-                data-eye-closed-id="eyeClosedIcon"
-              >
-                <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                <svg id="eyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path>
-                  <path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path>
-                  <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-          <button class="btn btn-primary w-100" type="submit">Sign In</button>
-        </form>
-        <div class="text-center mt-3 small">
-          No account yet? <a href="{% url 'member_register' %}">Create member account</a>
         </div>
+        <div class="form-group">
+          <label for="loginPasswordInput">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input id="loginPasswordInput" type="password" name="password" class="form-control pad-icon" placeholder="Enter your password" required>
+            <button class="password-toggle-btn" type="button" id="toggleLoginPasswordBtn" aria-label="Show password" aria-pressed="false">
+              <svg id="eyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="7" r="3"/></svg>
+              <svg id="eyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"/><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="btn-signin" type="submit">Sign In</button>
+      </form>
+
+      <div class="login-footer">
+        No account yet? <a href="{% url 'member_register' %}">Create member account</a>
       </div>
     </div>
+
+    <div class="login-copyright">&copy; {% now "Y" %} Church Admin MS</div>
   </div>
-</div>
-{% endblock %}
+
+  <script>
+    (function() {
+      var toggleBtn = document.getElementById('toggleLoginPasswordBtn');
+      var passwordInput = document.getElementById('loginPasswordInput');
+      var eyeOpen = document.getElementById('eyeOpenIcon');
+      var eyeClosed = document.getElementById('eyeClosedIcon');
+
+      if (toggleBtn && passwordInput) {
+        toggleBtn.addEventListener('click', function() {
+          var showing = passwordInput.type === 'text';
+          passwordInput.type = showing ? 'password' : 'text';
+          if (eyeOpen && eyeClosed) {
+            eyeOpen.classList.toggle('d-none', !showing);
+            eyeClosed.classList.toggle('d-none', showing);
+          }
+          toggleBtn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+          toggleBtn.setAttribute('aria-pressed', showing ? 'false' : 'true');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
