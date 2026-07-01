@@ -1,0 +1,48 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<p style="font-size:15px;margin:0 0 8px 0;">Dear {{ name }},</p>
+
+{% if status_label == "approved" %}
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  The baby dedication request for <strong>{{ child_name }}</strong> has been <strong style="color:#276749;">approved</strong>.
+  The church administration will be in touch to confirm the service date.
+</p>
+{% elif status_label == "declined" %}
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  The baby dedication request for <strong>{{ child_name }}</strong> could not be approved at this time.
+</p>
+{% elif status_label == "scheduled" %}
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  The baby dedication service for <strong>{{ child_name }}</strong> has been <strong style="color:#276749;">scheduled</strong>!
+</p>
+{% elif status_label == "completed" %}
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  The baby dedication for <strong>{{ child_name }}</strong> has been marked as <strong>completed</strong>.
+  A certificate will be made available shortly.
+</p>
+{% else %}
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  The baby dedication request for <strong>{{ child_name }}</strong> has been updated to <strong>{{ status_label }}</strong>.
+</p>
+{% endif %}
+
+{% if dedication.dedication_date and status_label == "scheduled" %}
+<div style="background:#f0fff4;border-left:4px solid #38a169;border-radius:6px;padding:16px 20px;margin:0 0 24px 0;">
+  <table style="font-size:13px;color:#276749;" cellpadding="0" cellspacing="0">
+    <tr><td style="padding:3px 0;width:80px;font-weight:600;">Date</td><td>{{ dedication.dedication_date|date:"l, d F Y" }}</td></tr>
+    {% if dedication.officiant %}<tr><td style="padding:3px 0;font-weight:600;">Officiant</td><td>{{ dedication.officiant }}</td></tr>{% endif %}
+  </table>
+</div>
+{% endif %}
+
+{% if dedication.admin_comment and status_label == "declined" %}
+<div style="background:#fff5f5;border-left:4px solid #fc8181;border-radius:6px;padding:16px 20px;margin:0 0 24px 0;">
+  <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;color:#c53030;text-transform:uppercase;letter-spacing:0.05em;">Note from Administration</p>
+  <p style="margin:0;font-size:13px;color:#742a2a;line-height:1.6;">{{ dedication.admin_comment }}</p>
+</div>
+{% endif %}
+
+<p style="font-size:13px;color:#718096;margin:0;">
+  Please contact the church office if you have any questions.
+</p>
+{% endblock %}

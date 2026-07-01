@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dashboard-wrap">
-<div class="dashboard-hero hero-member mb-4">
+<div class="pg-page">
+
+<div class="pg-card mb-4" style="border-left: 4px solid #667eea;">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
-      <h3 class="mb-1">Member Dashboard</h3>
-      <p class="mb-0 opacity-75">Track your requests, certificates, and sacramental progress in one place.</p>
+      <h3 class="mb-0" style="color:#1a202c;font-weight:700;">Member Dashboard</h3>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.9rem;">Track your requests, certificates, and sacramental progress in one place.</p>
     </div>
-    <span class="badge rounded-pill text-bg-light">My Portal</span>
+    <span class="pg-status-badge" style="background:#d1fae5;color:#065f46;">My Portal</span>
   </div>
 </div>
 
@@ -17,40 +19,110 @@
   <div class="col-md-6 col-xl-3"><div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">My Certificates</div><p class="value">{{ certificates|length }}</p></div></div></div>
   <div class="col-md-6 col-xl-3"><div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Pending Requests</div><p class="value">{{ pending_requests }}</p></div></div></div>
 </div>
-{% if baptism and baptism.admin_comment %}
-<div class="alert alert-warning border-0 shadow-sm mb-3">Baptism comment: {{ baptism.admin_comment }}</div>
-{% endif %}
-{% if dedications %}
-<div class="glass-card mb-3"><div class="card-body"><h5 class="section-title">Dedication Requests</h5>
-<ul class="mb-0">
-  {% for d in dedications %}
-  <li>{{ d.child }} - {{ d.status }} {% if d.status == 'Rejected' %}<a href="{% url 'member_dedication_edit' d.id %}">Resubmit</a>{% endif %}</li>
-  {% endfor %}
-</ul>
-</div></div>
-{% endif %}
-<div class="glass-card">
-  <div class="card-body">
-    <h5 class="section-title">Recent Certificates</h5>
-    <div class="table-responsive">
-      <table class="table table-sm soft-table mb-0">
-        <thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>Download</th></tr></thead>
-        <tbody>
-        {% for cert in recent_certificates %}
-          <tr>
-            <td>{{ cert.certificate_number }}</td>
-            <td>{{ cert.service_type }}</td>
-            <td>{{ cert.issued_date }}</td>
-            <td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
-            <td>{% if cert.certificate_file %}<a class="btn btn-sm btn-outline-primary" href="{{ cert.certificate_file.url }}">Download</a>{% else %}-{% endif %}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="5">No certificates available.</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
+
+<!-- Baptism status card -->
+{% if baptism %}
+<div class="pg-card mb-3">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:40px;height:40px;border-radius:50%;background:#dbeafe;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <p class="mb-0" style="font-weight:700;color:#1a202c;font-size:0.95rem;">Baptism Request</p>
+        <p class="mb-0" style="font-size:0.82rem;color:#718096;">
+          <span class="pg-status-badge pg-status-{{ baptism.status|lower }}" style="font-size:0.7rem;">{{ baptism.status }}</span>
+          {% if baptism.baptism_date %}&nbsp;&bull;&nbsp;Scheduled {{ baptism.baptism_date|date:"d M Y" }}{% endif %}
+        </p>
+        {% if baptism.admin_comment %}<p class="mb-0 mt-1" style="font-size:0.82rem;color:#92400e;">Note: {{ baptism.admin_comment }}</p>{% endif %}
+      </div>
     </div>
+    <a href="{% url 'member_baptism_status' %}" class="pg-btn-outline pg-btn-sm">View Status</a>
   </div>
 </div>
+{% endif %}
+
+<!-- Dedication requests card -->
+{% if dedications %}
+<div class="pg-card mb-3">
+  <div class="pg-section-title mb-2">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Dedication Requests
+  </div>
+  <ul class="mb-0" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:0.6rem;">
+    {% for d in dedications %}
+    <li class="d-flex align-items-center justify-content-between gap-2">
+      <div>
+        <span style="font-size:0.9rem;color:#1a202c;font-weight:500;">{{ d.child }}</span>
+        &nbsp;<span class="pg-status-badge pg-status-{{ d.status|lower }}" style="font-size:0.7rem;">{{ d.status }}</span>
+      </div>
+      <div class="d-flex gap-2">
+        {% if d.status == 'Rejected' %}
+        <a href="{% url 'member_dedication_edit' d.id %}" class="pg-btn-warning pg-btn-sm">Resubmit</a>
+        {% endif %}
+        <a href="{% url 'member_dedication_status' d.id %}" class="pg-btn-outline pg-btn-sm">View Status</a>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Wedding requests card -->
+{% if wedding_requests %}
+<div class="pg-card mb-3">
+  <div class="pg-section-title mb-2">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/><path d="M15.5 17c0 1-1.5 3-2 3-1 0-2.5-2-2.5-3"/></svg>
+    Wedding Requests
+  </div>
+  <ul class="mb-0" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:0.6rem;">
+    {% for wr in wedding_requests %}
+    <li class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+      <div>
+        <span style="font-size:0.9rem;color:#1a202c;font-weight:500;">
+          {% if wr.partner %}{{ wr.partner.first_name }} {{ wr.partner.last_name }}{% else %}Partner TBD{% endif %}
+        </span>
+        &nbsp;<span class="pg-status-badge pg-status-{{ wr.status|lower }}" style="font-size:0.7rem;">{{ wr.status }}</span>
+        {% if wr.available_slot %}<span style="font-size:0.78rem;color:#718096;">&nbsp;&bull;&nbsp;{{ wr.available_slot.date|date:"d M Y" }}</span>{% endif %}
+      </div>
+      <a href="{% url 'member_wedding_status' wr.id %}" class="pg-btn-outline pg-btn-sm">View Status</a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<!-- Certificates -->
+<div class="pg-card">
+  <div class="pg-section-title">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+    Recent Certificates
+  </div>
+  <div class="table-responsive">
+    <table class="pg-table">
+      <thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>Download</th></tr></thead>
+      <tbody>
+      {% for cert in recent_certificates %}
+        <tr>
+          <td><code style="color:#667eea;">{{ cert.certificate_number }}</code></td>
+          <td>{{ cert.service_type }}</td>
+          <td>{{ cert.issued_date }}</td>
+          <td>
+            {% if cert.is_valid %}
+              <span class="pg-status-badge pg-status-valid">Valid</span>
+            {% else %}
+              <span class="pg-status-badge pg-status-revoked">Revoked</span>
+            {% endif %}
+          </td>
+          <td>{% if cert.certificate_file %}<a class="pg-btn-outline pg-btn-sm" href="{{ cert.certificate_file.url }}">Download</a>{% else %}-{% endif %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="pg-empty">No certificates available.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 </div>
 {% endblock %}

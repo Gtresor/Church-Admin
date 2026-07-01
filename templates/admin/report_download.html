@@ -1,107 +1,95 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Download Reports</h3>
-  <a href="{% url 'admin_reports' %}" class="btn btn-outline-secondary">&larr; Back to Reports</a>
+<div class="pg-page">
+
+<div class="pg-card mb-4" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Download Reports</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="{% url 'admin_reports' %}" class="pg-btn-outline">← Back to Reports</a>
+  </div>
 </div>
 
-<div class="card">
-  <div class="card-body">
-    <form method="get" action="{% url 'admin_report_download' %}">
-      <div class="row g-3 mb-3">
-        <div class="col-md-4">
-          <label class="form-label">From Date</label>
-          <input type="date" name="from_date" class="form-control" value="{{ from_date|default:'' }}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">To Date</label>
-          <input type="date" name="to_date" class="form-control" value="{{ to_date|default:'' }}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Status (optional)</label>
-          <select name="status" class="form-select">
-            <option value="">All Statuses</option>
-            <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
-            <option value="Approved" {% if selected_status == 'Approved' %}selected{% endif %}>Approved</option>
-            <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected</option>
-            <option value="Scheduled" {% if selected_status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
-            <option value="Completed" {% if selected_status == 'Completed' %}selected{% endif %}>Completed</option>
-            <option value="Cancelled" {% if selected_status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
-            <option value="Married" {% if selected_status == 'Married' %}selected{% endif %}>Married</option>
-          </select>
-        </div>
+<div class="pg-card mb-4">
+  <form method="get" action="{% url 'admin_report_download' %}">
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="pg-label">From Date</label>
+        <input type="date" name="from_date" class="pg-input" value="{{ from_date|default:'' }}" required>
       </div>
+      <div class="col-md-4">
+        <label class="pg-label">To Date</label>
+        <input type="date" name="to_date" class="pg-input" value="{{ to_date|default:'' }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Status (optional)</label>
+        <select name="status" class="pg-select">
+          <option value="">All Statuses</option>
+          <option value="Pending" {% if selected_status == 'Pending' %}selected{% endif %}>Pending</option>
+          <option value="Approved" {% if selected_status == 'Approved' %}selected{% endif %}>Approved</option>
+          <option value="Rejected" {% if selected_status == 'Rejected' %}selected{% endif %}>Rejected</option>
+          <option value="Scheduled" {% if selected_status == 'Scheduled' %}selected{% endif %}>Scheduled</option>
+          <option value="Completed" {% if selected_status == 'Completed' %}selected{% endif %}>Completed</option>
+          <option value="Cancelled" {% if selected_status == 'Cancelled' %}selected{% endif %}>Cancelled</option>
+          <option value="Married" {% if selected_status == 'Married' %}selected{% endif %}>Married</option>
+        </select>
+      </div>
+    </div>
 
-      <div class="mb-3">
-        <label class="form-label fw-bold">Record Types to Include</label>
-        <div class="row g-2">
-          <div class="col-md-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="types" value="baptisms" id="chk-baptisms" checked>
-              <label class="form-check-label" for="chk-baptisms">Baptisms</label>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="types" value="dedications" id="chk-dedications" checked>
-              <label class="form-check-label" for="chk-dedications">Baby Dedications</label>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" name="types" value="weddings" id="chk-weddings" checked>
-              <label class="form-check-label" for="chk-weddings">Weddings</label>
-            </div>
-          </div>
-        </div>
+    <div class="mb-3">
+      <label class="pg-label">Record Types to Include</label>
+      <div class="row g-2 mt-1">
+        <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="types" value="baptisms" id="chk-baptisms" checked><label class="form-check-label" for="chk-baptisms">Baptisms</label></div></div>
+        <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="types" value="dedications" id="chk-dedications" checked><label class="form-check-label" for="chk-dedications">Baby Dedications</label></div></div>
+        <div class="col-md-4"><div class="form-check"><input class="form-check-input" type="checkbox" name="types" value="weddings" id="chk-weddings" checked><label class="form-check-label" for="chk-weddings">Weddings</label></div></div>
       </div>
+    </div>
 
-      <hr>
-      <div class="d-flex gap-2">
-        <button type="submit" name="format" value="csv" class="btn btn-success">
-          <i class="bi bi-file-earmark-spreadsheet"></i> Download CSV
-        </button>
-        <button type="submit" name="format" value="pdf" class="btn btn-danger">
-          <i class="bi bi-file-earmark-pdf"></i> Download PDF
-        </button>
-      </div>
-      <small class="text-muted mt-2 d-block">CSV files can be opened in Excel, Google Sheets, or any spreadsheet application.</small>
-    </form>
-  </div>
+    <hr style="border-color:#eef2f7;">
+    <div class="d-flex gap-2">
+      <button type="submit" name="format" value="csv" class="pg-btn-success">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Download CSV
+      </button>
+      <button type="submit" name="format" value="pdf" class="pg-btn-danger">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Download PDF
+      </button>
+    </div>
+    <p style="font-size:0.8rem;color:#718096;margin-top:0.75rem;margin-bottom:0;">CSV files can be opened in Excel, Google Sheets, or any spreadsheet application.</p>
+  </form>
 </div>
 
 {% if not request.GET.format %}
-<div class="row g-3 mt-3">
+<div class="row g-3">
   <div class="col-md-6">
-    <div class="card">
-      <div class="card-header"><strong>Quick Statistics</strong></div>
-      <div class="card-body">
-        <table class="table table-sm mb-0">
-          <thead>
-            <tr><th>Record Type</th><th>Total</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>Baptisms</td><td>{{ baptism_count }}</td></tr>
-            <tr><td>Dedications</td><td>{{ dedication_count }}</td></tr>
-            <tr><td>Weddings</td><td>{{ wedding_count }}</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div class="pg-card">
+      <div class="pg-section-title">Quick Statistics</div>
+      <table class="pg-table">
+        <thead><tr><th>Record Type</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Baptisms</td><td style="font-weight:700;">{{ baptism_count }}</td></tr>
+          <tr><td>Dedications</td><td style="font-weight:700;">{{ dedication_count }}</td></tr>
+          <tr><td>Weddings</td><td style="font-weight:700;">{{ wedding_count }}</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
   <div class="col-md-6">
-    <div class="card">
-      <div class="card-header"><strong>Date Range</strong></div>
-      <div class="card-body">
-        {% if earliest_date and latest_date %}
-          <p class="mb-1"><strong>Earliest Record:</strong> {{ earliest_date }}</p>
-          <p class="mb-0"><strong>Latest Record:</strong> {{ latest_date }}</p>
-        {% else %}
-          <p class="text-muted mb-0">No records available.</p>
-        {% endif %}
-      </div>
+    <div class="pg-card">
+      <div class="pg-section-title">Date Range</div>
+      {% if earliest_date and latest_date %}
+        <div class="pg-label">Earliest Record</div><div class="pg-value mb-3">{{ earliest_date }}</div>
+        <div class="pg-label">Latest Record</div><div class="pg-value">{{ latest_date }}</div>
+      {% else %}
+        <div style="color:#a0aec0;font-size:0.9rem;">No records available.</div>
+      {% endif %}
     </div>
   </div>
 </div>
 {% endif %}
+
+</div>
 {% endblock %}

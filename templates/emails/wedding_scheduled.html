@@ -1,0 +1,21 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<div style="text-align:center;margin:0 0 24px 0;">
+  <div style="display:inline-block;background:#fff7ed;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;">&#128149;</div>
+</div>
+<p style="font-size:15px;margin:0 0 8px 0;">Dear {{ name }},</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  Great news! Your wedding has been <strong style="color:#c05621;">scheduled</strong> by the church administration.
+</p>
+<div style="background:#fff7ed;border-left:4px solid #ed8936;border-radius:6px;padding:16px 20px;margin:0 0 24px 0;">
+  <p style="margin:0 0 6px 0;font-size:13px;font-weight:600;color:#c05621;">Wedding Date</p>
+  <p style="margin:0;font-size:15px;color:#1a202c;font-weight:700;">{{ date_str }}</p>
+</div>
+<p style="font-size:13px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  Please confirm your attendance and coordinate with the church office regarding any remaining requirements
+  before your ceremony day.
+</p>
+<p style="font-size:13px;color:#718096;margin:0;">
+  If you have any questions, please contact the church office directly.
+</p>
+{% endblock %}

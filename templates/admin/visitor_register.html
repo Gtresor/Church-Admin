@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="pg-page">
+
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Register Visitor</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="{% url 'admin_visitor_list' %}" class="pg-btn-outline">← Back to Visitors</a>
+  </div>
+</div>
+
+{% if errors %}
+<div class="pg-card mb-3 pg-notice-danger" style="color:#991b1b;">
+  <strong>Please fix the following:</strong>
+  <ul class="mb-0 mt-1">
+    {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="pg-card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+
+      <!-- Required fields -->
+      <div class="col-md-6">
+        <label class="pg-label">First Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="first_name" value="{{ post.first_name }}" class="pg-input" placeholder="First name" required>
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Last Name <span style="color:#ef4444;">*</span></label>
+        <input type="text" name="last_name" value="{{ post.last_name }}" class="pg-input" placeholder="Last name" required>
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Phone <span style="color:#ef4444;">*</span></label>
+        <input type="tel" name="phone" value="{{ post.phone }}" class="pg-input" placeholder="+250 7XX XXX XXX" required>
+      </div>
+
+      <!-- Optional fields -->
+      <div class="col-md-6">
+        <label class="pg-label">Email</label>
+        <input type="email" name="email" value="{{ post.email }}" class="pg-input" placeholder="email@example.com">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Gender</label>
+        <select name="gender" class="pg-select">
+          <option value="">— Select —</option>
+          <option value="Male" {% if post.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if post.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if post.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Date of Birth</label>
+        <input type="date" name="date_of_birth" value="{{ post.date_of_birth }}" class="pg-input">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Address</label>
+        <input type="text" name="address" value="{{ post.address }}" class="pg-input" placeholder="Street / area">
+      </div>
+      <div class="col-12">
+        <label class="pg-label">Notes</label>
+        <textarea name="visitor_notes" class="pg-input" rows="3" placeholder="How did they hear about us? Any follow-up needed?">{{ post.visitor_notes }}</textarea>
+      </div>
+
+      <div class="col-12 d-flex gap-2 justify-content-end mt-2">
+        <a href="{% url 'admin_visitor_list' %}" class="pg-btn-outline">Cancel</a>
+        <button type="submit" class="pg-btn-primary">
+          <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Register Visitor
+        </button>
+      </div>
+
+    </div>
+  </form>
+</div>
+
+</div>
+{% endblock %}

@@ -1,20 +1,25 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Wedding Registration Request</h3>
+<div class="pg-page">
 
 {% if active_request_exists %}
-<div class="alert alert-info">
-  You already have an active wedding request in progress. Please wait for admin feedback from the church office.
+<div class="pg-card-sm mb-3 pg-notice-info">
+  <div style="font-weight:600;color:#1e40af;">You already have an active wedding request in progress. Please wait for admin feedback from the church office.</div>
 </div>
 {% endif %}
 
-<form method="post" enctype="multipart/form-data" class="card card-body">
+<div class="pg-card mb-3 pg-notice-info">
+  <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Wedding Registration Request</h4>
+  <div class="pg-gradient-accent"></div>
+</div>
+
+<div class="pg-card">
+<form method="post" enctype="multipart/form-data">
 {% csrf_token %}
 
-<div class="alert alert-light border mb-4">
-  <h5 class="mb-2">Before You Continue</h5>
-  <p class="mb-2">Please read this carefully:</p>
-  <ul class="mb-3">
+<div class="pg-card-sm mb-4 pg-notice-info">
+  <div style="font-weight:700;color:#1a202c;margin-bottom:0.6rem;">Before You Continue</div>
+  <ul style="font-size:0.88rem;color:#4a5568;margin-bottom:0.85rem;padding-left:1.25rem;">
     <li>This request is sent to church administration for review.</li>
     <li>The admin may call both of you for clarification before final approval.</li>
     <li>If one partner is not a church member, provide their full details, home location, and church information.</li>
@@ -22,29 +27,29 @@
   </ul>
   <div class="form-check">
     <input class="form-check-input" type="checkbox" id="has_read" name="has_read" required>
-    <label class="form-check-label" for="has_read">I have read and understood the process</label>
+    <label class="form-check-label" for="has_read" style="font-size:0.88rem;">I have read and understood the process</label>
   </div>
 </div>
 
 <fieldset id="wedding_request_fields" disabled>
   <div class="row g-3">
     <div class="col-md-4">
-      <label class="form-label">I am the</label>
-      <select name="owner_role" id="owner_role" class="form-select" required>
+      <label class="pg-label">I am the</label>
+      <select name="owner_role" id="owner_role" class="pg-select" required>
         <option value="">Select role</option>
         <option value="groom">Groom</option>
         <option value="bride">Bride</option>
       </select>
     </div>
-    
+
     {% if available_slots %}
       <div class="col-md-8">
-        <div class="alert alert-info">
-          <p><strong>Available Time Slots:</strong> Weddings have 3 available slots per day (12:00 PM, 2:00 PM, 4:00 PM). Select an available slot:</p>
+        <div class="pg-card-sm mb-2 pg-notice-info">
+          <div style="font-weight:600;color:#1e40af;font-size:0.85rem;">Weddings have 3 available slots per day (12:00 PM, 2:00 PM, 4:00 PM). Select an available slot:</div>
         </div>
-        <label for="available_slot" class="form-label">Select Wedding Date & Time</label>
-        <select name="available_slot" id="available_slot" class="form-select">
-          <option value="">-- Choose a date & time --</option>
+        <label class="pg-label">Select Wedding Date &amp; Time</label>
+        <select name="available_slot" id="available_slot" class="pg-select">
+          <option value="">-- Choose a date &amp; time --</option>
           {% for slot in available_slots %}
             <option value="{{ slot.id }}">{{ slot.date }} at {{ slot.time|time:"H:i" }}</option>
           {% endfor %}
@@ -52,31 +57,32 @@
       </div>
     {% else %}
       <div class="col-12">
-        <div class="alert alert-warning">
-          <p><strong>No Available Slots:</strong> There are currently no available wedding slots. You can still submit a request, and the admin will schedule you when slots become available.</p>
+        <div class="pg-card-sm pg-notice-warning">
+          <div style="font-weight:600;color:#92400e;margin-bottom:0.25rem;">No Available Slots</div>
+          <div style="font-size:0.85rem;color:#92400e;">There are currently no available wedding slots. You can still submit a request, and the admin will schedule you when slots become available.</div>
         </div>
       </div>
     {% endif %}
-    
-  <div class="col-12">
-    <hr>
-    <h5 class="mb-2">Couple Photo</h5>
-    <p class="text-muted small mb-2">Upload a photo of the couple that will appear on the certificate.</p>
-    <input type="file" name="couple_photo" class="form-control" accept="image/*">
-  </div>
-
-  <div class="col-md-12"><hr></div>
 
     <div class="col-12">
-      <h5 class="mb-2">Partner Information</h5>
-      <p class="text-muted small mb-3">If your partner is a church member, select them below. Otherwise, fill the non-member section.</p>
+      <hr style="border-color:#eef2f7;">
+      <div style="font-weight:700;color:#1a202c;margin-bottom:0.4rem;">Couple Photo</div>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:0.6rem;">Upload a photo of the couple that will appear on the certificate.</p>
+      <input type="file" name="couple_photo" class="pg-input" accept="image/*">
+    </div>
+
+    <div class="col-12"><hr style="border-color:#eef2f7;"></div>
+
+    <div class="col-12">
+      <div style="font-weight:700;color:#1a202c;margin-bottom:0.25rem;">Partner Information</div>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:0;">If your partner is a church member, select them below. Otherwise, fill the non-member section.</p>
     </div>
 
     <div class="col-md-6">
-      <label class="form-label" id="partner_member_label">Church Member Partner (Optional)</label>
-      <input id="partner_member_search" class="form-control mb-2" placeholder="Search member by name" autocomplete="off">
-      <small id="partner_member_search_feedback" class="text-muted d-block mb-2">Type to search members.</small>
-      <select name="partner_member_id" id="partner_member_id" class="form-select">
+      <label class="pg-label" id="partner_member_label">Church Member Partner (Optional)</label>
+      <input id="partner_member_search" class="pg-input mb-2" placeholder="Search member by name" autocomplete="off">
+      <small id="partner_member_search_feedback" style="color:#718096;font-size:0.8rem;display:block;margin-bottom:0.4rem;">Type to search members.</small>
+      <select name="partner_member_id" id="partner_member_id" class="pg-select">
         <option value="">-- Partner is not listed as member --</option>
         {% for person in member_choices %}
         <option value="{{ person.id }}">{{ person }}</option>
@@ -85,31 +91,33 @@
     </div>
 
     <div class="col-12">
-      <div class="border rounded p-3 bg-light-subtle" id="non_member_partner_section">
-        <h6 class="mb-3" id="non_member_role_title">Non-member Partner Details</h6>
+      <div class="pg-card-sm" id="non_member_partner_section">
+        <div style="font-weight:700;color:#1a202c;margin-bottom:0.75rem;" id="non_member_role_title">Non-member Partner Details</div>
         <div class="row g-2">
-          <div class="col-md-4"><label class="form-label">First Name</label><input name="partner_first_name" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">Last Name</label><input name="partner_last_name" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">Gender</label><select name="partner_gender" class="form-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
-          <div class="col-md-4"><label class="form-label">Date of Birth</label><input type="date" name="partner_date_of_birth" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">Phone</label><input name="partner_phone" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">Email</label><input type="email" name="partner_email" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Current Church</label><input name="partner_church_name" class="form-control" placeholder="Church of partner"></div>
-          <div class="col-md-6"><label class="form-label">Address</label><input name="partner_address" class="form-control"></div>
-
-          <div class="col-md-4"><label class="form-label">Province</label><input name="partner_province" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">District</label><input name="partner_district" class="form-control"></div>
-          <div class="col-md-4"><label class="form-label">Sector</label><input name="partner_sector" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Cell</label><input name="partner_cell" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Village</label><input name="partner_village" class="form-control"></div>
+          <div class="col-md-4"><label class="pg-label">First Name</label><input name="partner_first_name" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Last Name</label><input name="partner_last_name" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Gender</label><select name="partner_gender" class="pg-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
+          <div class="col-md-4"><label class="pg-label">Date of Birth</label><input type="date" name="partner_date_of_birth" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Phone</label><input name="partner_phone" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Email</label><input type="email" name="partner_email" class="pg-input"></div>
+          <div class="col-md-6"><label class="pg-label">Current Church</label><input name="partner_church_name" class="pg-input" placeholder="Church of partner"></div>
+          <div class="col-md-6"><label class="pg-label">Address</label><input name="partner_address" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Province</label><input name="partner_province" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">District</label><input name="partner_district" class="pg-input"></div>
+          <div class="col-md-4"><label class="pg-label">Sector</label><input name="partner_sector" class="pg-input"></div>
+          <div class="col-md-6"><label class="pg-label">Cell</label><input name="partner_cell" class="pg-input"></div>
+          <div class="col-md-6"><label class="pg-label">Village</label><input name="partner_village" class="pg-input"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <button class="btn btn-primary mt-3" {% if active_request_exists %}disabled{% endif %}>Submit Wedding Request</button>
+  <div class="mt-4">
+    <button class="pg-btn-primary" {% if active_request_exists %}disabled{% endif %}>Submit Wedding Request</button>
+  </div>
 </fieldset>
 </form>
+</div>
 
 <script>
 const hasRead = document.getElementById('has_read');
@@ -233,4 +241,5 @@ toggleNonMemberSection();
 updatePartnerRoleLabels();
 filterPartnerOptions();
 </script>
+</div>
 {% endblock %}

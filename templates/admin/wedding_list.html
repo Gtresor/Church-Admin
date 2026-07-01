@@ -197,6 +197,71 @@
     </div>
   </div>
 
+  <!-- Pending Requests -->
+  {% if pending_requests %}
+  <div class="wl-card mb-3" style="border-left:4px solid #f59e0b;">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div>
+        <div style="font-size:1rem;font-weight:700;color:#2d3748;display:flex;align-items:center;gap:0.5rem;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Pending Requests
+          <span style="background:#fef3c7;color:#92400e;font-size:0.75rem;font-weight:700;padding:0.15rem 0.55rem;border-radius:999px;">{{ pending_requests|length }}</span>
+        </div>
+        <p style="color:#a0aec0;font-size:0.82rem;margin:0.2rem 0 0;">Member-submitted wedding requests awaiting admin review.</p>
+      </div>
+    </div>
+    <div class="table-responsive">
+      <table class="wl-table">
+        <thead>
+          <tr>
+            <th>Submitter</th>
+            <th>Partner</th>
+            <th>Role</th>
+            <th>Consent</th>
+            <th>Submitted</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in pending_requests %}
+          <tr>
+            <td>
+              <a href="{% url 'admin_person_detail' req.submitter.id %}" style="color:#667eea;font-weight:600;text-decoration:none;">
+                {{ req.submitter }}
+              </a>
+            </td>
+            <td>
+              {% if req.partner %}
+                <a href="{% url 'admin_person_detail' req.partner.id %}" style="color:#667eea;font-weight:600;text-decoration:none;">
+                  {{ req.partner }}
+                </a>
+              {% elif req.partner_non_member_data %}
+                {{ req.partner_non_member_data.first_name }} {{ req.partner_non_member_data.last_name }}
+                <small style="color:#a0aec0;">(non-member)</small>
+              {% else %}
+                <span style="color:#a0aec0;">—</span>
+              {% endif %}
+            </td>
+            <td><span style="text-transform:capitalize;">{{ req.submitter_role }}</span></td>
+            <td>
+              {% if req.partner_consented %}
+                <span class="pg-status-badge pg-status-approved" style="font-size:0.72rem;">Consented</span>
+              {% else %}
+                <span class="pg-status-badge pg-status-pending" style="font-size:0.72rem;">Awaiting</span>
+              {% endif %}
+            </td>
+            <td style="color:#718096;font-size:0.85rem;">{{ req.created_at|date:"d M Y" }}</td>
+            <td>
+              <a href="{% url 'admin_wedding_request_review' req.id %}" class="wl-btn-primary" style="padding:0.35rem 0.8rem;font-size:0.78rem;">Review</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Filter -->
   <div class="wl-card mb-3">
     <form class="row g-2" method="get">
@@ -259,7 +324,7 @@
           {% for item in page_obj %}
           <tr>
             <td>
-              <strong>{{ item.groom }}</strong>
+              <a href="{% url 'admin_person_detail' item.groom.id %}" style="color:#667eea;font-weight:600;">{{ item.groom }}</a>
               <br>
               <small style="color:#a0aec0;">{% if item.groom.is_member %}
                 <span class="wl-member-tag" style="background:#d1fae5;color:#065f46;">Member</span>
@@ -268,7 +333,7 @@
               {% endif %}</small>
             </td>
             <td>
-              <strong>{{ item.bride }}</strong>
+              <a href="{% url 'admin_person_detail' item.bride.id %}" style="color:#667eea;font-weight:600;">{{ item.bride }}</a>
               <br>
               <small style="color:#a0aec0;">{% if item.bride.is_member %}
                 <span class="wl-member-tag" style="background:#d1fae5;color:#065f46;">Member</span>
@@ -296,15 +361,7 @@
               {% endif %}
             </td>
             <td>
-              <span class="wl-status-badge
-                {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
-                {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
-                {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
-                {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
-                {% elif item.status == 'Married' %}" style="background:#d1fae5;color:#065f46;
-                {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
-                {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
-                {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">{{ item.status }}</span>
+              <span class="wl-status-badge pg-status-badge pg-status-{{ item.status|lower }}">{{ item.status }}</span>
             </td>
             <td class="text-end">
               <div class="dropdown">
@@ -316,10 +373,12 @@
                   <li><a class="dropdown-item" href="{% url 'admin_wedding_edit' item.id %}">Edit</a></li>
                   <li><hr class="dropdown-divider"></li>
                   <li>
-                    <form method="post" action="{% url 'admin_wedding_cancel' item.id %}" style="display:inline;">
-                      {% csrf_token %}
-                      <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Cancel this wedding record?')">Cancel</button>
-                    </form>
+                    <button type="button" class="dropdown-item text-danger"
+                      data-bs-toggle="modal" data-bs-target="#cancelWeddingModal"
+                      data-cancel-url="{% url 'admin_wedding_cancel' item.id %}"
+                      data-couple="{{ item.groom }} &amp; {{ item.bride }}">
+                      Cancel
+                    </button>
                   </li>
                 </ul>
               </div>
@@ -334,4 +393,34 @@
   </div>
   {% include 'partials/pagination.html' with page_query=page_query %}
 </div>
+
+<!-- Cancel Wedding Modal -->
+<div class="modal fade" id="cancelWeddingModal" tabindex="-1" aria-labelledby="cancelWeddingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
+        <h5 class="modal-title" id="cancelWeddingModalLabel" style="color:#991b1b;">Cancel Wedding Record</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <p style="color:#4a5568;font-size:0.9rem;">Cancel the wedding record for <strong id="cancelCoupleName"></strong>? This will free up the slot but keep the record.</p>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+        <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Keep</button>
+        <form id="cancelWeddingForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="pg-btn-danger">Cancel Wedding</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('cancelWeddingModal').addEventListener('show.bs.modal', function (event) {
+  var btn = event.relatedTarget;
+  document.getElementById('cancelCoupleName').textContent = btn.dataset.couple || '';
+  document.getElementById('cancelWeddingForm').action = btn.dataset.cancelUrl || '';
+});
+</script>
 {% endblock %}

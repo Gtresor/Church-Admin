@@ -1,37 +1,81 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Baby Dedication Request</h3>
-<form method="post" class="card card-body">{% csrf_token %}
-<div class="row g-3">
-  <div class="col-md-4"><label>Child First Name</label><input name="child_first_name" class="form-control" required></div>
-  <div class="col-md-4"><label>Child Last Name</label><input name="child_last_name" class="form-control" required></div>
-  <div class="col-md-4"><label>Child Gender</label><select name="child_gender" class="form-select" required><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select></div>
-  <div class="col-md-4"><label>Child Date of Birth</label><input type="date" name="child_date_of_birth" class="form-control" required></div>
-  <div class="col-md-4"><label>Father Full Name</label><input name="father_name" class="form-control" required></div>
-  <div class="col-md-4"><label>Mother Full Name</label><input name="mother_name" class="form-control" required></div>
-  <div class="col-md-4"><label>Scripture Reference</label><input name="scripture_reference" class="form-control" placeholder="e.g. Proverbs 22:6" required></div>
-  <div class="col-md-8"><label>Scripture Verse</label><textarea name="scripture_text" class="form-control" rows="3" required></textarea></div>
-  
-  <div class="col-12">
-    {% if available_slots %}
-      <div class="alert alert-info">
-        <p><strong>Available Dates:</strong> Select an available date for the dedication (optional).</p>
-      </div>
-      <label for="available_slot" class="form-label">Select Available Date</label>
-      <select name="available_slot" id="available_slot" class="form-select">
-        <option value="">-- Choose a date (optional) --</option>
-        {% for slot in available_slots %}
-          <option value="{{ slot.id }}">{{ slot.date }} {% if slot.time %}at {{ slot.time|time:"H:i" }}{% endif %}</option>
-        {% endfor %}
-      </select>
-      <small class="form-text text-muted">Select a date if you prefer, or leave blank to submit a request.</small>
-    {% else %}
-      <div class="alert alert-warning">
-        <p><strong>No Available Dates:</strong> There are currently no available dates for dedication. You can still submit a request, and the admin will schedule you when dates become available.</p>
-      </div>
-    {% endif %}
-  </div>
+<div class="pg-page">
+
+<div class="pg-card mb-3 pg-notice-info">
+  <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Baby Dedication Request</h4>
+  <div class="pg-gradient-accent"></div>
 </div>
-<button class="btn btn-primary mt-3">Submit Request</button>
-</form>
+
+<div class="pg-card">
+  <form method="post">{% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="pg-label">Child First Name</label>
+        <input name="child_first_name" class="pg-input" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Child Last Name</label>
+        <input name="child_last_name" class="pg-input" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Child Gender</label>
+        <select name="child_gender" class="pg-select" required>
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Child Date of Birth</label>
+        <input type="date" name="child_date_of_birth" class="pg-input" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Father Full Name</label>
+        <input name="father_name" class="pg-input" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Mother Full Name</label>
+        <input name="mother_name" class="pg-input" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Scripture Reference</label>
+        <input name="scripture_reference" class="pg-input" placeholder="e.g. Proverbs 22:6" required>
+      </div>
+      <div class="col-md-8">
+        <label class="pg-label">Scripture Verse</label>
+        <textarea name="scripture_text" class="pg-input" rows="3" style="resize:vertical;" required></textarea>
+      </div>
+
+      <div class="col-12">
+        {% if available_slots %}
+          <div class="pg-card-sm mb-3 pg-notice-info">
+            <div style="font-weight:600;color:#1e40af;margin-bottom:0.25rem;">Available Dates</div>
+            <div style="font-size:0.85rem;color:#4a5568;">Select a preferred date for the dedication, or leave blank to submit without a specific date.</div>
+          </div>
+          <label class="pg-label">Select Available Date</label>
+          <select name="available_slot" id="available_slot" class="pg-select">
+            <option value="">-- Choose a date (optional) --</option>
+            {% for slot in available_slots %}
+              <option value="{{ slot.id }}">{{ slot.date }} {% if slot.time %}at {{ slot.time|time:"H:i" }}{% endif %}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <div class="pg-card-sm pg-notice-warning">
+            <div style="font-weight:600;color:#92400e;margin-bottom:0.25rem;">No Available Dates</div>
+            <div style="font-size:0.85rem;color:#92400e;">There are currently no available dates for dedication. You can still submit a request, and the admin will schedule you when dates become available.</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="d-flex gap-2 mt-4">
+      <button class="pg-btn-primary">Submit Request</button>
+      <a href="{% url 'member_dashboard' %}" class="pg-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+
+</div>
 {% endblock %}

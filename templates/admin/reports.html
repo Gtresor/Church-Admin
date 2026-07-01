@@ -1,20 +1,28 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Reports</h3>
-  <div>
-    <a href="{% url 'admin_report_download' %}" class="btn btn-outline-primary">
+<div class="pg-page">
+
+<div class="pg-card mb-4" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Reports</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="{% url 'admin_report_download' %}" class="pg-btn-primary">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Download Reports
     </a>
   </div>
 </div>
 
 <div class="row g-3">
-  <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="servicesByMonth"></canvas></div></div></div>
-  <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="certsByMonth"></canvas></div></div></div>
-  <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="membershipGrowth"></canvas></div></div></div>
-  <div class="col-md-6"><div class="card"><div class="card-body"><canvas id="approvalRate"></canvas></div></div></div>
-  <div class="col-12"><div class="card"><div class="card-body"><canvas id="servicesByYear"></canvas></div></div></div>
+  <div class="col-md-6"><div class="pg-card"><canvas id="servicesByMonth"></canvas></div></div>
+  <div class="col-md-6"><div class="pg-card"><canvas id="certsByMonth"></canvas></div></div>
+  <div class="col-md-6"><div class="pg-card"><canvas id="membershipGrowth"></canvas></div></div>
+  <div class="col-md-6"><div class="pg-card"><canvas id="approvalRate"></canvas></div></div>
+  <div class="col-12"><div class="pg-card"><canvas id="servicesByYear"></canvas></div></div>
+</div>
+
 </div>
 
 {{ month_labels|json_script:"r-month-labels" }}
@@ -41,17 +49,17 @@ const certificatesMonthly = JSON.parse(document.getElementById('r-certificates')
 const membershipGrowth = JSON.parse(document.getElementById('r-membership').textContent);
 const approvalRejection = JSON.parse(document.getElementById('r-approval-rejection').textContent);
 new Chart(document.getElementById('servicesByMonth'), {type:'line', data:{labels, datasets:[
-{label:'Baptisms', data:baptismsMonthly, borderColor:'#0d6efd'},
-{label:'Dedications', data:dedicationsMonthly, borderColor:'#fd7e14'},
-{label:'Weddings', data:weddingsMonthly, borderColor:'#6f42c1'}
+{label:'Baptisms', data:baptismsMonthly, borderColor:'#667eea'},
+{label:'Dedications', data:dedicationsMonthly, borderColor:'#f59e0b'},
+{label:'Weddings', data:weddingsMonthly, borderColor:'#764ba2'}
 ]}});
-new Chart(document.getElementById('certsByMonth'), {type:'bar', data:{labels, datasets:[{label:'Certificates', data:certificatesMonthly, backgroundColor:'#198754'}]}});
-new Chart(document.getElementById('membershipGrowth'), {type:'line', data:{labels, datasets:[{label:'Members', data:membershipGrowth, borderColor:'#20c997'}]}});
-new Chart(document.getElementById('approvalRate'), {type:'pie', data:{labels:['Approved','Rejected'], datasets:[{data:approvalRejection, backgroundColor:['#198754','#dc3545']}]}});
+new Chart(document.getElementById('certsByMonth'), {type:'bar', data:{labels, datasets:[{label:'Certificates', data:certificatesMonthly, backgroundColor:'#0ba360'}]}});
+new Chart(document.getElementById('membershipGrowth'), {type:'line', data:{labels, datasets:[{label:'Members', data:membershipGrowth, borderColor:'#3cba92'}]}});
+new Chart(document.getElementById('approvalRate'), {type:'pie', data:{labels:['Approved','Rejected'], datasets:[{data:approvalRejection, backgroundColor:['#0ba360','#ef4444']}]}});
 new Chart(document.getElementById('servicesByYear'), {type:'bar', data:{labels:yearLabels, datasets:[
-{label:'Baptisms / Year', data:yearBaptisms, backgroundColor:'#0d6efd'},
-{label:'Dedications / Year', data:yearDedications, backgroundColor:'#fd7e14'},
-{label:'Weddings / Year', data:yearWeddings, backgroundColor:'#6f42c1'}
+{label:'Baptisms / Year', data:yearBaptisms, backgroundColor:'#667eea'},
+{label:'Dedications / Year', data:yearDedications, backgroundColor:'#f59e0b'},
+{label:'Weddings / Year', data:yearWeddings, backgroundColor:'#764ba2'}
 ]}});
 </script>
 {% endblock %}

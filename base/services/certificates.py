@@ -8,13 +8,46 @@ from django.utils import timezone
 from reportlab.lib.pagesizes import A4, A5, landscape
 from reportlab.lib.units import cm
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from base.models import BabyDedication, Baptism, Certificate, Officiant, Wedding
 
 
+def _register_poppins():
+    font_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "fonts", "Poppins")
+    weights = [
+        ("Poppins", "Poppins-Regular.ttf"),
+        ("Poppins-Medium", "Poppins-Medium.ttf"),
+        ("Poppins-SemiBold", "Poppins-SemiBold.ttf"),
+        ("Poppins-Bold", "Poppins-Bold.ttf"),
+        ("Poppins-Italic", "Poppins-Italic.ttf"),
+        ("Poppins-BoldItalic", "Poppins-BoldItalic.ttf"),
+    ]
+    registered = pdfmetrics.getRegisteredFontNames()
+    for name, filename in weights:
+        path = os.path.join(font_dir, filename)
+        if os.path.exists(path) and name not in registered:
+            pdfmetrics.registerFont(TTFont(name, path))
+    try:
+        pdfmetrics.registerFontFamily(
+            "Poppins",
+            normal="Poppins",
+            bold="Poppins-Bold",
+            italic="Poppins-Italic",
+            boldItalic="Poppins-BoldItalic",
+        )
+    except Exception:
+        pass
+
+
+_register_poppins()
+
+
 CERTIFICATE_DESIGN_OPTIONS = {
     Certificate.BAPTISM: [
+        ("baptism_og", "New Life OG Classic"),
         ("baptism_blue_cross", "Blue Cross Classic"),
         ("baptism_white_gold", "White & Gold Formal"),
     ],
@@ -82,6 +115,8 @@ def _certificate_page_size(certificate: Certificate):
         return landscape(A5)
     if certificate.service_type == Certificate.WEDDING and certificate.design_template == "wedding_og":
         return landscape(A5)
+    if certificate.service_type == Certificate.BAPTISM and certificate.design_template == "baptism_og":
+        return A5
     return landscape(A4)
 
 
@@ -320,8 +355,54 @@ def _draw_new_life_dedication(c, dedication: BabyDedication, certificate: Certif
     c.drawRightString(width - 0.7 * cm, 0.35 * cm, f"No: {certificate.certificate_number}")
 
 
+def _draw_baptism_og(c, certificate: Certificate):
+    """New Life OG Classic — A5 portrait with pre-designed background."""
+    baptism = certificate.linked_object
+    width, height = c._pagesize  # A5 portrait: ~419 × 595 pts
+
+    bg_path = _design_asset_path("Baptism OG.png")
+    if os.path.exists(bg_path):
+        c.drawImage(bg_path, 0, 0, width=width, height=height,
+                    preserveAspectRatio=False, mask="auto")
+    else:
+        c.setFillColor("#FFFDF5")
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+
+    text_color = "#2C3530"
+    cx = width / 2
+
+    c.setFillColor(text_color)
+    c.setFont("Poppins", 11)
+    c.drawCentredString(cx, 422, "This is to certify that")
+    c.drawCentredString(cx, 410, "Turemeza ko")
+
+    c.setFont("Poppins-SemiBold", 13)
+    c.drawCentredString(cx, 387, str(baptism.person))
+
+    c.setFont("Poppins", 11)
+    c.drawCentredString(cx, 363, "Was baptized by immersion on")
+    c.drawCentredString(cx, 351, "Yabatijwe mu mazi magari kuwa")
+
+    c.setFont("Poppins-SemiBold", 13)
+    if baptism.baptism_date:
+        date_str = f"{baptism.baptism_date.day} {baptism.baptism_date.strftime('%B %Y')}"
+    else:
+        date_str = "—"
+    c.drawCentredString(cx, 320, date_str)
+
+    c.setFont("Poppins", 11)
+    c.drawCentredString(cx, 295, "At")
+    c.drawCentredString(cx, 283, "Yabatirijwe")
+
+    c.setFont("Poppins-Bold", 12)
+    c.drawCentredString(cx, 258, "NEW LIFE BIBLE CHURCH-KIGALI")
+
+
 def _draw_baptism(c, certificate: Certificate):
     baptism = certificate.linked_object
+    if certificate.design_template == "baptism_og":
+        _draw_baptism_og(c, certificate)
+        return
     if certificate.design_template == "baptism_white_gold":
         _draw_common(
             c,
@@ -421,8 +502,8 @@ def _draw_wedding_og(c, certificate: Certificate):
     if wedding.couple_photo and os.path.exists(wedding.couple_photo.path):
         try:
             photo_reader = ImageReader(wedding.couple_photo.path)
-            # Circle center and radius — positioned in the gold circle on the left
-            cx, cy, r = 110, 160, 90
+            # Circle center and radius — measured from Wedding OG.png gold ring position
+            cx, cy, r = 107, 150, 100
             # Save state, clip to circle, draw image, restore
             c.saveState()
             p = c.beginPath()
@@ -443,28 +524,28 @@ def _draw_wedding_og(c, certificate: Certificate):
     # "CERTIFICATE" — large bold serif
     c.setFillColor(dark_color)
     c.setFont("Times-Bold", 32)
-    c.drawCentredString(370, 330, "CERTIFICATE")
+    c.drawCentredString(330, 310, "CERTIFICATE")
 
     # "OF MARRIAGE" — gold spaced uppercase
     c.setFillColor(gold_color)
     c.setFont("Times-Bold", 14)
-    c.drawCentredString(370, 310, "O F   M A R R I A G E")
+    c.drawCentredString(330, 290, "O F   M A R R I A G E")
 
     # Legal text — small gray
     c.setFillColor(gray_color)
-    c.setFont("Times-Roman", 7)
-    c.drawCentredString(370, 294, "ACCORDING TO THE ORDINANCES OF GOD AND THE")
-    c.drawCentredString(370, 284, "LAWS OF THE REPUBLIC OF RWANDA")
+    c.setFont("Times-Roman", 12)
+    c.drawCentredString(330, 274, "ACCORDING TO THE ORDINANCES OF GOD AND THE")
+    c.drawCentredString(330, 264, "LAWS OF THE REPUBLIC OF RWANDA")
 
     # Couple names — gold bold italic
     c.setFillColor(gold_color)
     c.setFont("Times-BoldItalic", 15)
     couple_names = f"{wedding.groom} & {wedding.bride}"
-    c.drawCentredString(370, 260, couple_names)
+    c.drawCentredString(370, 220, couple_names)
 
     # Wedding details — dark spaced uppercase
     c.setFillColor(dark_color)
-    c.setFont("Times-Roman", 8)
+    c.setFont("Times-Roman", 9)
 
     # Format date nicely
     if wedding.wedding_date:
@@ -475,11 +556,9 @@ def _draw_wedding_og(c, certificate: Certificate):
     else:
         date_str = "N/A"
 
-    c.drawCentredString(370, 238, f"WERE UNITED IN THE HOLY MATRIMONY ON {date_str},")
+    c.drawCentredString(370, 190, f"WERE UNITED IN THE HOLY MATRIMONY,")
+    c.drawCentredString(370, 180, f" ON {date_str} AT NEW LIFE")
 
-    # Church location
-    c.setFont("Times-Roman", 8)
-    c.drawCentredString(370, 225, "AT NEW LIFE")
 
     # === SIGNATURE SECTION ===
     sig_y = 105
@@ -488,47 +567,43 @@ def _draw_wedding_og(c, certificate: Certificate):
     # Left column: GROOM + MINISTER
     # GROOM line
     c.setStrokeColor(dark_color)
-    c.setLineWidth(0.5)
-    c.line(295, sig_y + 15, 295 + line_width, sig_y + 15)
+    c.setLineWidth(1)
+    c.line(220, sig_y + 15, 250 + line_width, sig_y + 15)
     c.setFillColor(gray_color)
-    c.setFont("Times-Roman", 6)
-    c.drawCentredString(295 + line_width / 2, sig_y + 6, "GROOM")
+    c.setFont("Times-Roman", 8)
+    c.drawCentredString(250 + line_width / 2, sig_y + 6, "GROOM")
 
     # MINISTER line
     c.setStrokeColor(dark_color)
-    c.line(295, sig_y - 10, 295 + line_width, sig_y - 10)
+    c.line(220, sig_y - 10, 250 + line_width, sig_y - 10)
     c.setFillColor(gray_color)
-    c.setFont("Times-Roman", 6)
-    c.drawCentredString(295 + line_width / 2, sig_y - 19, "MINISTER")
-    # Officiant name below minister
-    c.setFont("Times-Italic", 6)
-    c.drawCentredString(295 + line_width / 2, sig_y - 27, wedding.officiant or "")
+    c.setFont("Times-Roman", 8)
+    c.drawCentredString(250 + line_width / 2, sig_y - 19, "MINISTER")
+
 
     # Right column: BRIDE + WITNESSES
     # BRIDE line
     c.setStrokeColor(dark_color)
     c.setLineWidth(0.5)
-    c.line(375, sig_y + 15, 375 + line_width, sig_y + 15)
+    c.line(375, sig_y + 15, 400 + line_width, sig_y + 15)
     c.setFillColor(gray_color)
-    c.setFont("Times-Roman", 6)
+    c.setFont("Times-Roman", 8)
     c.drawCentredString(375 + line_width / 2, sig_y + 6, "BRIDE")
 
     # WITNESSES line
     c.setStrokeColor(dark_color)
-    c.line(375, sig_y - 10, 375 + line_width, sig_y - 10)
+    c.line(375, sig_y - 10, 400 + line_width, sig_y - 10)
+    c.line(375, sig_y - 25, 400 + line_width, sig_y - 25)
+    c.line(375, sig_y - 40, 400 + line_width, sig_y - 40)
     c.setFillColor(gray_color)
-    c.setFont("Times-Roman", 6)
-    c.drawCentredString(375 + line_width / 2, sig_y - 19, "WITNESSES")
-    c.setFont("Times-Italic", 6)
-    c.drawCentredString(375 + line_width / 2, sig_y - 27, "1. _________________")
-    c.drawCentredString(375 + line_width / 2, sig_y - 34, "2. _________________")
+    c.setFont("Times-Roman", 8)
+    c.drawCentredString(375 + line_width / 2, sig_y - 50, "WITNESSES")
+    c.setFont("Times-Italic", 8)
 
     # === FOOTER BIBLE VERSE ===
     c.setFillColor(gray_color)
-    c.setFont("Times-Italic", 6)
-    c.drawCentredString(width / 2, 22, '"What therefore God hath joined together, let no man put asunder."')
-    c.setFont("Times-Roman", 6)
-    c.drawCentredString(width / 2, 14, "— Matthew 19:6")
+    c.setFont("Times-Italic", 8)
+    c.drawCentredString(365, 13, '"What therefore God hath joined together, let no man put asunder. — Matthew 19:6"')
 
     # === CERTIFICATE NUMBER (bottom right) ===
     c.setFont("Times-Roman", 5.5)
@@ -604,7 +679,7 @@ def render_baptism_preview_pdf(baptism: Baptism, design_template: str) -> bytes:
     return _render_pdf_bytes(preview_certificate, _draw_baptism)
 
 
-def generate_baptism_certificate(baptism: Baptism, design_template: str = "baptism_blue_cross") -> Certificate:
+def generate_baptism_certificate(baptism: Baptism, design_template: str = "baptism_og") -> Certificate:
     certificate = _create_or_get_certificate(Certificate.BAPTISM, baptism, design_template)
     _save_certificate_pdf(certificate, _draw_baptism)
     baptism.certificate_generated = True

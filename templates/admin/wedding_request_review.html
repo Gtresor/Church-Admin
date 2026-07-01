@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .wrr-page {
+    background: linear-gradient(135deg,#f8faff 0%,#eef2f7 50%,#e8ecf4 100%);
+    min-height: 100vh; margin: -1.5rem; padding: 1.5rem;
+  }
+  .wrr-card {
+    background: #fff; border-radius: 1.25rem; padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .wrr-card-sm {
+    background: #fff; border-radius: 1rem; padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04);
+  }
+  .wrr-gradient-accent { height:4px; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:2px; width:80px; margin-top:0.3rem; }
+  .wrr-label { font-size:0.78rem; font-weight:600; color:#718096; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:0.15rem; }
+  .wrr-value { font-size:0.95rem; color:#1a202c; font-weight:500; }
+  .wrr-section-title { font-size:1rem; font-weight:700; color:#2d3748; display:flex; align-items:center; gap:0.5rem; margin-bottom:1rem; }
+  .wrr-divider { height:1px; background:#eef2f7; margin:1.25rem 0; }
+  .wrr-btn-primary {
+    padding:0.6rem 1.2rem; border-radius:0.65rem; border:0;
+    background:linear-gradient(135deg,#667eea,#764ba2); color:#fff;
+    font-weight:600; font-size:0.9rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:0.4rem;
+    transition:transform 0.15s, box-shadow 0.2s; text-decoration:none;
+  }
+  .wrr-btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(102,126,234,0.3); color:#fff; }
+  .wrr-btn-success {
+    padding:0.6rem 1.2rem; border-radius:0.65rem; border:0;
+    background:linear-gradient(135deg,#2ecc71,#27ae60); color:#fff;
+    font-weight:600; font-size:0.9rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:0.4rem;
+    transition:transform 0.15s, box-shadow 0.2s;
+  }
+  .wrr-btn-success:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(46,204,113,0.3); color:#fff; }
+  .wrr-btn-danger {
+    padding:0.6rem 1.2rem; border-radius:0.65rem; border:0;
+    background:linear-gradient(135deg,#fc5c7d,#e74c3c); color:#fff;
+    font-weight:600; font-size:0.9rem; cursor:pointer;
+    display:inline-flex; align-items:center; gap:0.4rem;
+    transition:transform 0.15s, box-shadow 0.2s;
+  }
+  .wrr-btn-danger:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(231,76,60,0.3); color:#fff; }
+  .wrr-btn-outline {
+    padding:0.6rem 1.2rem; border-radius:0.65rem; border:1.5px solid #e2e8f0;
+    background:#fff; color:#4a5568; font-weight:600; font-size:0.9rem;
+    cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem;
+    text-decoration:none; transition:border-color 0.2s;
+  }
+  .wrr-btn-outline:hover { border-color:#667eea; color:#667eea; }
+  .wrr-textarea {
+    background:#f7f9fc; border:1px solid #e2e8f0; border-radius:0.65rem;
+    padding:0.65rem 0.85rem; font-size:0.9rem; color:#1a202c; width:100%;
+    outline:none; resize:vertical; min-height:80px;
+    transition:border 0.2s, box-shadow 0.2s;
+  }
+  .wrr-textarea:focus { background:#fff; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,0.12); }
+  .wrr-info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:0.75rem; }
+  .wrr-icon-svg { width:18px; height:18px; display:inline-block; vertical-align:middle; flex-shrink:0; }
+</style>
+
+<div class="wrr-page">
+  <!-- Header -->
+  <div class="wrr-card mb-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h3 class="mb-0" style="color:#1a202c;font-weight:700;">Wedding Request Review</h3>
+        <div class="wrr-gradient-accent"></div>
+        <p class="mt-1 mb-0" style="color:#718096;font-size:0.88rem;">Submitted {{ item.created_at|date:"d M Y" }}</p>
+      </div>
+      <div class="d-flex gap-2 align-items-center flex-wrap">
+        <span class="pg-status-badge pg-status-{{ item.status|lower }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.35rem 0.85rem;border-radius:999px;font-size:0.8rem;font-weight:600;text-transform:uppercase;">
+          {{ item.status }}
+        </span>
+        <a href="{% url 'admin_wedding_list' %}" class="wrr-btn-outline" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          Back
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <!-- Left column -->
+    <div class="col-lg-8">
+
+      <!-- Submitter -->
+      <div class="wrr-card-sm mb-3" style="border-left:4px solid #667eea;">
+        <div class="wrr-section-title">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Submitter — {{ item.submitter_role|title }}
+        </div>
+        <div class="wrr-info-grid">
+          <div><div class="wrr-label">Full Name</div>
+            <div class="wrr-value">
+              <a href="{% url 'admin_person_detail' item.submitter.id %}" style="color:#667eea;font-weight:600;">{{ item.submitter }}</a>
+            </div>
+          </div>
+          <div><div class="wrr-label">Phone</div><div class="wrr-value">{{ item.submitter.phone|default:"—" }}</div></div>
+          <div><div class="wrr-label">Email</div><div class="wrr-value">{{ item.submitter.email|default:"—" }}</div></div>
+          <div><div class="wrr-label">Member</div><div class="wrr-value">{% if item.submitter.is_member %}Yes{% else %}No{% endif %}</div></div>
+        </div>
+        {% if item.submitter_health_document %}
+        <div class="wrr-divider"></div>
+        <div class="wrr-label">Health Document</div>
+        <a href="{{ item.submitter_health_document.url }}" target="_blank" class="wrr-btn-outline mt-1" style="padding:0.35rem 0.8rem;font-size:0.8rem;">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          View Document
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Partner -->
+      <div class="wrr-card-sm mb-3" style="border-left:4px solid #C9A84C;">
+        <div class="wrr-section-title">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          Partner — {% if item.submitter_role == "groom" %}Bride{% else %}Groom{% endif %}
+        </div>
+        {% if item.partner %}
+        <div class="wrr-info-grid">
+          <div><div class="wrr-label">Full Name</div>
+            <div class="wrr-value">
+              <a href="{% url 'admin_person_detail' item.partner.id %}" style="color:#667eea;font-weight:600;">{{ item.partner }}</a>
+            </div>
+          </div>
+          <div><div class="wrr-label">Phone</div><div class="wrr-value">{{ item.partner.phone|default:"—" }}</div></div>
+          <div><div class="wrr-label">Email</div><div class="wrr-value">{{ item.partner.email|default:"—" }}</div></div>
+          <div><div class="wrr-label">Member</div><div class="wrr-value">{% if item.partner.is_member %}Yes{% else %}No{% endif %}</div></div>
+        </div>
+        {% else %}
+        <p style="color:#a0aec0;margin:0;">No partner record linked.</p>
+        {% endif %}
+        {% if item.partner_non_member_data %}
+        <div class="wrr-divider"></div>
+        <div class="wrr-label mb-2">Additional Info (from submission)</div>
+        <div class="wrr-info-grid">
+          {% if item.partner_non_member_data.church_name %}
+          <div><div class="wrr-label">Church</div><div class="wrr-value">{{ item.partner_non_member_data.church_name }}</div></div>
+          {% endif %}
+          {% if item.partner_non_member_data.province %}
+          <div><div class="wrr-label">Province</div><div class="wrr-value">{{ item.partner_non_member_data.province }}</div></div>
+          {% endif %}
+          {% if item.partner_non_member_data.district %}
+          <div><div class="wrr-label">District</div><div class="wrr-value">{{ item.partner_non_member_data.district }}</div></div>
+          {% endif %}
+        </div>
+        {% endif %}
+        {% if item.partner_health_document %}
+        <div class="wrr-divider"></div>
+        <div class="wrr-label">Health Document</div>
+        <a href="{{ item.partner_health_document.url }}" target="_blank" class="wrr-btn-outline mt-1" style="padding:0.35rem 0.8rem;font-size:0.8rem;">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          View Document
+        </a>
+        {% endif %}
+      </div>
+
+      <!-- Couple Photo -->
+      {% if item.couple_photo %}
+      <div class="wrr-card-sm mb-3" style="border-left:4px solid #C9A84C;">
+        <div class="wrr-section-title">Couple Photo</div>
+        <img src="{{ item.couple_photo.url }}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;">
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right column: consent status + actions -->
+    <div class="col-lg-4">
+
+      <!-- Requested Slot -->
+      <div class="wrr-card-sm mb-3">
+        <div class="wrr-section-title">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Requested Date
+        </div>
+        {% if item.available_slot %}
+          <div style="background:#f0fdf4;border-radius:0.75rem;padding:0.85rem 1rem;">
+            <div style="color:#166534;font-weight:700;">{{ item.available_slot.date|date:"d F Y" }}</div>
+            {% if item.available_slot.time %}<div style="color:#4ade80;font-size:0.82rem;">{{ item.available_slot.time }}</div>{% endif %}
+          </div>
+        {% else %}
+          <div style="background:#f7f9fc;border-radius:0.75rem;padding:0.85rem 1rem;color:#a0aec0;font-size:0.88rem;">
+            No date requested — admin will set the date after approval.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Consent -->
+      <div class="wrr-card-sm mb-3">
+        <div class="wrr-section-title">
+          <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+          Partner Consent
+        </div>
+        {% if item.partner_consented %}
+          <div style="background:#f0fdf4;border-radius:0.75rem;padding:0.85rem 1rem;">
+            <div style="color:#166534;font-weight:700;">Consented</div>
+            <div style="color:#4ade80;font-size:0.82rem;">{{ item.partner_consented_at|date:"d M Y H:i" }}</div>
+          </div>
+        {% else %}
+          <div style="background:#fffbeb;border-radius:0.75rem;padding:0.85rem 1rem;">
+            <div style="color:#92400e;font-weight:700;">Awaiting Consent</div>
+            {% if item.partner_is_member %}
+            <div style="color:#a0aec0;font-size:0.82rem;margin-top:0.25rem;">Partner invite sent — waiting for confirmation.</div>
+            {% else %}
+            <div style="color:#a0aec0;font-size:0.82rem;margin-top:0.25rem;">Non-member partner — consent may not be required.</div>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Cancelled notice -->
+      {% if item.status == 'Cancelled' %}
+      <div class="wrr-card-sm mb-3" style="border-left:4px solid #f59e0b;background:#fffbeb;">
+        <div style="font-weight:700;color:#92400e;margin-bottom:0.4rem;font-size:0.95rem;">Member Withdrew This Request</div>
+        <p style="font-size:0.85rem;color:#4a5568;margin:0;">
+          The couple cancelled this wedding request. No action is required unless they resubmit.
+        </p>
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      {% if item.status == 'Pending' %}
+      <div class="wrr-card-sm mb-3">
+        <div class="wrr-section-title">Actions</div>
+
+        {% if not item.partner %}
+        <div style="background:#fff5f5;border-left:3px solid #e53e3e;padding:0.75rem 1rem;border-radius:0 0.5rem 0.5rem 0;margin-bottom:1rem;font-size:0.85rem;color:#c53030;">
+          Cannot approve: partner Person record is missing. This may happen with older non-member submissions.
+        </div>
+        {% endif %}
+
+        <!-- Approve -->
+        <form method="post" class="mb-2">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="approve">
+          <button type="submit" class="wrr-btn-success w-100" {% if not item.partner %}disabled{% endif %}>
+            <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Approve &amp; Create Wedding
+          </button>
+        </form>
+
+        <!-- Reject -->
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="reject">
+          <div class="mb-2">
+            <label class="wrr-label">Reason (optional)</label>
+            <textarea name="admin_comment" class="wrr-textarea" placeholder="Explain why this request is rejected…"></textarea>
+          </div>
+          <button type="submit" class="wrr-btn-danger w-100">
+            <svg class="wrr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Reject Request
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+      {% if item.admin_comment %}
+      <div class="wrr-card-sm">
+        <div class="wrr-label mb-1">Admin Comment</div>
+        <p style="color:#1a202c;font-size:0.9rem;margin:0;">{{ item.admin_comment }}</p>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,19 +1,50 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-7">
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <h4>Certificate Verification</h4>
+<div class="pg-page">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+      <div class="pg-card">
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Certificate Verification</h4>
+        <div class="pg-gradient-accent mb-4"></div>
+
         {% if not_found %}
-          <div class="alert alert-danger">Certificate not found.</div>
+          <div class="pg-card-sm pg-notice-danger">
+            <div style="font-weight:700;color:#991b1b;margin-bottom:0.25rem;">Certificate Not Found</div>
+            <div style="font-size:0.88rem;color:#991b1b;">No certificate matches the provided number. Please check and try again.</div>
+          </div>
         {% else %}
-          <p><strong>Certificate No:</strong> {{ certificate.certificate_number }}</p>
-          <p><strong>Service Type:</strong> {{ service_type }}</p>
-          <p><strong>Name(s):</strong> {{ names }}</p>
-          <p><strong>Date:</strong> {{ service_date }}</p>
-          <p><strong>Status:</strong> <span class="badge bg-{% if status == 'Valid' %}success{% else %}danger{% endif %}">{{ status }}</span></p>
-          {% if certificate.revoked_reason %}<p><strong>Reason:</strong> {{ certificate.revoked_reason }}</p>{% endif %}
+          <table class="pg-table">
+            <tbody>
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;width:40%;">Certificate No</td>
+                <td style="font-weight:600;">{{ certificate.certificate_number }}</td>
+              </tr>
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Service Type</td>
+                <td>{{ service_type }}</td>
+              </tr>
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Name(s)</td>
+                <td style="font-weight:600;">{{ names }}</td>
+              </tr>
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Date</td>
+                <td>{{ service_date }}</td>
+              </tr>
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Status</td>
+                <td>
+                  <span class="pg-status-badge pg-status-{{ status|lower }}">{{ status }}</span>
+                </td>
+              </tr>
+              {% if certificate.revoked_reason %}
+              <tr>
+                <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Reason</td>
+                <td style="color:#991b1b;">{{ certificate.revoked_reason }}</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
         {% endif %}
       </div>
     </div>

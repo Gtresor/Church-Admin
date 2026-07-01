@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .pl-page {
+    background: linear-gradient(135deg, #f8faff 0%, #eef2f7 50%, #e8ecf4 100%);
+    min-height: 100vh;
+    margin: -1.5rem;
+    padding: 1.5rem;
+  }
+  .pl-card {
+    background: #ffffff;
+    border-radius: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06), 0 12px 48px rgba(0,0,0,0.04);
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+  .pl-gradient-accent {
+    height: 4px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 2px;
+    width: 80px;
+    margin-top: 0.3rem;
+  }
+  .pl-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s, color 0.15s;
+    color: #4a5568;
+    background: #f0f2f5;
+  }
+  .pl-tab:hover { background: #e2e8f0; color: #2d3748; }
+  .pl-tab.active { background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
+  .pl-tab .badge {
+    background: rgba(255,255,255,0.35);
+    color: inherit;
+    font-size: 0.72rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .pl-tab:not(.active) .badge { background: #fff; color: #667eea; }
+  .pl-input {
+    background: #f7f9fc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.65rem;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.88rem;
+    color: #1a202c;
+    outline: none;
+    width: 100%;
+    transition: border 0.2s, box-shadow 0.2s;
+  }
+  .pl-input:focus { background:#fff; border-color:#667eea; box-shadow:0 0 0 3px rgba(102,126,234,0.12); }
+  .pl-btn-primary {
+    padding: 0.5rem 1.1rem;
+    border-radius: 0.65rem;
+    border: 0;
+    background: linear-gradient(135deg,#667eea,#764ba2);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.2s;
+  }
+  .pl-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(102,126,234,0.3); color:#fff; }
+  .pl-btn-outline {
+    padding: 0.45rem 0.9rem;
+    border-radius: 0.6rem;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    transition: border-color 0.2s;
+  }
+  .pl-btn-outline:hover { border-color: #667eea; color: #667eea; }
+  .pl-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.82rem; color: #fff; flex-shrink: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+  }
+  .pl-table { width: 100%; border-collapse: collapse; }
+  .pl-table thead th {
+    padding: 0.65rem 0.9rem;
+    font-size: 0.72rem; font-weight: 700; color: #718096;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 2px solid #eef2f7; white-space: nowrap;
+  }
+  .pl-table tbody td {
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid #f0f2f5;
+    color: #1a202c; vertical-align: middle;
+  }
+  .pl-table tbody tr:hover { background: #f8faff; }
+  .pl-table tbody tr:last-child td { border-bottom: 0; }
+  .pl-type-badge {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .pl-type-member { background: #ebf5fb; color: #1a6fa6; }
+  .pl-type-visitor { background: #f0fdf4; color: #166534; }
+  .pl-type-kid { background: #fff7ed; color: #9a3412; }
+  .pl-type-other { background: #f5f3ff; color: #5b21b6; }
+  .pl-empty { text-align: center; color: #a0aec0; padding: 2.5rem 0; font-size: 0.9rem; }
+</style>
+
+<div class="pl-page">
+  <!-- Header -->
+  <div class="pl-card mb-3" style="border-left:4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">People</h4>
+        <div class="pl-gradient-accent"></div>
+      </div>
+      <a href="{% url 'admin_member_create' %}" class="pl-btn-primary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Person
+      </a>
+    </div>
+  </div>
+
+  <!-- Filter tabs + search -->
+  <div class="pl-card mb-3">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+      <a href="?type=all{% if q %}&q={{ q }}{% endif %}" class="pl-tab {% if person_type == 'all' %}active{% endif %}">
+        All <span class="badge">{{ counts.all }}</span>
+      </a>
+      <a href="?type=member{% if q %}&q={{ q }}{% endif %}" class="pl-tab {% if person_type == 'member' %}active{% endif %}">
+        Members <span class="badge">{{ counts.member }}</span>
+      </a>
+      <a href="?type=visitor{% if q %}&q={{ q }}{% endif %}" class="pl-tab {% if person_type == 'visitor' %}active{% endif %}">
+        Visitors <span class="badge">{{ counts.visitor }}</span>
+      </a>
+      <a href="?type=kid{% if q %}&q={{ q }}{% endif %}" class="pl-tab {% if person_type == 'kid' %}active{% endif %}">
+        Kids <span class="badge">{{ counts.kid }}</span>
+      </a>
+      <a href="?type=other{% if q %}&q={{ q }}{% endif %}" class="pl-tab {% if person_type == 'other' %}active{% endif %}">
+        Other <span class="badge">{{ counts.other }}</span>
+      </a>
+    </div>
+    <form method="get" class="d-flex gap-2">
+      <input type="hidden" name="type" value="{{ person_type }}">
+      <input name="q" value="{{ q }}" class="pl-input" placeholder="Search name, phone, email…" style="max-width:320px;">
+      <button type="submit" class="pl-btn-primary">Search</button>
+      {% if q %}<a href="?type={{ person_type }}" class="pl-btn-outline">Clear</a>{% endif %}
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="pl-card">
+    {% if page_obj.object_list %}
+    <div class="table-responsive">
+      <table class="pl-table">
+        <thead>
+          <tr>
+            <th>Person</th>
+            <th>Type</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Date Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for person in page_obj %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                {% if person.member_account.profile_photo %}
+                  <img src="{{ person.member_account.profile_photo.url }}" class="pl-avatar" style="object-fit:cover;" alt="">
+                {% else %}
+                  <div class="pl-avatar">{{ person.first_name.0|upper }}{{ person.last_name.0|upper }}</div>
+                {% endif %}
+                <div>
+                  <a href="{% url 'admin_person_detail' person.id %}" style="color:#667eea;font-weight:600;text-decoration:none;">
+                    {{ person.first_name }} {{ person.last_name }}
+                  </a>
+                  {% if not person.is_active %}<br><small style="color:#e53e3e;">Inactive</small>{% endif %}
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if person.is_member %}
+                <span class="pl-type-badge pl-type-member">Member</span>
+              {% elif person.is_visitor %}
+                <span class="pl-type-badge pl-type-visitor">Visitor</span>
+              {% elif person.is_child_profile %}
+                <span class="pl-type-badge pl-type-kid">Kid</span>
+              {% else %}
+                <span class="pl-type-badge pl-type-other">Other</span>
+              {% endif %}
+            </td>
+            <td style="font-size:0.88rem;">{{ person.phone|default:"—" }}</td>
+            <td style="font-size:0.88rem;">{{ person.email|default:"—" }}</td>
+            <td style="font-size:0.85rem;color:#718096;">{{ person.created_at|date:"d M Y" }}</td>
+            <td>
+              <div class="d-flex gap-2">
+                <a href="{% url 'admin_person_detail' person.id %}" class="pl-btn-outline">View</a>
+                <a href="{% url 'admin_person_edit' person.id %}" class="pl-btn-outline">Edit</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+      <small style="color:#718096;">
+        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+      </small>
+      <div class="d-flex gap-1">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&type={{ person_type }}{% if q %}&q={{ q }}{% endif %}" class="pl-btn-outline">Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&type={{ person_type }}{% if q %}&q={{ q }}{% endif %}" class="pl-btn-outline">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="pl-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="1.5" class="mb-3 d-block mx-auto"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <p class="mb-0">No people found{% if q %} matching "{{ q }}"{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

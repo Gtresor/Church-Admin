@@ -252,16 +252,9 @@
         <tbody>
           {% for item in page_obj %}
           <tr>
-            <td><strong>{{ item.person }}</strong></td>
+            <td><a href="{% url 'admin_person_detail' item.person.id %}" style="color:#667eea;font-weight:600;">{{ item.person }}</a></td>
             <td>
-              <span class="bl-status-badge
-                {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
-                {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
-                {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
-                {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
-                {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
-                {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
-                {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">{{ item.status }}</span>
+              <span class="pg-status-badge pg-status-{{ item.status|lower }}">{{ item.status }}</span>
             </td>
             <td>{{ item.baptism_date|default:item.request_date|default:"-" }}</td>
             <td>{{ item.officiant|default:"-" }}</td>

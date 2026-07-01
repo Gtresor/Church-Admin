@@ -1,7 +1,8 @@
 import calendar
 import csv
+import json
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -21,10 +22,12 @@ from django.views.generic import TemplateView
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
+from . import notifications
+from ._log import log, notify_member
 from .decorators import member_required, staff_required
 from .models import (
-	AdminProfile, AvailableSlot, BabyDedication, Baptism, BlackoutDate,
-	Certificate, MemberAccount, Officiant, Person, SacramentStatus, Wedding,
+	ActivityLog, AdminProfile, AvailableSlot, BabyDedication, Baptism, BlackoutDate,
+	Certificate, MemberAccount, MemberNotification, Officiant, Person, SacramentStatus, Wedding,
 	WeddingCeremony, WeddingRequest, WeddingCertificateExtra,
 )
 from .services.certificates import (
@@ -40,7 +43,7 @@ from .services.ai_reports import CHAT_EXAMPLES, answer_system_chat, generate_ai_
 
 
 DEDICATION_FIXED_DESIGN_TEMPLATE = "dedication_new_life"
-BAPTISM_FIXED_DESIGN_TEMPLATE = "baptism_blue_cross"
+BAPTISM_FIXED_DESIGN_TEMPLATE = "baptism_og"
 WEDDING_FIXED_DESIGN_TEMPLATE = "wedding_og"
 
 
@@ -315,7 +318,8 @@ def member_register_view(request):
 			last_name=person.last_name,
 		)
 		MemberAccount.objects.create(user=user, person=person)
-
+		notifications.send_welcome(person, username=user.username)
+		log(user, "create", ActivityLog.CAT_MEMBER, f"{person.first_name} {person.last_name} created a member account.")
 		login(request, user)
 		messages.success(request, "Account created successfully. Welcome to your member portal.")
 		return redirect("member_dashboard")
@@ -410,6 +414,48 @@ def admin_profile(request):
 		return redirect("admin_profile")
 
 	return render(request, "admin/profile.html", {"profile": profile})
+
+
+@method_decorator([login_required, staff_required], name="dispatch")
+class PersonListView(TemplateView):
+    template_name = "admin/person_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get("q", "").strip()
+        person_type = self.request.GET.get("type", "all")
+
+        qs = Person.objects.select_related("member_account").all()
+        if q:
+            qs = qs.filter(
+                Q(first_name__icontains=q) | Q(last_name__icontains=q) |
+                Q(phone__icontains=q) | Q(email__icontains=q)
+            )
+        if person_type == "member":
+            qs = qs.filter(is_member=True)
+        elif person_type == "visitor":
+            qs = qs.filter(is_visitor=True)
+        elif person_type == "kid":
+            qs = qs.filter(is_child_profile=True)
+        elif person_type == "other":
+            qs = qs.filter(is_member=False, is_visitor=False, is_child_profile=False)
+        else:
+            person_type = "all"
+
+        paginator = Paginator(qs.order_by("first_name", "last_name"), 25)
+        base = Person.objects.all()
+        counts = {
+            "all": base.count(),
+            "member": base.filter(is_member=True).count(),
+            "visitor": base.filter(is_visitor=True).count(),
+            "kid": base.filter(is_child_profile=True).count(),
+            "other": base.filter(is_member=False, is_visitor=False, is_child_profile=False).count(),
+        }
+        context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
+        context["q"] = q
+        context["person_type"] = person_type
+        context["counts"] = counts
+        return context
 
 
 @login_required
@@ -756,46 +802,108 @@ class AdminDashboardView(TemplateView):
 
 	def get_context_data(self, **kwargs):
 		context = super().get_context_data(**kwargs)
+		today = timezone.localdate()
+		month_start = today.replace(day=1)
+
+		# ── Stat cards ────────────────────────────────────────────────────────
 		context["total_members"] = Person.objects.filter(is_member=True).count()
 		context["pending_baptisms"] = Baptism.objects.filter(status=SacramentStatus.PENDING).count()
 		context["pending_dedications"] = BabyDedication.objects.filter(status=SacramentStatus.PENDING).count()
+		context["pending_weddings"] = Wedding.objects.filter(
+			status__in=[SacramentStatus.PENDING, SacramentStatus.APPROVED]
+		).count()
 		context["total_weddings"] = Wedding.objects.count()
 		context["certificates_issued"] = Certificate.objects.count()
-		today = timezone.localdate()
+		context["new_members_this_month"] = Person.objects.filter(
+			is_member=True, date_joined__gte=month_start
+		).count()
+		context["active_officiants"] = Officiant.objects.filter(is_active=True).count()
+		context["new_visitors_this_month"] = Person.objects.filter(
+			is_visitor=True, first_visit_date__gte=month_start
+		).count()
+		context["total_visitors"] = Person.objects.filter(is_visitor=True).count()
+
+		# ── Upcoming services (with days_away) ────────────────────────────────
 		upcoming_services = []
 		for item in Baptism.objects.select_related("person").filter(baptism_date__gte=today).order_by("baptism_date")[:10]:
-			upcoming_services.append(
-				{
-					"service": "Baptism",
-					"name": str(item.person),
-					"date": item.baptism_date,
-					"url": reverse("admin_baptism_review", kwargs={"baptism_id": item.id}),
-				}
-			)
+			upcoming_services.append({
+				"service": "Baptism",
+				"name": str(item.person),
+				"date": item.baptism_date,
+				"days_away": (item.baptism_date - today).days,
+				"url": reverse("admin_baptism_review", kwargs={"baptism_id": item.id}),
+			})
 		for item in BabyDedication.objects.select_related("child").filter(dedication_date__gte=today).order_by("dedication_date")[:10]:
-			upcoming_services.append(
-				{
-					"service": "Dedication",
-					"name": str(item.child),
-					"date": item.dedication_date,
-					"url": reverse("admin_dedication_review", kwargs={"dedication_id": item.id}),
-				}
-			)
-		for item in Wedding.objects.select_related("groom", "bride").filter(wedding_date__gte=today).order_by("wedding_date")[:10]:
-			upcoming_services.append(
-				{
-					"service": "Wedding",
-					"name": f"{item.groom} & {item.bride}",
-					"date": item.wedding_date,
-					"url": reverse("admin_wedding_review", kwargs={"wedding_id": item.id}),
-				}
-			)
-		context["upcoming_services"] = sorted(upcoming_services, key=lambda value: value["date"])[:8]
-		context["recent_requests"] = {
-			"baptisms": Baptism.objects.select_related("person").order_by("-created_at")[:5],
-			"dedications": BabyDedication.objects.select_related("child").order_by("-created_at")[:5],
-		}
-		context["recent_certificates"] = Certificate.objects.order_by("-issued_date", "-created_at")[:5]
+			upcoming_services.append({
+				"service": "Dedication",
+				"name": str(item.child),
+				"date": item.dedication_date,
+				"days_away": (item.dedication_date - today).days,
+				"url": reverse("admin_dedication_review", kwargs={"dedication_id": item.id}),
+			})
+		for item in Wedding.objects.select_related("groom", "bride").filter(wedding_date__gte=today).exclude(marriage_resolution=Wedding.RESOLUTION_ANNULLED).order_by("wedding_date")[:10]:
+			upcoming_services.append({
+				"service": "Wedding",
+				"name": f"{item.groom} & {item.bride}",
+				"date": item.wedding_date,
+				"days_away": (item.wedding_date - today).days,
+				"url": reverse("admin_wedding_review", kwargs={"wedding_id": item.id}),
+			})
+		context["upcoming_services"] = sorted(upcoming_services, key=lambda v: v["date"])[:8]
+
+		# ── Pending actions (unified, sorted oldest-first) ────────────────────
+		pending_actions = []
+		for b in Baptism.objects.filter(status=SacramentStatus.PENDING).select_related("person").order_by("created_at")[:5]:
+			pending_actions.append({
+				"service": "Baptism",
+				"name": str(b.person),
+				"status": b.status,
+				"age": (today - b.created_at.date()).days,
+				"url": reverse("admin_baptism_review", kwargs={"baptism_id": b.id}),
+			})
+		for d in BabyDedication.objects.filter(status=SacramentStatus.PENDING).select_related("child").order_by("created_at")[:5]:
+			pending_actions.append({
+				"service": "Dedication",
+				"name": str(d.child),
+				"status": d.status,
+				"age": (today - d.created_at.date()).days,
+				"url": reverse("admin_dedication_review", kwargs={"dedication_id": d.id}),
+			})
+		for w in Wedding.objects.filter(
+			status__in=[SacramentStatus.PENDING, SacramentStatus.APPROVED]
+		).select_related("groom", "bride").order_by("created_at")[:5]:
+			pending_actions.append({
+				"service": "Wedding",
+				"name": f"{w.groom} & {w.bride}",
+				"status": w.status,
+				"age": (today - w.created_at.date()).days,
+				"url": reverse("admin_wedding_review", kwargs={"wedding_id": w.id}),
+			})
+		context["pending_actions"] = sorted(pending_actions, key=lambda x: x["age"], reverse=True)[:10]
+
+		# ── 6-month activity chart data ───────────────────────────────────────
+		chart_labels, chart_baptisms, chart_dedications, chart_weddings = [], [], [], []
+		for offset in range(5, -1, -1):
+			mo = today.month - offset
+			yr = today.year
+			if mo <= 0:
+				mo += 12
+				yr -= 1
+			chart_labels.append(calendar.month_abbr[mo])
+			chart_baptisms.append(Baptism.objects.filter(created_at__year=yr, created_at__month=mo).count())
+			chart_dedications.append(BabyDedication.objects.filter(created_at__year=yr, created_at__month=mo).count())
+			chart_weddings.append(Wedding.objects.filter(created_at__year=yr, created_at__month=mo).count())
+		context["chart_labels"] = json.dumps(chart_labels)
+		context["chart_baptisms"] = json.dumps(chart_baptisms)
+		context["chart_dedications"] = json.dumps(chart_dedications)
+		context["chart_weddings"] = json.dumps(chart_weddings)
+
+		_seven_days_ago = timezone.now() - timedelta(days=7)
+		context["recent_certificates"] = (
+			Certificate.objects
+			.filter(created_at__gte=_seven_days_ago)
+			.order_by("-issued_date", "-created_at")[:5]
+		)
 		return context
 
 
@@ -810,6 +918,9 @@ class MemberDashboardView(TemplateView):
 		context["dedications"] = BabyDedication.objects.filter(
 			Q(father=member.person) | Q(mother=member.person)
 		).order_by("-created_at")
+		context["wedding_requests"] = WeddingRequest.objects.filter(
+			submitter=member.person
+		).order_by("-created_at")
 		context["certificates"] = _member_certificates(member.person)
 		context["recent_certificates"] = _member_certificates(member.person)[:5]
 		context["pending_requests"] = Baptism.objects.filter(
@@ -817,6 +928,9 @@ class MemberDashboardView(TemplateView):
 		).count() + BabyDedication.objects.filter(
 			Q(father=member.person) | Q(mother=member.person),
 			status__in=[SacramentStatus.PENDING, SacramentStatus.APPROVED, SacramentStatus.SCHEDULED],
+		).count() + WeddingRequest.objects.filter(
+			submitter=member.person,
+			status__in=[SacramentStatus.PENDING, SacramentStatus.APPROVED],
 		).count()
 		return context
 
@@ -847,6 +961,122 @@ class MemberListView(TemplateView):
 		context["status"] = status
 		context["page_query"] = _query_without_page(self.request)
 		return context
+
+
+@method_decorator([login_required, staff_required], name="dispatch")
+class VisitorListView(TemplateView):
+    template_name = "admin/visitor_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        q = self.request.GET.get("q", "").strip()
+        visitors = Person.objects.filter(is_visitor=True).order_by("-first_visit_date", "-created_at")
+        if q:
+            visitors = visitors.filter(
+                Q(first_name__icontains=q)
+                | Q(last_name__icontains=q)
+                | Q(phone__icontains=q)
+                | Q(email__icontains=q)
+            )
+        paginator = Paginator(visitors, 25)
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+        context.update({"page_obj": page_obj, "q": q, "page_query": f"q={q}&"})
+        return context
+
+
+@login_required
+@staff_required
+def visitor_register(request):
+    if request.method == "POST":
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        phone = request.POST.get("phone", "").strip()
+        gender = request.POST.get("gender", "")
+        dob_raw = request.POST.get("date_of_birth", "").strip()
+        email = request.POST.get("email", "").strip()
+        address = request.POST.get("address", "").strip()
+        visitor_notes = request.POST.get("visitor_notes", "").strip()
+
+        errors = []
+        if not first_name:
+            errors.append("First name is required.")
+        if not last_name:
+            errors.append("Last name is required.")
+        if not phone:
+            errors.append("Phone number is required.")
+
+        dob = None
+        if dob_raw:
+            try:
+                dob = date.fromisoformat(dob_raw)
+            except ValueError:
+                errors.append("Invalid date of birth format.")
+
+        if not errors:
+            Person.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                gender=gender or "Other",
+                date_of_birth=dob or date(2000, 1, 1),
+                phone=phone,
+                email=email,
+                address=address,
+                is_visitor=True,
+                first_visit_date=date.today(),
+                visit_count=1,
+                visitor_notes=visitor_notes,
+                is_active=True,
+            )
+            return redirect(reverse("admin_visitor_list") + "?registered=1")
+
+        return render(request, "admin/visitor_register.html", {
+            "errors": errors,
+            "post": request.POST,
+        })
+
+    return render(request, "admin/visitor_register.html", {})
+
+
+@login_required
+@staff_required
+def visitor_checkin(request, person_id):
+    if request.method != "POST":
+        return redirect("admin_visitor_list")
+    visitor = get_object_or_404(Person, id=person_id, is_visitor=True)
+    visitor.visit_count += 1
+    visitor.save(update_fields=["visit_count", "updated_at"])
+    return redirect(request.POST.get("next", reverse("admin_visitor_list")))
+
+
+@login_required
+@staff_required
+def visitor_convert_to_member(request, person_id):
+    if request.method != "POST":
+        return redirect("admin_visitor_list")
+    person = get_object_or_404(Person, id=person_id, is_visitor=True)
+    base_username = f"{person.first_name.lower()}.{person.last_name.lower()}".replace(" ", "")
+    username = base_username
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{base_username}{counter}"
+        counter += 1
+    temp_password = User.objects.make_random_password(length=12)
+    user = User.objects.create_user(
+        username=username,
+        password=temp_password,
+        email=person.email or "",
+        first_name=person.first_name,
+        last_name=person.last_name,
+    )
+    person.is_visitor = False
+    person.is_member = True
+    person.date_joined = date.today()
+    person.save(update_fields=["is_visitor", "is_member", "date_joined", "updated_at"])
+    MemberAccount.objects.create(user=user, person=person)
+    notifications.send_welcome(person, username=user.username, temp_password=temp_password)
+    log(request.user, "update", ActivityLog.CAT_MEMBER, f"{person.first_name} {person.last_name} converted from visitor to member.")
+    return redirect(reverse("admin_member_edit", args=[person.id]))
 
 
 @method_decorator([login_required, staff_required], name="dispatch")
@@ -1058,6 +1288,8 @@ def member_create(request):
 		)
 		user = User.objects.create_user(username=username, password=password, email=email)
 		MemberAccount.objects.create(user=user, person=person)
+		notifications.send_welcome(person, username=username, temp_password=password)
+		log(request.user, "create", ActivityLog.CAT_MEMBER, f"Admin created member account for {person.first_name} {person.last_name}.")
 		messages.success(request, "Member created successfully.")
 		return redirect("admin_member_list")
 	return render(request, "admin/member_form.html", base_context)
@@ -1140,6 +1372,33 @@ def member_edit(request, person_id):
 
 @login_required
 @staff_required
+def admin_person_detail(request, person_id):
+    person = get_object_or_404(
+        Person.objects.prefetch_related(
+            "father_dedications__child",
+            "mother_dedications__child",
+            "groom_weddings__bride",
+            "bride_weddings__groom",
+            "child_dedications",
+        ).select_related("member_account"),
+        id=person_id,
+    )
+    try:
+        baptism = person.baptism
+    except Exception:
+        baptism = Baptism.objects.filter(person=person).first()
+    profile_photo = None
+    if hasattr(person, "member_account") and person.member_account and person.member_account.profile_photo:
+        profile_photo = person.member_account.profile_photo
+    return render(request, "admin/person_detail.html", {
+        "person": person,
+        "baptism": baptism,
+        "profile_photo": profile_photo,
+    })
+
+
+@login_required
+@staff_required
 def admin_person_edit(request, person_id):
 	person = get_object_or_404(Person, id=person_id)
 
@@ -1175,6 +1434,7 @@ def admin_person_edit(request, person_id):
 		person.address = address
 		person.save(update_fields=["first_name", "last_name", "gender", "date_of_birth", "email", "phone", "address", "updated_at"])
 
+		log(request.user, "update", ActivityLog.CAT_MEMBER, f"Profile updated for {person.first_name} {person.last_name}.")
 		messages.success(request, f"Profile for {person} updated successfully.")
 		referrer = request.POST.get("referrer", "")
 		if referrer:
@@ -1493,6 +1753,17 @@ def admin_baptism_review(request, baptism_id):
 		if comment:
 			baptism.admin_comment = comment
 		baptism.save()
+		notifications.send_baptism_status(baptism, action)
+		_bdate = baptism.baptism_date.strftime("%d %B %Y") if baptism.baptism_date else "a date to be confirmed"
+		_bmsg = {
+			"approve": "Your baptism request has been approved.",
+			"reject": f"Your baptism request was not approved.{' ' + baptism.admin_comment if baptism.admin_comment else ''}",
+			"cancel": "Your baptism request has been cancelled.",
+			"schedule": f"Your baptism has been scheduled for {_bdate}.",
+			"complete": "Your baptism has been marked as completed.",
+		}.get(action, "Your baptism status has been updated.")
+		notify_member(baptism.person, MemberNotification.CAT_BAPTISM, _bmsg)
+		log(request.user, action, ActivityLog.CAT_BAPTISM, f"Baptism for {baptism.person.first_name} {baptism.person.last_name} marked {action}.")
 		messages.success(request, "Baptism request updated.")
 		return redirect("admin_baptism_review", baptism_id=baptism.id)
 	latest_certificate = (
@@ -1529,6 +1800,7 @@ def admin_generate_baptism_certificate(request, baptism_id):
 		messages.error(request, "Set baptism date before generating certificate.")
 		return redirect("admin_baptism_review", baptism_id=baptism.id)
 	generate_baptism_certificate(baptism, design_template=BAPTISM_FIXED_DESIGN_TEMPLATE)
+	log(request.user, "generate", ActivityLog.CAT_CERTIFICATE, f"Baptism certificate generated for {baptism.person.first_name} {baptism.person.last_name}.")
 	messages.success(request, "Baptism certificate generated.")
 	return redirect("admin_baptism_review", baptism_id=baptism.id)
 
@@ -1751,6 +2023,18 @@ def admin_dedication_review(request, dedication_id):
 		if comment:
 			dedication.admin_comment = comment
 		dedication.save()
+		notifications.send_dedication_status(dedication, action)
+		_ddate = dedication.dedication_date.strftime("%d %B %Y") if dedication.dedication_date else "a date to be confirmed"
+		_dmsg = {
+			"approve": "Your baby dedication request has been approved.",
+			"reject": "Your baby dedication request was not approved.",
+			"schedule": f"Your baby dedication has been scheduled for {_ddate}.",
+			"complete": "Your baby dedication has been marked as completed.",
+		}.get(action, "Your baby dedication status has been updated.")
+		for _dp in [dedication.father, dedication.mother]:
+			if _dp:
+				notify_member(_dp, MemberNotification.CAT_DEDICATION, _dmsg)
+		log(request.user, action, ActivityLog.CAT_DEDICATION, f"Dedication for {dedication.child.first_name} {dedication.child.last_name} marked {action}.")
 		messages.success(request, "Dedication request updated.")
 		return redirect("admin_dedication_review", dedication_id=dedication.id)
 	return render(
@@ -1779,6 +2063,7 @@ def admin_generate_dedication_certificate(request, dedication_id):
 		messages.error(request, "Set dedication date before generating certificate.")
 		return redirect("admin_dedication_review", dedication_id=dedication.id)
 	generate_dedication_certificate(dedication, design_template=DEDICATION_FIXED_DESIGN_TEMPLATE)
+	log(request.user, "generate", ActivityLog.CAT_CERTIFICATE, f"Dedication certificate generated for {dedication.child.first_name} {dedication.child.last_name}.")
 	messages.success(request, "Dedication certificate generated.")
 	return redirect("admin_dedication_review", dedication_id=dedication.id)
 
@@ -1854,7 +2139,71 @@ class WeddingListView(TemplateView):
 		context["dir"] = dir
 		context["couple_type"] = couple_type
 		context["page_query"] = _query_without_page(self.request)
+		context["pending_requests"] = (
+			WeddingRequest.objects
+			.select_related("submitter", "partner")
+			.filter(status=SacramentStatus.PENDING)
+			.order_by("-created_at")
+		)
 		return context
+
+
+@login_required
+@staff_required
+def admin_wedding_request_review(request, request_id):
+	wrequest = get_object_or_404(WeddingRequest, id=request_id)
+
+	if request.method == "POST":
+		action = request.POST.get("action")
+
+		if action == "approve":
+			if wrequest.submitter_role == "groom":
+				groom, bride = wrequest.submitter, wrequest.partner
+			else:
+				groom, bride = wrequest.partner, wrequest.submitter
+
+			if not groom or not bride:
+				messages.error(request, "Cannot approve: partner Person record is missing.")
+				return redirect("admin_wedding_request_review", request_id=wrequest.id)
+
+			try:
+				wedding = Wedding.objects.create(
+					groom=groom,
+					bride=bride,
+					available_slot=wrequest.available_slot,
+					couple_photo=wrequest.couple_photo,
+					groom_health_document=wrequest.submitter_health_document if wrequest.submitter_role == "groom" else wrequest.partner_health_document,
+					bride_health_document=wrequest.partner_health_document if wrequest.submitter_role == "groom" else wrequest.submitter_health_document,
+					status=SacramentStatus.APPROVED,
+				)
+				WeddingRequest.objects.filter(id=wrequest.id).update(
+					status=SacramentStatus.APPROVED,
+					updated_at=timezone.now(),
+				)
+				notifications.send_wedding_approved(wrequest)
+				notify_member(wrequest.submitter, MemberNotification.CAT_WEDDING,
+					"Your wedding request has been approved. Scheduling details will follow.")
+				log(request.user, "approve", ActivityLog.CAT_WEDDING,
+					f"Wedding request by {wrequest.submitter.first_name} {wrequest.submitter.last_name} approved.")
+				messages.success(request, "Wedding request approved. Set the date and officiant below.")
+				return redirect("admin_wedding_review", wedding_id=wedding.id)
+			except Exception as exc:
+				messages.error(request, f"Approval failed: {exc}")
+				return redirect("admin_wedding_request_review", request_id=wrequest.id)
+
+		elif action == "reject":
+			wrequest.status = SacramentStatus.REJECTED
+			wrequest.admin_comment = request.POST.get("admin_comment", "")
+			wrequest.save(update_fields=["status", "admin_comment", "updated_at"])
+			notifications.send_wedding_rejected(wrequest)
+			_wrej_comment = wrequest.admin_comment
+			notify_member(wrequest.submitter, MemberNotification.CAT_WEDDING,
+				f"Your wedding request was not approved.{' ' + _wrej_comment if _wrej_comment else ''}")
+			log(request.user, "reject", ActivityLog.CAT_WEDDING, f"Wedding request by {wrequest.submitter.first_name} {wrequest.submitter.last_name} rejected.")
+			messages.info(request, "Wedding request rejected.")
+			return redirect("admin_wedding_list")
+
+	return render(request, "admin/wedding_request_review.html", {"item": wrequest})
 
 
 @method_decorator([login_required, staff_required], name="dispatch")
@@ -2117,6 +2466,7 @@ def admin_wedding_review(request, wedding_id):
 				comment = "Marriage marked as divorced by admin."
 		elif action == "mark_annulled":
 			wedding.marriage_resolution = Wedding.RESOLUTION_ANNULLED
+			wedding.resolution_date = date.today()
 			if not comment:
 				comment = "Marriage marked as annulled by admin."
 		elif action == "mark_married":
@@ -2161,14 +2511,51 @@ def admin_wedding_review(request, wedding_id):
 			wedding.wedding_date = service_date
 			wedding.officiant = str(officiant_obj)
 			wedding.status = SacramentStatus.SCHEDULED
+		elif action == "upload_photo":
+			photo = request.FILES.get("couple_photo")
+			if photo:
+				wedding.couple_photo = photo
+				wedding.save(update_fields=["couple_photo", "updated_at"])
+				messages.success(request, "Couple photo uploaded successfully.")
+			else:
+				messages.error(request, "No file was selected.")
+			return redirect("admin_wedding_review", wedding_id=wedding.id)
 		else:
 			messages.error(request, "Invalid action.")
 			return redirect("admin_wedding_review", wedding_id=wedding.id)
 		if comment:
 			wedding.admin_comment = comment
 		wedding.save()
+		if action == "schedule" and wedding.wedding_date:
+			_wdate = wedding.wedding_date.strftime("%d %B %Y")
+			notifications.send_wedding_scheduled(wedding)
+			for _wp in [wedding.groom, wedding.bride]:
+				if _wp:
+					notify_member(_wp, MemberNotification.CAT_WEDDING, f"Your wedding has been scheduled for {_wdate}.")
+		elif action == "mark_married":
+			for _wp in [wedding.groom, wedding.bride]:
+				if _wp:
+					notify_member(_wp, MemberNotification.CAT_WEDDING, "Congratulations! Your marriage has been recorded.")
 		messages.success(request, "Wedding updated.")
 		return redirect("admin_wedding_review", wedding_id=wedding.id)
+	# Lazy 10-day check: if annulment window has closed, reset both persons to Single
+	if (
+		wedding.marriage_resolution == Wedding.RESOLUTION_ANNULLED
+		and wedding.resolution_date
+		and date.today() > wedding.resolution_date + timedelta(days=10)
+	):
+		for person in [wedding.groom, wedding.bride]:
+			if person and person.marital_status != "Single":
+				person.marital_status = "Single"
+				person.spouse_name = ""
+				person.save(update_fields=["marital_status", "spouse_name"])
+
+	within_remarry_window = (
+		wedding.marriage_resolution == Wedding.RESOLUTION_ANNULLED
+		and wedding.resolution_date is not None
+		and date.today() <= wedding.resolution_date + timedelta(days=10)
+	)
+
 	latest_certificate = (
 		Certificate.objects.filter(
 			service_type=Certificate.WEDDING,
@@ -2185,6 +2572,7 @@ def admin_wedding_review(request, wedding_id):
 			"item": wedding,
 			"officiants": officiants,
 			"latest_certificate": latest_certificate,
+			"within_remarry_window": within_remarry_window,
 		},
 	)
 
@@ -2293,6 +2681,7 @@ def admin_generate_wedding_certificate(request, wedding_id):
 		return redirect("admin_wedding_review", wedding_id=wedding.id)
 
 	generate_wedding_certificate(wedding, design_template=WEDDING_FIXED_DESIGN_TEMPLATE)
+	log(request.user, "generate", ActivityLog.CAT_CERTIFICATE, f"Wedding certificate generated for {wedding.groom.first_name} {wedding.groom.last_name} & {wedding.bride.first_name} {wedding.bride.last_name}.")
 	messages.success(request, "Wedding certificate generated.")
 	return redirect("admin_wedding_review", wedding_id=wedding.id)
 
@@ -2385,13 +2774,15 @@ def admin_calendar(request):
 	month = int(request.GET.get("month", today.month))
 	_, total_days = calendar.monthrange(year, month)
 
+	month_rows = list(calendar.Calendar(firstweekday=0).monthdayscalendar(year, month))
+
 	events = []
 	for item in Baptism.objects.filter(baptism_date__year=year, baptism_date__month=month):
-		events.append({"day": item.baptism_date.day, "label": f"Baptism: {item.person}", "color": "#0d6efd"})
+		events.append({"day": item.baptism_date.day, "label": f"Baptism: {item.person}", "type": "baptism"})
 	for item in BabyDedication.objects.filter(dedication_date__year=year, dedication_date__month=month):
-		events.append({"day": item.dedication_date.day, "label": f"Dedication: {item.child}", "color": "#fd7e14"})
-	for item in Wedding.objects.filter(wedding_date__year=year, wedding_date__month=month):
-		events.append({"day": item.wedding_date.day, "label": f"Wedding: {item.groom} & {item.bride}", "color": "#6f42c1"})
+		events.append({"day": item.dedication_date.day, "label": f"Dedication: {item.child}", "type": "dedication"})
+	for item in Wedding.objects.filter(wedding_date__year=year, wedding_date__month=month).exclude(marriage_resolution=Wedding.RESOLUTION_ANNULLED):
+		events.append({"day": item.wedding_date.day, "label": f"Wedding: {item.groom} & {item.bride}", "type": "wedding"})
 
 	return render(
 		request,
@@ -2399,7 +2790,7 @@ def admin_calendar(request):
 		{
 			"year": year,
 			"month": month,
-			"days": list(range(1, total_days + 1)),
+			"month_rows": month_rows,
 			"events": events,
 			"month_name": calendar.month_name[month],
 		},
@@ -3227,15 +3618,21 @@ def member_baptism_request(request):
 			existing.available_slot = selected_slot
 			existing.admin_comment = ""
 			existing.save(update_fields=["status", "available_slot", "admin_comment", "updated_at"])
+			baptism_obj = existing
 			messages.success(request, "Baptism request resubmitted.")
 		else:
-			Baptism.objects.create(
-				person=person, 
-				request_date=timezone.localdate(), 
+			baptism_obj = Baptism.objects.create(
+				person=person,
+				request_date=timezone.localdate(),
 				status=SacramentStatus.PENDING,
-				available_slot=selected_slot
+				available_slot=selected_slot,
 			)
 			messages.success(request, "Baptism request submitted.")
+		review_url = request.build_absolute_uri(
+			reverse("admin_baptism_review", kwargs={"baptism_id": baptism_obj.id})
+		)
+		notifications.notify_admin_new_baptism(baptism_obj, review_url)
+		log(request.user, "create", ActivityLog.CAT_BAPTISM, f"{person.first_name} {person.last_name} submitted a baptism request.")
 		return redirect("member_dashboard")
 	
 	return render(request, "member/baptism_request.html", {
@@ -3376,8 +3773,39 @@ def member_wedding_request(request):
 				"cell": partner_cell,
 				"village": partner_village,
 			}
+			# Create a Person record so the partner is trackable in the People table
+			partner = Person.objects.create(
+				first_name=partner_first_name,
+				last_name=partner_last_name,
+				gender=partner_gender,
+				date_of_birth=partner_dob,
+				phone=partner_phone,
+				email=partner_email,
+				address=partner_address,
+				province=partner_province,
+				district=partner_district,
+				sector=partner_sector,
+				cell=partner_cell,
+				village=partner_village,
+				is_member=False,
+				is_visitor=False,
+				is_child_profile=False,
+			)
 
 		submitter_health_document = request.FILES.get("submitter_health_document")
+
+		# Resolve requested slot (optional — member may not have selected one)
+		requested_slot = None
+		slot_id = request.POST.get("available_slot", "").strip()
+		if slot_id:
+			try:
+				requested_slot = AvailableSlot.objects.get(
+					id=slot_id,
+					activity_type=AvailableSlot.ACTIVITY_WEDDING,
+					is_available=True,
+				)
+			except (ValueError, AvailableSlot.DoesNotExist):
+				requested_slot = None
 
 		wrequest = WeddingRequest.objects.create(
 			submitter=member_person,
@@ -3385,11 +3813,21 @@ def member_wedding_request(request):
 			partner_is_member=partner_is_member,
 			partner_non_member_data=partner_non_member_data,
 			partner_gender_expected=partner_gender_expected,
+			available_slot=requested_slot,
 			submitter_role=owner_role,
 			couple_photo=couple_photo,
 			submitter_health_document=submitter_health_document,
 			status=SacramentStatus.PENDING,
 		)
+		invite_url = request.build_absolute_uri(
+			reverse("member_wedding_consent", kwargs={"invite_code": wrequest.partner_invite_code})
+		)
+		review_url = request.build_absolute_uri(
+			reverse("admin_wedding_request_review", kwargs={"request_id": wrequest.id})
+		)
+		notifications.send_partner_invite(wrequest, invite_url)
+		notifications.notify_admin_new_wedding_request(wrequest, review_url)
+		log(request.user, "create", ActivityLog.CAT_WEDDING, f"{member_person.first_name} {member_person.last_name} submitted a wedding request.")
 		messages.success(
 			request,
 			"Wedding request submitted! "
@@ -3418,10 +3856,197 @@ def member_wedding_status(request, request_id):
 		reverse("member_wedding_consent", kwargs={"invite_code": wrequest.partner_invite_code})
 	)
 
+	is_submitter = wrequest.submitter == member_person
 	return render(request, "member/wedding_status.html", {
 		"wrequest": wrequest,
 		"invite_url": invite_url,
+		"can_edit": is_submitter and wrequest.status == SacramentStatus.PENDING,
+		"can_cancel": is_submitter and wrequest.status == SacramentStatus.PENDING,
+		"can_resubmit": is_submitter and wrequest.status in [SacramentStatus.REJECTED, SacramentStatus.CANCELLED],
+		"show_application_form": wrequest.status == SacramentStatus.APPROVED,
 	})
+
+
+@login_required
+@member_required
+def member_wedding_cancel(request, request_id):
+	"""Member cancels their own pending wedding request."""
+	if request.method != "POST":
+		return redirect("member_wedding_status", request_id=request_id)
+
+	wrequest = get_object_or_404(WeddingRequest, id=request_id)
+	member_person = request.user.member_account.person
+	if wrequest.submitter != member_person:
+		raise Http404
+
+	if wrequest.status != SacramentStatus.PENDING:
+		messages.error(request, "This request cannot be removed in its current status.")
+		return redirect("member_wedding_status", request_id=request_id)
+
+	wrequest_id = wrequest.id
+	notifications.notify_admin_wedding_cancelled(wrequest)
+	log(request.user, "cancel", ActivityLog.CAT_WEDDING, f"Member removed wedding request {wrequest_id}")
+	wrequest.delete()
+	messages.success(request, "Your wedding request has been removed.")
+	return redirect("member_dashboard")
+
+
+@login_required
+@member_required
+def member_wedding_edit(request, request_id):
+	"""Member edits their pending wedding request (slot, photo, health docs)."""
+	wrequest = get_object_or_404(WeddingRequest, id=request_id)
+	member_person = request.user.member_account.person
+	if wrequest.submitter != member_person:
+		raise Http404
+
+	if wrequest.status != SacramentStatus.PENDING:
+		messages.error(request, "You can only edit a request while it is pending.")
+		return redirect("member_wedding_status", request_id=request_id)
+
+	available_slots = AvailableSlot.objects.filter(
+		activity_type=AvailableSlot.ACTIVITY_WEDDING,
+		is_available=True,
+	).order_by("date", "time")
+
+	member_choices = Person.objects.filter(is_member=True, is_active=True).exclude(id=member_person.id).order_by("last_name", "first_name")
+
+	if request.method == "POST":
+		slot_id = request.POST.get("available_slot") or None
+		slot = None
+		if slot_id:
+			slot = AvailableSlot.objects.filter(id=slot_id, activity_type=AvailableSlot.ACTIVITY_WEDDING, is_available=True).first()
+
+		qs_update = {"updated_at": timezone.now(), "available_slot": slot}
+
+		# --- Partner editing ---
+		if not wrequest.partner_is_member:
+			# Non-member partner: update JSON data + the linked Person record
+			p_first = request.POST.get("partner_first_name", "").strip()
+			p_last = request.POST.get("partner_last_name", "").strip()
+			p_gender = request.POST.get("partner_gender", "").strip()
+			p_dob_raw = request.POST.get("partner_date_of_birth", "").strip()
+			p_phone = request.POST.get("partner_phone", "").strip()
+			p_email = request.POST.get("partner_email", "").strip()
+			p_address = request.POST.get("partner_address", "").strip()
+			p_church = request.POST.get("partner_church_name", "").strip()
+			p_province = request.POST.get("partner_province", "").strip()
+			p_district = request.POST.get("partner_district", "").strip()
+			p_sector = request.POST.get("partner_sector", "").strip()
+			p_cell = request.POST.get("partner_cell", "").strip()
+			p_village = request.POST.get("partner_village", "").strip()
+
+			p_dob, p_dob_error = _parse_date(p_dob_raw, "Partner date of birth")
+			email_err = _validate_email_value(p_email) if p_email else None
+			phone_err = _validate_phone(p_phone) if p_phone else None
+
+			if p_dob_error or email_err or phone_err:
+				messages.error(request, p_dob_error or email_err or phone_err)
+				return render(request, "member/wedding_edit.html", {
+					"wrequest": wrequest,
+					"available_slots": available_slots,
+					"member_choices": member_choices,
+				})
+
+			if p_first and p_last:
+				new_json = dict(wrequest.partner_non_member_data)
+				new_json.update({
+					"first_name": p_first,
+					"last_name": p_last,
+					"gender": p_gender,
+					"date_of_birth": p_dob.isoformat() if p_dob else new_json.get("date_of_birth", ""),
+					"phone": p_phone,
+					"email": p_email,
+					"address": p_address,
+					"church_name": p_church,
+					"province": p_province,
+					"district": p_district,
+					"sector": p_sector,
+					"cell": p_cell,
+					"village": p_village,
+				})
+				qs_update["partner_non_member_data"] = new_json
+				# Also update the Person record that was created for the non-member partner
+				if wrequest.partner_id:
+					Person.objects.filter(id=wrequest.partner_id).update(
+						first_name=p_first,
+						last_name=p_last,
+						gender=p_gender,
+						date_of_birth=p_dob if p_dob else wrequest.partner.date_of_birth,
+						phone=p_phone,
+						email=p_email,
+						address=p_address,
+						province=p_province,
+						district=p_district,
+						sector=p_sector,
+						cell=p_cell,
+						village=p_village,
+					)
+		else:
+			# Member partner: allow swapping if partner hasn't consented yet
+			if not wrequest.partner_consented:
+				new_partner_id = request.POST.get("partner_member_id", "").strip()
+				if new_partner_id and new_partner_id != str(wrequest.partner_id):
+					try:
+						new_partner = Person.objects.get(id=new_partner_id, is_member=True, is_active=True)
+						if new_partner.id != member_person.id:
+							qs_update["partner"] = new_partner
+					except Person.DoesNotExist:
+						pass
+
+		WeddingRequest.objects.filter(id=wrequest.id).update(**qs_update)
+
+		wrequest.refresh_from_db()
+		from django.db.models import Model as _Model
+		if "couple_photo" in request.FILES:
+			wrequest.couple_photo = request.FILES["couple_photo"]
+			_Model.save(wrequest, update_fields=["couple_photo"])
+		if "submitter_health_document" in request.FILES:
+			wrequest.submitter_health_document = request.FILES["submitter_health_document"]
+			_Model.save(wrequest, update_fields=["submitter_health_document"])
+		if "partner_health_document" in request.FILES:
+			wrequest.partner_health_document = request.FILES["partner_health_document"]
+			_Model.save(wrequest, update_fields=["partner_health_document"])
+
+		messages.success(request, "Your wedding request has been updated.")
+		return redirect("member_wedding_status", request_id=wrequest.id)
+
+	return render(request, "member/wedding_edit.html", {
+		"wrequest": wrequest,
+		"available_slots": available_slots,
+		"member_choices": member_choices,
+	})
+
+
+@login_required
+@member_required
+def member_wedding_resubmit(request, request_id):
+	"""Member resubmits a rejected or cancelled wedding request."""
+	if request.method != "POST":
+		return redirect("member_wedding_status", request_id=request_id)
+
+	wrequest = get_object_or_404(WeddingRequest, id=request_id)
+	member_person = request.user.member_account.person
+	if wrequest.submitter != member_person:
+		raise Http404
+
+	if wrequest.status not in [SacramentStatus.REJECTED, SacramentStatus.CANCELLED]:
+		messages.error(request, "This request cannot be resubmitted in its current status.")
+		return redirect("member_wedding_status", request_id=request_id)
+
+	WeddingRequest.objects.filter(id=wrequest.id).update(
+		status=SacramentStatus.PENDING,
+		updated_at=timezone.now(),
+	)
+	review_url = request.build_absolute_uri(
+		reverse("admin_wedding_request_review", kwargs={"request_id": wrequest.id})
+	)
+	notifications.notify_admin_new_wedding_request(wrequest, review_url)
+	notify_member(wrequest.submitter, MemberNotification.CAT_WEDDING,
+		"Your wedding request has been resubmitted and is under review.")
+	log(request.user, "create", ActivityLog.CAT_WEDDING, f"Member resubmitted wedding request {wrequest.id}")
+	messages.success(request, "Your wedding request has been resubmitted for review.")
+	return redirect("member_wedding_status", request_id=wrequest.id)
 
 
 @login_required
@@ -3526,7 +4151,7 @@ def member_dedication_request(request):
 			is_member=False,
 			is_child_profile=True,
 		)
-		BabyDedication.objects.create(
+		ded = BabyDedication.objects.create(
 			child=child,
 			father=father,
 			mother=mother,
@@ -3535,6 +4160,11 @@ def member_dedication_request(request):
 			request_date=timezone.localdate(),
 			available_slot=selected_slot,
 		)
+		review_url = request.build_absolute_uri(
+			reverse("admin_dedication_review", kwargs={"dedication_id": ded.id})
+		)
+		notifications.notify_admin_new_dedication(ded, review_url)
+		log(request.user, "create", ActivityLog.CAT_DEDICATION, f"{member_person.first_name} {member_person.last_name} submitted a dedication request for {child_first} {child_last}.")
 		messages.success(request, "Dedication request submitted.")
 		return redirect("member_dashboard")
 	
@@ -3599,6 +4229,64 @@ class MemberCertificateListView(TemplateView):
 		return context
 
 
+@login_required
+@member_required
+def member_notifications(request):
+	MemberNotification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+	qs = MemberNotification.objects.filter(user=request.user)
+	paginator = Paginator(qs, 20)
+	return render(request, "member/notifications.html", {
+		"page_obj": paginator.get_page(request.GET.get("page")),
+	})
+
+
+@login_required
+@member_required
+def member_mark_notifications_read(request):
+	if request.method == "POST":
+		MemberNotification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+	return redirect(request.POST.get("next") or "member_dashboard")
+
+
+@login_required
+@member_required
+def member_baptism_status(request):
+	person = request.user.member_account.person
+	baptism = get_object_or_404(Baptism, person=person)
+	latest_certificate = (
+		Certificate.objects.filter(service_type=Certificate.BAPTISM, object_id=baptism.id)
+		.exclude(certificate_file="")
+		.order_by("-issued_date", "-created_at")
+		.first()
+	)
+	return render(request, "member/baptism_status.html", {
+		"baptism": baptism,
+		"latest_certificate": latest_certificate,
+	})
+
+
+@login_required
+@member_required
+def member_dedication_status(request, dedication_id):
+	person = request.user.member_account.person
+	dedication = get_object_or_404(
+		BabyDedication,
+		id=dedication_id,
+	)
+	if dedication.father != person and dedication.mother != person:
+		raise Http404
+	latest_certificate = (
+		Certificate.objects.filter(service_type=Certificate.DEDICATION, object_id=dedication.id)
+		.exclude(certificate_file="")
+		.order_by("-issued_date", "-created_at")
+		.first()
+	)
+	return render(request, "member/dedication_status.html", {
+		"dedication": dedication,
+		"latest_certificate": latest_certificate,
+	})
+
+
 def verify_certificate(request, certificate_number):
 	certificate = Certificate.objects.filter(certificate_number=certificate_number).first()
 	if not certificate:
@@ -3628,3 +4316,33 @@ def verify_certificate(request, certificate_number):
 			"status": "Valid" if certificate.is_valid else "Revoked",
 		},
 	)
+
+
+# ---------------------------------------------------------------------------
+# Notifications / Activity Log
+# ---------------------------------------------------------------------------
+
+@method_decorator([login_required, staff_required], name="dispatch")
+class NotificationListView(TemplateView):
+	template_name = "admin/notifications.html"
+
+	def get_context_data(self, **kwargs):
+		context = super().get_context_data(**kwargs)
+		cat = self.request.GET.get("cat", "all")
+		qs = ActivityLog.objects.select_related("actor").all()
+		if cat != "all":
+			qs = qs.filter(category=cat)
+		paginator = Paginator(qs, 30)
+		context["page_obj"] = paginator.get_page(self.request.GET.get("page"))
+		context["active_cat"] = cat
+		context["categories"] = ActivityLog.CATEGORY_CHOICES
+		context["unread_total"] = ActivityLog.objects.filter(is_read=False).count()
+		return context
+
+
+@login_required
+@staff_required
+def mark_notifications_read(request):
+	if request.method == "POST":
+		ActivityLog.objects.filter(is_read=False).update(is_read=True)
+	return redirect(request.POST.get("next", "admin_notifications"))

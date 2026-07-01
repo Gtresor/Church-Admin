@@ -1,21 +1,79 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Calendar - {{ month_name }} {{ year }}</h3>
-<form class="row g-2 mb-3">
-  <div class="col-md-2"><input class="form-control" type="number" name="month" min="1" max="12" value="{{ month }}"></div>
-  <div class="col-md-2"><input class="form-control" type="number" name="year" min="2000" max="2100" value="{{ year }}"></div>
-  <div class="col-md-2"><button class="btn btn-outline-primary">Go</button></div>
-</form>
-<div class="row row-cols-7 g-2">
-  {% for day in days %}
-    <div class="col-md-1 border rounded p-2 bg-white" style="min-height:120px;">
-      <strong>{{ day }}</strong>
-      {% for event in events %}
-        {% if event.day == day %}
-          <div class="small mt-1 p-1 text-white rounded" style="background:{{ event.color }};">{{ event.label }}</div>
-        {% endif %}
-      {% endfor %}
+<style>
+  .cal-ev            { font-size:10px; padding:2px 6px; margin-top:2px; border-radius:4px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+  .cal-ev-baptism    { background:#dbeafe; color:#1e40af; }
+  .cal-ev-dedication { background:#fef3c7; color:#92400e; }
+  .cal-ev-wedding    { background:#f3e8ff; color:#6b21a8; }
+  .cal-grid th       { font-size:0.72rem; font-weight:700; color:#718096; text-transform:uppercase; letter-spacing:0.04em; padding:0.5rem; text-align:center; border-bottom:2px solid #eef2f7; }
+  .cal-grid td       { vertical-align:top; padding:0.5rem; border:1px solid #f0f2f5; min-height:100px; }
+  .cal-grid td.pg-cal-day:hover { background:#f8faff; }
+</style>
+
+<div class="pg-page">
+
+<div class="pg-card mb-3 pg-notice-info">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">{{ month_name }} {{ year }}</h4>
+      <div class="pg-gradient-accent"></div>
     </div>
-  {% endfor %}
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      {% if month == 1 %}
+        <a href="?year={{ year|add:"-1" }}&month=12" class="pg-btn-outline pg-btn-sm">&#8592; Prev</a>
+      {% else %}
+        <a href="?year={{ year }}&month={{ month|add:"-1" }}" class="pg-btn-outline pg-btn-sm">&#8592; Prev</a>
+      {% endif %}
+      <form class="d-flex align-items-end gap-2" method="get">
+        <input class="pg-input" style="width:72px;" type="number" name="month" min="1" max="12" value="{{ month }}">
+        <input class="pg-input" style="width:90px;" type="number" name="year" min="2000" max="2100" value="{{ year }}">
+        <button class="pg-btn-primary pg-btn-sm">Go</button>
+      </form>
+      {% if month == 12 %}
+        <a href="?year={{ year|add:"1" }}&month=1" class="pg-btn-outline pg-btn-sm">Next &#8594;</a>
+      {% else %}
+        <a href="?year={{ year }}&month={{ month|add:"1" }}" class="pg-btn-outline pg-btn-sm">Next &#8594;</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="pg-card">
+  <div class="table-responsive">
+    <table class="cal-grid" style="table-layout:fixed;width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th>
+          <th style="color:#667eea;">Sat</th><th style="color:#667eea;">Sun</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for week in month_rows %}
+        <tr>
+          {% for day_num in week %}
+          <td class="pg-cal-day {% if day_num == 0 %}pg-cal-empty{% endif %}" style="height:100px;">
+            {% if day_num > 0 %}
+              <strong style="font-size:0.82rem;color:#2d3748;">{{ day_num }}</strong>
+              {% for event in events %}
+                {% if event.day == day_num %}
+                  <div class="cal-ev cal-ev-{{ event.type }}">{{ event.label }}</div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="d-flex gap-3 mt-3" style="font-size:0.82rem;">
+    <span><span class="cal-ev cal-ev-baptism d-inline-block" style="display:inline-block !important;margin-top:0;">Baptism</span></span>
+    <span><span class="cal-ev cal-ev-dedication d-inline-block" style="display:inline-block !important;margin-top:0;">Dedication</span></span>
+    <span><span class="cal-ev cal-ev-wedding d-inline-block" style="display:inline-block !important;margin-top:0;">Wedding</span></span>
+  </div>
+</div>
+
 </div>
 {% endblock %}

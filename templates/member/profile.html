@@ -5,173 +5,139 @@
     min-width: 48px;
     line-height: 1;
   }
-
   .password-toggle-btn svg {
     width: 18px;
     height: 18px;
     display: block;
     margin: 0 auto;
   }
-
-  .info-avatar {
-    width: 74px;
-    height: 74px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #e9eefc;
-    border: 1px solid #d6def4;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #334155;
-  }
-
-  .info-avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .info-grid .label {
-    font-size: 0.78rem;
-    color: #6b7280;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-  }
-
-  .info-grid .value {
-    font-weight: 600;
-    color: #1f2937;
-  }
-
   .profile-preview-box {
-    height: 230px;
+    height: 200px;
     background: #eef2ff;
+    border-radius: 0.75rem;
     overflow: hidden;
   }
-
   .profile-preview-box img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 </style>
-<h3 class="mb-3">My Profile</h3>
 
-<div class="card border-0 shadow-sm mb-3">
-  <div class="card-body">
-    <div class="d-flex align-items-center gap-3 mb-4">
-      <span class="info-avatar">
-        {% if member_account.profile_photo %}
-          <img src="{{ member_account.profile_photo.url }}" alt="Member profile photo">
-        {% else %}
-          {{ person.first_name|slice:":1"|upper }}{{ person.last_name|slice:":1"|upper }}
-        {% endif %}
-      </span>
-      <div>
-        <h5 class="mb-1">Member Information Overview</h5>
-        <div class="small text-muted">Manage your account, personal profile, and contact information.</div>
-      </div>
-    </div>
+<div class="pg-page">
 
-    <div class="row g-3 info-grid">
-      <div class="col-lg-4">
-        <div class="border rounded-3 p-3 h-100">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">Account Details</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberAccountModal">Edit</button>
-          </div>
-          <div class="label">Username</div><div class="value mb-2">{{ user.username }}</div>
-          <div class="label">Email</div><div class="value mb-2">{{ user.email|default:'-' }}</div>
-          <div class="label">Password</div><div class="value">••••••••</div>
-          <button type="button" class="btn btn-sm btn-outline-warning mt-3" data-bs-toggle="modal" data-bs-target="#editMemberPasswordModal">Change Password</button>
-        </div>
-      </div>
-
-      <div class="col-lg-4">
-        <div class="border rounded-3 p-3 h-100">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">Personal Profile</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberPersonalModal">Edit</button>
-          </div>
-          <div class="label">First Name</div><div class="value mb-2">{{ person.first_name }}</div>
-          <div class="label">Last Name</div><div class="value mb-2">{{ person.last_name }}</div>
-          <div class="label">Gender</div><div class="value mb-2">{{ person.gender|default:'-' }}</div>
-          <div class="label">Date of Birth</div><div class="value">{{ person.date_of_birth|default:'-' }}</div>
-        </div>
-      </div>
-
-      <div class="col-lg-4">
-        <div class="border rounded-3 p-3 h-100">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">Contact Information</h6>
-            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editMemberContactModal">Edit</button>
-          </div>
-          <div class="label">Phone</div><div class="value mb-2">{{ person.phone|default:'-' }}</div>
-          <div class="label">Email</div><div class="value mb-2">{{ person.email|default:'-' }}</div>
-          <div class="label">Address</div><div class="value">{{ person.address|default:'-' }}</div>
-        </div>
-      </div>
+<div class="pg-card mb-3 pg-notice-info">
+  <div class="d-flex align-items-center gap-3">
+    <span class="pg-avatar-chip" style="width:52px;height:52px;font-size:1.05rem;font-weight:700;color:#334155;flex-shrink:0;">
+      {% if member_account.profile_photo %}
+        <img src="{{ member_account.profile_photo.url }}" alt="Member profile photo">
+      {% else %}
+        {{ person.first_name|slice:":1"|upper }}{{ person.last_name|slice:":1"|upper }}
+      {% endif %}
+    </span>
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">My Profile</h4>
+      <div class="pg-gradient-accent"></div>
     </div>
   </div>
 </div>
 
+<div class="row g-3 mb-3">
+  <div class="col-lg-4">
+    <div class="pg-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div style="font-weight:700;color:#1a202c;">Account Details</div>
+        <button type="button" class="pg-btn-outline pg-btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberAccountModal">Edit</button>
+      </div>
+      <div class="pg-label">Username</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ user.username }}</div>
+      <div class="pg-label">Email</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ user.email|default:'-' }}</div>
+      <div class="pg-label">Password</div><div style="color:#718096;letter-spacing:0.15em;margin-bottom:0.75rem;">••••••••</div>
+      <button type="button" class="pg-btn-warning pg-btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberPasswordModal">Change Password</button>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="pg-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div style="font-weight:700;color:#1a202c;">Personal Profile</div>
+        <button type="button" class="pg-btn-outline pg-btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberPersonalModal">Edit</button>
+      </div>
+      <div class="pg-label">First Name</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ person.first_name }}</div>
+      <div class="pg-label">Last Name</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ person.last_name }}</div>
+      <div class="pg-label">Gender</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ person.gender|default:'-' }}</div>
+      <div class="pg-label">Date of Birth</div><div style="font-weight:600;color:#1a202c;">{{ person.date_of_birth|default:'-' }}</div>
+    </div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="pg-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div style="font-weight:700;color:#1a202c;">Contact Information</div>
+        <button type="button" class="pg-btn-outline pg-btn-sm" data-bs-toggle="modal" data-bs-target="#editMemberContactModal">Edit</button>
+      </div>
+      <div class="pg-label">Phone</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ person.phone|default:'-' }}</div>
+      <div class="pg-label">Email</div><div style="font-weight:600;color:#1a202c;margin-bottom:0.75rem;">{{ person.email|default:'-' }}</div>
+      <div class="pg-label">Address</div><div style="font-weight:600;color:#1a202c;">{{ person.address|default:'-' }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Account Modal -->
 <div class="modal fade" id="editMemberAccountModal" tabindex="-1" aria-labelledby="editMemberAccountModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
         <h5 class="modal-title" id="editMemberAccountModalLabel">Edit Account Details</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post">
-        <div class="modal-body">
+        <div class="modal-body p-4">
           {% csrf_token %}
           <input type="hidden" name="action" value="account">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">Username</label>
-              <input type="text" name="username" class="form-control" value="{{ user.username }}" required>
+              <label class="pg-label">Username</label>
+              <input type="text" name="username" class="pg-input" value="{{ user.username }}" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Email</label>
-              <input type="email" name="email" class="form-control" value="{{ user.email|default:'' }}">
+              <label class="pg-label">Email</label>
+              <input type="email" name="email" class="pg-input" value="{{ user.email|default:'' }}">
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Account Changes</button>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pg-btn-primary">Save Account Changes</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Personal Modal -->
 <div class="modal fade" id="editMemberPersonalModal" tabindex="-1" aria-labelledby="editMemberPersonalModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
         <h5 class="modal-title" id="editMemberPersonalModalLabel">Edit Personal Profile</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post">
-        <div class="modal-body">
+        <div class="modal-body p-4">
           {% csrf_token %}
           <input type="hidden" name="action" value="personal">
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">First Name</label>
-              <input type="text" name="first_name" class="form-control" value="{{ person.first_name }}" required>
+              <label class="pg-label">First Name</label>
+              <input type="text" name="first_name" class="pg-input" value="{{ person.first_name }}" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Last Name</label>
-              <input type="text" name="last_name" class="form-control" value="{{ person.last_name }}" required>
+              <label class="pg-label">Last Name</label>
+              <input type="text" name="last_name" class="pg-input" value="{{ person.last_name }}" required>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Gender</label>
-              <select name="gender" class="form-select" required>
+              <label class="pg-label">Gender</label>
+              <select name="gender" class="pg-select" required>
                 <option value="">Select</option>
                 {% for code, label in gender_choices %}
                   <option value="{{ code }}" {% if person.gender == code %}selected{% endif %}>{{ label }}</option>
@@ -179,36 +145,37 @@
               </select>
             </div>
             <div class="col-md-6">
-              <label class="form-label">Date of Birth</label>
-              <input type="date" name="date_of_birth" class="form-control" value="{{ person.date_of_birth|date:'Y-m-d' }}" required>
+              <label class="pg-label">Date of Birth</label>
+              <input type="date" name="date_of_birth" class="pg-input" value="{{ person.date_of_birth|date:'Y-m-d' }}" required>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Personal Changes</button>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pg-btn-primary">Save Personal Changes</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Contact Modal -->
 <div class="modal fade" id="editMemberContactModal" tabindex="-1" aria-labelledby="editMemberContactModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
         <h5 class="modal-title" id="editMemberContactModalLabel">Edit Contact Information</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post" enctype="multipart/form-data">
-        <div class="modal-body">
+        <div class="modal-body p-4">
           {% csrf_token %}
           <input type="hidden" name="action" value="contact">
           <div class="row g-4 align-items-start">
             <div class="col-lg-5">
-              <label class="form-label fw-semibold">Profile Picture</label>
-              <div class="border rounded-4 p-3 bg-light-subtle">
-                <div id="profilePreviewBox" class="d-flex align-items-center justify-content-center rounded-3 mb-3 profile-preview-box" style="color: #475569; font-weight: 600;">
+              <label class="pg-label">Profile Picture</label>
+              <div style="border-radius:1rem;padding:1rem;background:#f7f9fc;border:1px solid #eef2f7;">
+                <div id="profilePreviewBox" class="d-flex align-items-center justify-content-center mb-3 profile-preview-box" style="color:#475569;font-weight:600;">
                   <img
                     id="profilePreviewImage"
                     src="{% if member_account.profile_photo %}{{ member_account.profile_photo.url }}{% endif %}"
@@ -218,59 +185,60 @@
                   >
                   <span id="profilePreviewPlaceholder" class="{% if member_account.profile_photo %}d-none{% endif %}">No Photo</span>
                 </div>
-                <input id="profilePhotoInput" type="file" name="profile_photo" class="form-control" accept="image/*">
+                <input id="profilePhotoInput" type="file" name="profile_photo" class="pg-input" accept="image/*">
                 {% if member_account.profile_photo %}
                   <div class="form-check mt-2">
                     <input class="form-check-input" type="checkbox" name="remove_photo" id="removePhotoCheck">
-                    <label class="form-check-label" for="removePhotoCheck">Remove current photo</label>
+                    <label class="form-check-label" for="removePhotoCheck" style="font-size:0.85rem;">Remove current photo</label>
                   </div>
                 {% endif %}
-                <div class="form-text mt-2">Allowed: image files, maximum size 5MB.</div>
+                <div style="font-size:0.78rem;color:#718096;margin-top:0.5rem;">Allowed: image files, maximum size 5MB.</div>
               </div>
             </div>
             <div class="col-lg-7">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label class="form-label">Phone</label>
-                  <input type="text" name="phone" class="form-control" value="{{ person.phone|default:'' }}">
+                  <label class="pg-label">Phone</label>
+                  <input type="text" name="phone" class="pg-input" value="{{ person.phone|default:'' }}">
                 </div>
                 <div class="col-md-6">
-                  <label class="form-label">Email</label>
-                  <input type="email" name="email" class="form-control" value="{{ person.email|default:'' }}">
+                  <label class="pg-label">Email</label>
+                  <input type="email" name="email" class="pg-input" value="{{ person.email|default:'' }}">
                 </div>
                 <div class="col-12">
-                  <label class="form-label">Address</label>
-                  <textarea name="address" class="form-control" rows="3">{{ person.address|default:'' }}</textarea>
+                  <label class="pg-label">Address</label>
+                  <textarea name="address" class="pg-input" rows="3" style="resize:vertical;">{{ person.address|default:'' }}</textarea>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Contact Changes</button>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pg-btn-primary">Save Contact Changes</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
+<!-- Password Modal -->
 <div class="modal fade" id="editMemberPasswordModal" tabindex="-1" aria-labelledby="editMemberPasswordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
         <h5 class="modal-title" id="editMemberPasswordModalLabel">Change Password</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form method="post">
-        <div class="modal-body">
+        <div class="modal-body p-4">
           {% csrf_token %}
           <input type="hidden" name="action" value="password">
           <div class="row g-3">
             <div class="col-12">
-              <label class="form-label">New Password</label>
+              <label class="pg-label">New Password</label>
               <div class="input-group">
-                <input id="memberNewPasswordInput" type="password" name="new_password" class="form-control" required>
+                <input id="memberNewPasswordInput" type="password" name="new_password" class="pg-input" style="border-radius:0.65rem 0 0 0.65rem;" required>
                 <button id="toggleMemberNewPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="memberNewPasswordInput" data-eye-open-id="memberNewEyeOpenIcon" data-eye-closed-id="memberNewEyeClosedIcon">
                   <svg id="memberNewEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                   <svg id="memberNewEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
@@ -278,9 +246,9 @@
               </div>
             </div>
             <div class="col-12">
-              <label class="form-label">Confirm New Password</label>
+              <label class="pg-label">Confirm New Password</label>
               <div class="input-group">
-                <input id="memberConfirmPasswordInput" type="password" name="confirm_password" class="form-control" required>
+                <input id="memberConfirmPasswordInput" type="password" name="confirm_password" class="pg-input" style="border-radius:0.65rem 0 0 0.65rem;" required>
                 <button id="toggleMemberConfirmPasswordBtn" class="btn btn-outline-secondary password-toggle-btn" type="button" aria-label="Show password" aria-pressed="false" data-password-toggle="true" data-password-target="memberConfirmPasswordInput" data-eye-open-id="memberConfirmEyeOpenIcon" data-eye-closed-id="memberConfirmEyeClosedIcon">
                   <svg id="memberConfirmEyeOpenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                   <svg id="memberConfirmEyeClosedIcon" class="d-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C5 20 1 12 1 12a21.83 21.83 0 0 1 5.06-6.94"></path><path d="M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.82 21.82 0 0 1-2.16 3.19"></path><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
@@ -289,9 +257,9 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-warning">Update Password</button>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pg-btn-warning">Update Password</button>
         </div>
       </form>
     </div>
@@ -368,4 +336,5 @@
 
   })();
 </script>
+</div>
 {% endblock %}

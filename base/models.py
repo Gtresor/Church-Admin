@@ -53,6 +53,10 @@ class Person(UUIDTimestampModel):
 	emergency_contact_phone = models.CharField(max_length=30, blank=True)
 	is_member = models.BooleanField(default=False)
 	is_child_profile = models.BooleanField(default=False)
+	is_visitor = models.BooleanField(default=False)
+	first_visit_date = models.DateField(null=True, blank=True)
+	visit_count = models.PositiveIntegerField(default=1)
+	visitor_notes = models.TextField(blank=True)
 	date_joined = models.DateField(null=True, blank=True)
 	is_active = models.BooleanField(default=True)
 
@@ -245,13 +249,14 @@ class Wedding(ProtectedSacramentModel):
 	groom_church_name = models.CharField(max_length=200, blank=True)
 	bride_church_name = models.CharField(max_length=200, blank=True)
 	available_slot = models.ForeignKey(AvailableSlot, on_delete=models.SET_NULL, null=True, blank=True, related_name="weddings")
-	wedding_date = models.DateField()
-	officiant = models.CharField(max_length=120)
+	wedding_date = models.DateField(null=True, blank=True)
+	officiant = models.CharField(max_length=120, blank=True)
 	couple_photo = models.ImageField(upload_to="wedding_photos/", blank=True, verbose_name="Couple Photo")
 	groom_health_document = models.FileField(upload_to="wedding_health_documents/", blank=True)
 	bride_health_document = models.FileField(upload_to="wedding_health_documents/", blank=True)
 	status = models.CharField(max_length=20, choices=SacramentStatus.CHOICES, default=SacramentStatus.SCHEDULED)
 	marriage_resolution = models.CharField(max_length=20, choices=RESOLUTION_CHOICES, blank=True)
+	resolution_date = models.DateField(null=True, blank=True)
 	certificate_generated = models.BooleanField(default=False)
 	admin_comment = models.TextField(blank=True)
 	# Link to new model for migration
@@ -290,6 +295,9 @@ class WeddingRequest(ProtectedSacramentModel):
 	partner_is_member = models.BooleanField(default=False)
 	partner_non_member_data = models.JSONField(default=dict, blank=True)
 	partner_gender_expected = models.CharField(max_length=10, blank=True)
+	available_slot = models.ForeignKey(
+		AvailableSlot, on_delete=models.SET_NULL, null=True, blank=True, related_name="wedding_requests",
+	)
 	couple_photo = models.ImageField(upload_to="wedding_photos/", blank=True, verbose_name="Couple Photo")
 	submitter_role = models.CharField(max_length=10, choices=[("groom", "Groom"), ("bride", "Bride")])
 	submitter_health_document = models.FileField(upload_to="wedding_health_documents/", blank=True)
@@ -298,9 +306,10 @@ class WeddingRequest(ProtectedSacramentModel):
 	admin_comment = models.TextField(blank=True)
 
 	VALID_TRANSITIONS = {
-		SacramentStatus.PENDING: [SacramentStatus.APPROVED, SacramentStatus.REJECTED],
+		SacramentStatus.PENDING: [SacramentStatus.APPROVED, SacramentStatus.REJECTED, SacramentStatus.CANCELLED],
 		SacramentStatus.APPROVED: [SacramentStatus.REJECTED],
 		SacramentStatus.REJECTED: [SacramentStatus.PENDING],
+		SacramentStatus.CANCELLED: [SacramentStatus.PENDING],
 	}
 
 	class Meta:
@@ -322,6 +331,13 @@ class WeddingRequest(ProtectedSacramentModel):
 		super().clean()
 		if self.partner and self.partner_id == self.submitter_id:
 			raise ValidationError("Submitter and partner must be different people.")
+
+	def delete(self, *args, **kwargs):
+		if self.status == SacramentStatus.PENDING:
+			from django.db.models import Model as _BaseModel
+			_BaseModel.delete(self, *args, **kwargs)
+		else:
+			raise ValidationError("Historical sacramental records cannot be deleted.")
 
 	def save(self, *args, **kwargs):
 		self.full_clean()
@@ -355,6 +371,7 @@ class WeddingCeremony(ProtectedSacramentModel):
 	)
 	witnesses = models.JSONField(default=list, blank=True)
 	marriage_resolution = models.CharField(max_length=20, choices=RESOLUTION_CHOICES, blank=True)
+	resolution_date = models.DateField(null=True, blank=True)
 	certificate_generated = models.BooleanField(default=False)
 
 	class Meta:
@@ -432,4 +449,65 @@ class Certificate(ProtectedSacramentModel):
 @receiver(pre_delete, sender=WeddingCertificateExtra)
 @receiver(pre_delete, sender=Certificate)
 def prevent_sacrament_delete(sender, instance, **kwargs):
+	if sender is WeddingRequest and instance.status == SacramentStatus.PENDING:
+		return
 	raise ValidationError("Historical sacramental records cannot be deleted.")
+
+
+class ActivityLog(UUIDTimestampModel):
+	CAT_AUTH = "auth"
+	CAT_MEMBER = "member"
+	CAT_BAPTISM = "baptism"
+	CAT_DEDICATION = "dedication"
+	CAT_WEDDING = "wedding"
+	CAT_CERTIFICATE = "certificate"
+	CAT_SYSTEM = "system"
+
+	CATEGORY_CHOICES = [
+		(CAT_AUTH, "Login / Auth"),
+		(CAT_MEMBER, "Members"),
+		(CAT_BAPTISM, "Baptism"),
+		(CAT_DEDICATION, "Dedication"),
+		(CAT_WEDDING, "Wedding"),
+		(CAT_CERTIFICATE, "Certificates"),
+		(CAT_SYSTEM, "System"),
+	]
+
+	actor = models.ForeignKey(
+		User, null=True, blank=True, on_delete=models.SET_NULL, related_name="activity_logs"
+	)
+	action = models.CharField(max_length=40)
+	category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=CAT_SYSTEM)
+	description = models.CharField(max_length=400)
+	is_read = models.BooleanField(default=False)
+
+	class Meta:
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return self.description
+
+
+class MemberNotification(UUIDTimestampModel):
+	CAT_BAPTISM = "baptism"
+	CAT_DEDICATION = "dedication"
+	CAT_WEDDING = "wedding"
+	CAT_SYSTEM = "system"
+
+	CATEGORY_CHOICES = [
+		(CAT_BAPTISM, "Baptism"),
+		(CAT_DEDICATION, "Dedication"),
+		(CAT_WEDDING, "Wedding"),
+		(CAT_SYSTEM, "System"),
+	]
+
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="member_notifications")
+	category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default=CAT_SYSTEM)
+	message = models.CharField(max_length=500)
+	is_read = models.BooleanField(default=False)
+
+	class Meta:
+		ordering = ["-created_at"]
+
+	def __str__(self):
+		return self.message

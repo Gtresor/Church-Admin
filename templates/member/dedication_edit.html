@@ -1,14 +1,43 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Resubmit Dedication Request</h3>
-<div class="alert alert-warning">{{ item.admin_comment }}</div>
-<form method="post" class="card card-body">{% csrf_token %}
-  <div class="row g-3">
-    <div class="col-md-6"><label>Child First Name</label><input name="child_first_name" class="form-control" value="{{ item.child.first_name }}" required></div>
-    <div class="col-md-6"><label>Child Last Name</label><input name="child_last_name" class="form-control" value="{{ item.child.last_name }}" required></div>
-    <div class="col-md-4"><label>Scripture Reference</label><input name="scripture_reference" class="form-control" value="{{ item.scripture_reference }}" required></div>
-    <div class="col-md-8"><label>Scripture Verse</label><textarea name="scripture_text" class="form-control" rows="3" required>{{ item.scripture_text }}</textarea></div>
-  </div>
-  <button class="btn btn-primary mt-3">Resubmit</button>
-</form>
+<div class="pg-page">
+
+<div class="pg-card mb-3 pg-notice-info">
+  <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Resubmit Dedication Request</h4>
+  <div class="pg-gradient-accent"></div>
+</div>
+
+<div class="pg-card-sm mb-3 pg-notice-warning">
+  <div style="font-weight:600;color:#92400e;margin-bottom:0.25rem;">Admin Note</div>
+  <div style="font-size:0.88rem;color:#92400e;">{{ item.admin_comment }}</div>
+</div>
+
+<div class="pg-card">
+  <form method="post">{% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="pg-label">Child First Name</label>
+        <input name="child_first_name" class="pg-input" value="{{ item.child.first_name }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Child Last Name</label>
+        <input name="child_last_name" class="pg-input" value="{{ item.child.last_name }}" required>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Scripture Reference</label>
+        <input name="scripture_reference" class="pg-input" value="{{ item.scripture_reference }}" required>
+      </div>
+      <div class="col-md-8">
+        <label class="pg-label">Scripture Verse</label>
+        <textarea name="scripture_text" class="pg-input" rows="3" style="resize:vertical;" required>{{ item.scripture_text }}</textarea>
+      </div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button class="pg-btn-primary">Resubmit</button>
+      <a href="{% url 'member_dashboard' %}" class="pg-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+
+</div>
 {% endblock %}

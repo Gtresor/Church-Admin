@@ -225,28 +225,20 @@
         <div class="wr-gradient-accent"></div>
       </div>
       <div class="d-flex gap-2 align-items-center flex-wrap">
-        <!-- Status badge -->
-        <span class="wr-status-badge
-          {% if item.status == 'Pending' %}" style="background:#fef3c7;color:#92400e;
-          {% elif item.status == 'Approved' %}" style="background:#dbeafe;color:#1e40af;
-          {% elif item.status == 'Scheduled' %}" style="background:#e0e7ff;color:#3730a3;
-          {% elif item.status == 'Completed' %}" style="background:#d1fae5;color:#065f46;
-          {% elif item.status == 'Married' %}" style="background:#d1fae5;color:#065f46;
-          {% elif item.status == 'Rejected' %}" style="background:#fee2e2;color:#991b1b;
-          {% elif item.status == 'Cancelled' %}" style="background:#f3f4f6;color:#4b5563;
-          {% else %}" style="background:#e5e7eb;color:#374151;{% endif %}">
-          <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-          </svg>
-          {{ item.status }}
-        </span>
+        <!-- Status badge: show resolution if set, otherwise base status -->
         {% if item.marriage_resolution %}
-          <span class="wr-status-badge" style="background:#f3f4f6;color:#4b5563;">
+          <span class="wr-status-badge pg-status-badge pg-status-{{ item.marriage_resolution|lower }}">
             <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
             </svg>
             {{ item.marriage_resolution }}
+          </span>
+        {% else %}
+          <span class="wr-status-badge pg-status-badge pg-status-{{ item.status|lower }}">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+            </svg>
+            {{ item.status }}
           </span>
         {% endif %}
         <a href="{% url 'admin_wedding_edit' item.id %}" class="wr-btn-outline" style="padding:0.4rem 0.9rem;font-size:0.8rem;">
@@ -260,14 +252,49 @@
     </div>
   </div>
 
-  <!-- Couple Photo -->
-  {% if item.couple_photo %}
-  <div class="mb-3">
-    <div class="wr-photo-frame">
-      <img src="{{ item.couple_photo.url }}" alt="Couple Photo">
+  <!-- Couple Photo Management -->
+  <div class="wr-card-sm mb-3" style="border-left:4px solid #C9A84C;">
+    <div class="wr-section-title" style="margin-bottom:0.85rem;">
+      <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Couple Photo
+    </div>
+    <div class="d-flex align-items-center gap-3 flex-wrap">
+      {% if item.couple_photo %}
+        <!-- Circular preview matching certificate style -->
+        <img src="{{ item.couple_photo.url }}" alt="Couple Photo"
+          style="width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid #C9A84C;flex-shrink:0;">
+        <div>
+          <p style="color:#065f46;font-size:0.85rem;font-weight:600;margin-bottom:0.5rem;">
+            <svg style="width:14px;height:14px;display:inline;margin-right:0.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Photo uploaded 
+          </p>
+          <form method="post" action="{% url 'admin_wedding_review' item.id %}" enctype="multipart/form-data" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_photo">
+            <input type="file" name="couple_photo" accept="image/*" class="wr-input" style="font-size:0.82rem;padding:0.3rem 0.5rem;">
+            <button type="submit" class="wr-btn-outline" style="font-size:0.82rem;padding:0.35rem 0.75rem;">Replace Photo</button>
+          </form>
+        </div>
+      {% else %}
+        <!-- Placeholder circle -->
+        <div style="width:96px;height:96px;border-radius:50%;border:3px dashed #cbd5e0;background:#f7fafc;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg style="width:36px;height:36px;color:#a0aec0;" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <p style="color:#991b1b;font-size:0.85rem;font-weight:600;margin-bottom:0.5rem;">
+            <svg style="width:14px;height:14px;display:inline;margin-right:0.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            No photo — the certificate circle will be empty.
+          </p>
+          <form method="post" action="{% url 'admin_wedding_review' item.id %}" enctype="multipart/form-data" style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="upload_photo">
+            <input type="file" name="couple_photo" accept="image/*" class="wr-input" style="font-size:0.82rem;padding:0.3rem 0.5rem;" required>
+            <button type="submit" class="wr-btn-primary" style="font-size:0.82rem;padding:0.35rem 0.85rem;">Upload Photo</button>
+          </form>
+        </div>
+      {% endif %}
     </div>
   </div>
-  {% endif %}
 
   <!-- Profile Cards: Groom & Bride -->
   <div class="row g-3 mb-3">
@@ -452,13 +479,32 @@
           </svg>
           Marriage Lifecycle
         </div>
-        {% if item.marriage_resolution %}
-          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#f3f4f6;color:#4b5563;padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">{{ item.marriage_resolution }}</span>
-          <p style="font-size:0.8rem;color:#718096;margin-top:0.5rem;">This couple can submit a new wedding request only after this status is set to Divorced or Annulled.</p>
+        {% if item.marriage_resolution == 'Annulled' %}
+          <span class="pg-status-badge pg-status-annulled" style="font-size:0.85rem;">Annulled</span>
+          {% if within_remarry_window %}
+            <p style="font-size:0.82rem;color:#065f46;font-weight:600;margin-top:0.6rem;">
+              Re-marry window is open (within 10 days of annulment).
+            </p>
+            <a href="{% url 'admin_wedding_create' %}" class="wr-btn-primary" style="font-size:0.82rem;padding:0.4rem 0.9rem;display:inline-flex;align-items:center;gap:0.4rem;text-decoration:none;margin-top:0.4rem;">
+              <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Re-marry — Create New Wedding
+            </a>
+          {% else %}
+            <p style="font-size:0.8rem;color:#718096;margin-top:0.6rem;">
+              Re-marry window has closed (10 days passed).<br>Both members are now considered <strong>Single</strong>.
+            </p>
+          {% endif %}
+        {% elif item.marriage_resolution == 'Divorced' %}
+          <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#fee2e2;color:#991b1b;padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">Divorced</span>
+          <p style="font-size:0.8rem;color:#065f46;margin-top:0.5rem;font-weight:600;">This couple may now re-marry.</p>
+          <a href="{% url 'admin_wedding_create' %}" class="wr-btn-primary" style="font-size:0.82rem;padding:0.4rem 0.9rem;display:inline-flex;align-items:center;gap:0.4rem;text-decoration:none;margin-top:0.4rem;">
+            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create New Wedding
+          </a>
         {% else %}
           <span style="display:inline-flex;align-items:center;gap:0.4rem;background:#d1fae5;color:#065f46;padding:0.4rem 0.9rem;border-radius:999px;font-size:0.85rem;font-weight:600;">
             <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            Active Marriage/Request
+            Active Marriage / Request
           </span>
           <p style="font-size:0.8rem;color:#718096;margin-top:0.5rem;">No resolution recorded yet.</p>
         {% endif %}
@@ -478,7 +524,7 @@
     <form method="post">
       {% csrf_token %}
 
-      <!-- Schedule section: visible when NOT already scheduled -->
+      <!-- Schedule section: visible when NOT already scheduled/completed/married/cancelled -->
       {% if item.status != 'Scheduled' and item.status != 'Completed' and item.status != 'Married' and item.status != 'Cancelled' %}
       <div style="background:#f7f9fc;border-radius:0.85rem;padding:1.25rem;margin-bottom:1.25rem;border:1px solid #e2e8f0;">
         <div class="d-flex align-items-center gap-2 mb-3">
@@ -513,52 +559,73 @@
       </div>
       {% endif %}
 
-      <!-- Status-based action buttons -->
-      <div class="d-flex gap-2 flex-wrap">
+      <!-- Primary action + More Actions row -->
+      <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+
+        <!-- Primary forward-moving action button -->
         {% if item.status == 'Pending' or item.status == 'Rejected' %}
           <button class="wr-btn-success" name="action" value="approve">
             <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Approve
           </button>
-          <button class="wr-btn-danger" name="action" value="reject">
-            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Reject
-          </button>
-        {% elif item.status == 'Approved' %}
-          <button class="wr-btn-danger" name="action" value="reject">
-            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Reject
-          </button>
         {% elif item.status == 'Scheduled' %}
           <button class="wr-btn-success" name="action" value="complete">
             <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Complete
+            Mark Complete
           </button>
-          <button class="wr-btn-danger" name="action" value="reject">
-            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Reject
-          </button>
-        {% elif item.status == 'Completed' or item.status == 'Married' %}
+        {% elif item.status == 'Completed' and not item.marriage_resolution %}
           <button class="wr-btn-success" name="action" value="mark_married">
             <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            Married
+            Mark as Married
           </button>
-          <button class="wr-btn-danger" name="action" value="mark_divorced">
-            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Divorced
+        {% endif %}
+
+        <!-- More Actions dropdown — opens modals for destructive/secondary actions -->
+        {% if item.status != 'Cancelled' %}
+        <div class="dropdown">
+          <button type="button" class="wr-btn-outline dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            More Actions
           </button>
-          <button class="wr-btn-outline" name="action" value="mark_annulled">
-            <svg class="wr-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Annulled
-          </button>
+          <ul class="dropdown-menu">
+            {% if item.status == 'Pending' or item.status == 'Rejected' or item.status == 'Approved' or item.status == 'Scheduled' %}
+            <li>
+              <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                &#215;&nbsp; Reject
+              </button>
+            </li>
+            {% endif %}
+            {% if item.status == 'Completed' or item.status == 'Married' %}
+              {% if not item.marriage_resolution %}
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#divorceModal">
+                  Mark as Divorced
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#annulModal">
+                  Mark as Annulled
+                </button>
+              </li>
+              {% endif %}
+            {% endif %}
+          </ul>
+        </div>
         {% endif %}
       </div>
 
-      <!-- Admin comment -->
-      <div class="mt-3">
-        <label class="wr-label">Admin Comment</label>
-        <textarea name="admin_comment" class="wr-input" rows="2" placeholder="Add a note or rejection reason...">{{ item.admin_comment }}</textarea>
+      <!-- Admin note: shown when there is a primary action to submit -->
+      {% if item.status == 'Pending' or item.status == 'Rejected' or item.status == 'Approved' or item.status == 'Scheduled' or item.status == 'Completed' %}
+      <div>
+        <label class="wr-label">Admin Note <span style="font-weight:400;text-transform:none;color:#a0aec0;font-size:0.75rem;">— optional, saved with the action above</span></label>
+        <textarea name="admin_comment" class="wr-input" rows="2" placeholder="Add a note...">{{ item.admin_comment }}</textarea>
       </div>
+      {% elif item.admin_comment %}
+      <div>
+        <div class="wr-label">Admin Note</div>
+        <div style="font-style:italic;color:#4a5568;font-size:0.9rem;">{{ item.admin_comment }}</div>
+      </div>
+      {% endif %}
     </form>
   </div>
 
@@ -572,7 +639,15 @@
       </svg>
       Certificate
     </div>
-    <p style="color:#718096;font-size:0.85rem;margin-bottom:1rem;">Generate, preview, or download the wedding certificate.</p>
+    <p style="color:#718096;font-size:0.85rem;margin-bottom:0.75rem;">Generate, preview, or download the wedding certificate.</p>
+    {% if not item.couple_photo %}
+    <div style="background:#fffbeb;border-left:3px solid #f59e0b;border-radius:0.5rem;padding:0.65rem 0.85rem;margin-bottom:0.85rem;">
+      <p style="color:#92400e;font-size:0.82rem;font-weight:600;margin:0;">
+        <svg style="width:13px;height:13px;display:inline;margin-right:0.25rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        No couple photo — the circular frame on the certificate will be blank. Upload a photo above first.
+      </p>
+    </div>
+    {% endif %}
     <div class="d-flex gap-3 flex-wrap align-items-end">
       {% if item.status == 'Scheduled' %}
       <div>
@@ -606,5 +681,80 @@
     </div>
   </div>
   {% endif %}
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
+        <h5 class="modal-title" id="rejectModalLabel" style="color:#991b1b;">Reject Wedding Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reject">
+        <div class="modal-body p-4">
+          <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1rem;">Provide a reason — the couple will see this note.</p>
+          <label class="wr-label">Rejection Reason <span style="color:#ef4444;">*</span></label>
+          <textarea name="admin_comment" class="wr-input" rows="3" placeholder="e.g. Health documents incomplete. Please resubmit with valid documents." required></textarea>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="wr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="wr-btn-danger">Confirm Reject</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Divorce Modal -->
+<div class="modal fade" id="divorceModal" tabindex="-1" aria-labelledby="divorceModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
+        <h5 class="modal-title" id="divorceModalLabel" style="color:#991b1b;">Mark as Divorced</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_divorced">
+        <div class="modal-body p-4">
+          <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1rem;">This records the marriage of <strong>{{ item.groom }} &amp; {{ item.bride }}</strong> as ended by divorce. This action cannot be undone.</p>
+          <label class="wr-label">Note <span style="font-weight:400;text-transform:none;color:#a0aec0;">(optional)</span></label>
+          <textarea name="admin_comment" class="wr-input" rows="2" placeholder="Optional context or case reference..."></textarea>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="wr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="wr-btn-danger">Confirm Divorced</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Annul Modal -->
+<div class="modal fade" id="annulModal" tabindex="-1" aria-labelledby="annulModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-modal-content">
+      <div class="modal-header pg-modal-header">
+        <h5 class="modal-title" id="annulModalLabel">Mark as Annulled</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mark_annulled">
+        <div class="modal-body p-4">
+          <p style="color:#4a5568;font-size:0.9rem;margin-bottom:1rem;">This records the marriage of <strong>{{ item.groom }} &amp; {{ item.bride }}</strong> as annulled. Once annulled, the couple will be able to re-marry.</p>
+          <label class="wr-label">Note <span style="font-weight:400;text-transform:none;color:#a0aec0;">(optional)</span></label>
+          <textarea name="admin_comment" class="wr-input" rows="2" placeholder="Optional context or church resolution reference..."></textarea>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #eef2f7;padding:1rem 1.5rem;">
+          <button type="button" class="wr-btn-outline" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="wr-btn-outline" style="border-color:#9ca3af;color:#374151;">Confirm Annulment</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 {% endblock %}

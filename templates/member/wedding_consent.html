@@ -1,57 +1,81 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3>Wedding Request Confirmation</h3>
+<div class="pg-page">
 
-<div class="card card-body mb-3">
-  <h5 class="mb-3">You have been invited to confirm a wedding request</h5>
-  <table class="table table-sm">
-    <tr><th>Requested by</th><td>{{ wrequest.submitter }}</td></tr>
-    <tr><th>Your Role</th>
-      <td>{% if wrequest.submitter_role == 'groom' %}Bride{% else %}Groom{% endif %}</td>
-    </tr>
-    <tr><th>Partner (Submitter)</th><td>{{ wrequest.submitter }}</td></tr>
-    <tr><th>Status</th>
-      <td>
-        {% if wrequest.partner_consented %}
-          <span class="text-success">✓ Already Confirmed</span>
-        {% else %}
-          <span class="text-warning">⏳ Awaiting your confirmation</span>
-        {% endif %}
-      </td>
-    </tr>
+<div class="pg-card mb-3 pg-notice-info">
+  <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Wedding Request Confirmation</h4>
+  <div class="pg-gradient-accent"></div>
+</div>
+
+<div class="pg-card mb-3">
+  <div class="pg-section-title mb-3">Invitation Details</div>
+  <table class="pg-table">
+    <tbody>
+      <tr>
+        <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;width:40%;">Requested by</td>
+        <td style="font-weight:600;">{{ wrequest.submitter }}</td>
+      </tr>
+      <tr>
+        <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Your Role</td>
+        <td>{% if wrequest.submitter_role == 'groom' %}Bride{% else %}Groom{% endif %}</td>
+      </tr>
+      <tr>
+        <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Partner (Submitter)</td>
+        <td>{{ wrequest.submitter }}</td>
+      </tr>
+      <tr>
+        <td style="color:#718096;font-size:0.82rem;font-weight:600;text-transform:uppercase;">Status</td>
+        <td>
+          {% if wrequest.partner_consented %}
+            <span class="pg-status-badge pg-status-completed">&#10003; Already Confirmed</span>
+          {% else %}
+            <span class="pg-status-badge pg-status-pending">Awaiting Your Confirmation</span>
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
   </table>
 </div>
 
 {% if not wrequest.partner_consented %}
-<form method="post" enctype="multipart/form-data" class="card card-body">
-  {% csrf_token %}
-
-  <div class="alert alert-light border mb-4">
-    <h5 class="mb-2">Confirmation</h5>
-    <p>By confirming, you agree to the following:</p>
-    <ul class="mb-3">
-      <li>You consent to marry {{ wrequest.submitter }} at this church.</li>
-      <li>The information provided in this request is accurate to the best of your knowledge.</li>
-      <li>You understand that church administration will review this request and may contact you for further information.</li>
-    </ul>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="checkbox" id="agree" name="agree" required>
-      <label class="form-check-label" for="agree">I confirm my agreement to marry {{ wrequest.submitter }} and consent to this wedding request.</label>
+<div class="pg-card">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="pg-card-sm mb-4 pg-notice-info">
+      <div style="font-weight:700;color:#1a202c;margin-bottom:0.75rem;">Confirmation Agreement</div>
+      <p style="font-size:0.88rem;color:#4a5568;margin-bottom:0.5rem;">By confirming, you agree to the following:</p>
+      <ul style="font-size:0.88rem;color:#4a5568;margin-bottom:1rem;padding-left:1.25rem;">
+        <li>You consent to marry {{ wrequest.submitter }} at this church.</li>
+        <li>The information provided in this request is accurate to the best of your knowledge.</li>
+        <li>You understand that church administration will review this request and may contact you for further information.</li>
+      </ul>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="agree" name="agree" required>
+        <label class="form-check-label" for="agree" style="font-size:0.88rem;">I confirm my agreement to marry {{ wrequest.submitter }} and consent to this wedding request.</label>
+      </div>
     </div>
-  </div>
 
-  <div class="mb-3">
-    <label class="form-label">Upload Your Health Document (required)</label>
-    <input type="file" name="partner_health_document" class="form-control" accept=".pdf,.png,.jpg,.jpeg">
-    <small class="text-muted">Accepted: PDF, PNG, JPG (max 5MB)</small>
-  </div>
+    <div class="mb-4">
+      <label class="pg-label">Upload Your Health Document (required)</label>
+      <input type="file" name="partner_health_document" class="pg-input" accept=".pdf,.png,.jpg,.jpeg">
+      <p style="font-size:0.8rem;color:#718096;margin-top:0.35rem;margin-bottom:0;">Accepted: PDF, PNG, JPG (max 5MB)</p>
+    </div>
 
-  <button type="submit" class="btn btn-success">Confirm & Submit</button>
-</form>
-{% else %}
-<div class="alert alert-success">
-  <strong>Already Confirmed!</strong> You have already confirmed this wedding request. No further action is needed.
+    <div class="d-flex gap-2">
+      <button type="submit" class="pg-btn-success">Confirm &amp; Submit</button>
+      <a href="{% url 'member_dashboard' %}" class="pg-btn-outline">Cancel</a>
+    </div>
+  </form>
 </div>
-<a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">&larr; Back to Dashboard</a>
+{% else %}
+<div class="pg-card-sm pg-notice-success">
+  <div style="font-weight:700;color:#065f46;margin-bottom:0.25rem;">Already Confirmed!</div>
+  <div style="font-size:0.88rem;color:#065f46;">You have already confirmed this wedding request. No further action is needed.</div>
+</div>
+<div class="mt-3">
+  <a href="{% url 'member_dashboard' %}" class="pg-btn-outline">&larr; Back to Dashboard</a>
+</div>
 {% endif %}
+
+</div>
 {% endblock %}

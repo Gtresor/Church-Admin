@@ -1,0 +1,38 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<p style="font-size:15px;font-weight:700;color:#1a202c;margin:0 0 16px 0;">New Wedding Request Received</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 24px 0;">
+  A new wedding request has been submitted and is awaiting your review.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;font-size:13px;">
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;width:140px;">Submitted by</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;font-weight:600;">{{ submitter_name }}</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;">Role</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;text-transform:capitalize;">{{ wrequest.submitter_role }}</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;">Partner</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;">
+      {% if wrequest.partner %}{{ wrequest.partner.first_name }} {{ wrequest.partner.last_name }}
+      {% elif wrequest.partner_non_member_data %}{{ wrequest.partner_non_member_data.first_name }} {{ wrequest.partner_non_member_data.last_name }} (non-member)
+      {% else %}—{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;color:#718096;">Partner consent</td>
+    <td style="padding:8px 0;">{% if wrequest.partner_consented %}Confirmed{% else %}Pending{% endif %}</td>
+  </tr>
+</table>
+
+<div style="text-align:center;margin:0 0 16px 0;">
+  <a href="{{ review_url }}"
+     style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:14px;font-weight:700;
+            padding:14px 32px;border-radius:8px;text-decoration:none;">
+    Review Request
+  </a>
+</div>
+{% endblock %}

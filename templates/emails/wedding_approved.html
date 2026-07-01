@@ -1,0 +1,19 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<div style="text-align:center;margin:0 0 24px 0;">
+  <div style="display:inline-block;background:#f0fff4;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:28px;">&#10003;</div>
+</div>
+<p style="font-size:15px;margin:0 0 8px 0;">Dear {{ name }},</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 20px 0;">
+  Congratulations! Your wedding request has been <strong style="color:#276749;">approved</strong> by the church administration.
+</p>
+<div style="background:#f0fff4;border-left:4px solid #38a169;border-radius:6px;padding:16px 20px;margin:0 0 24px 0;">
+  <p style="margin:0;font-size:13px;color:#276749;line-height:1.6;">
+    The next steps — including scheduling, officiant assignment, and pre-marital counselling requirements —
+    will be communicated to you by the church office. Please check with administration for your scheduled date.
+  </p>
+</div>
+<p style="font-size:13px;color:#718096;margin:0;">
+  If you have any questions, please contact the church office directly.
+</p>
+{% endblock %}

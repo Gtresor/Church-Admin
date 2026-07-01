@@ -1,0 +1,45 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<p style="font-size:15px;margin:0 0 8px 0;">Dear {{ name }},</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 24px 0;">
+  Welcome to <strong>New Life Bible Church, Kigali</strong>! Your member account has been created
+  and you now have access to the member portal where you can request sacraments, view certificates, and more.
+</p>
+
+{% if temp_password %}
+<div style="background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;padding:20px 24px;margin:0 0 28px 0;">
+  <p style="margin:0 0 12px 0;font-size:12px;font-weight:700;color:#667eea;text-transform:uppercase;letter-spacing:0.06em;">Your Login Credentials</p>
+  <table cellpadding="0" cellspacing="0" style="font-size:14px;">
+    <tr>
+      <td style="padding:4px 0;color:#718096;width:110px;">Username</td>
+      <td style="padding:4px 0;font-weight:700;color:#1a202c;font-family:monospace;">{{ username }}</td>
+    </tr>
+    <tr>
+      <td style="padding:4px 0;color:#718096;">Password</td>
+      <td style="padding:4px 0;font-weight:700;color:#1a202c;font-family:monospace;">{{ temp_password }}</td>
+    </tr>
+  </table>
+  <p style="margin:16px 0 0 0;font-size:12px;color:#e53e3e;">
+    Please change your password after your first login for security.
+  </p>
+</div>
+{% else %}
+<div style="background:#f0fff4;border-left:4px solid #38a169;border-radius:6px;padding:14px 20px;margin:0 0 28px 0;">
+  <p style="margin:0;font-size:13px;color:#276749;line-height:1.6;">
+    Your account is ready. Log in using the username and password you chose during registration.
+  </p>
+</div>
+{% endif %}
+
+<div style="text-align:center;margin:0 0 24px 0;">
+  <a href="http://127.0.0.1:8000/login/"
+     style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:14px;font-weight:700;
+            padding:14px 32px;border-radius:8px;text-decoration:none;">
+    Go to Member Portal
+  </a>
+</div>
+
+<p style="font-size:13px;color:#718096;line-height:1.6;margin:0;">
+  If you have any questions, please contact the church office. We look forward to serving you.
+</p>
+{% endblock %}

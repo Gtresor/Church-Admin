@@ -1,0 +1,36 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<div style="text-align:center;margin:0 0 24px 0;">
+  <div style="display:inline-block;background:#fef3c7;border-radius:50%;width:56px;height:56px;line-height:56px;font-size:26px;">&#9888;</div>
+</div>
+<p style="font-size:15px;font-weight:700;color:#92400e;margin:0 0 12px 0;">Wedding Request Withdrawn</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 24px 0;">
+  A member has withdrawn their wedding request. No immediate action is required unless they resubmit.
+</p>
+
+<table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px 0;font-size:13px;">
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;width:140px;">Submitted by</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;font-weight:600;">{{ name }}</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;">Partner</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;">
+      {% if wrequest.partner %}{{ wrequest.partner.first_name }} {{ wrequest.partner.last_name }}
+      {% else %}Non-member partner{% endif %}
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;color:#718096;">Originally submitted</td>
+    <td style="padding:8px 0;border-bottom:1px solid #f0f2f5;">{{ wrequest.created_at|date:"d M Y" }}</td>
+  </tr>
+  <tr>
+    <td style="padding:8px 0;color:#718096;">New status</td>
+    <td style="padding:8px 0;font-weight:600;color:#d97706;">Cancelled</td>
+  </tr>
+</table>
+
+<p style="font-size:13px;color:#718096;line-height:1.6;margin:0;">
+  If this was done in error or you need to follow up with the couple, please contact them directly.
+</p>
+{% endblock %}

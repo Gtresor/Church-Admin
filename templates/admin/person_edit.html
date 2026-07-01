@@ -1,71 +1,59 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3>Edit Profile: {{ person }}</h3>
-  <a href="javascript:history.back()" class="btn btn-outline-secondary">&larr; Back</a>
+<div class="pg-page">
+
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Edit Profile: {{ person }}</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="javascript:history.back()" class="pg-btn-outline">← Back</a>
+  </div>
 </div>
 
-<div class="card">
-  <div class="card-body">
-    <form method="post">
-      {% csrf_token %}
-      <input type="hidden" name="referrer" value="{{ request.META.HTTP_REFERER }}">
-
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">First Name</label>
-          <input name="first_name" class="form-control" value="{{ person.first_name }}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Last Name</label>
-          <input name="last_name" class="form-control" value="{{ person.last_name }}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Gender</label>
-          <select name="gender" class="form-select" required>
-            <option value="Male" {% if person.gender == 'Male' %}selected{% endif %}>Male</option>
-            <option value="Female" {% if person.gender == 'Female' %}selected{% endif %}>Female</option>
-            <option value="Other" {% if person.gender == 'Other' %}selected{% endif %}>Other</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Date of Birth</label>
-          <input type="date" name="date_of_birth" class="form-control" value="{{ person.date_of_birth|date:'Y-m-d' }}" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Email</label>
-          <input type="email" name="email" class="form-control" value="{{ person.email }}">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Phone</label>
-          <input name="phone" class="form-control" value="{{ person.phone }}">
-        </div>
-        <div class="col-12">
-          <label class="form-label">Address</label>
-          <input name="address" class="form-control" value="{{ person.address }}">
-        </div>
+<div class="pg-card mb-3">
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="referrer" value="{{ request.META.HTTP_REFERER }}">
+    <div class="row g-3">
+      <div class="col-md-4"><label class="pg-label">First Name</label><input name="first_name" class="pg-input" value="{{ person.first_name }}" required></div>
+      <div class="col-md-4"><label class="pg-label">Last Name</label><input name="last_name" class="pg-input" value="{{ person.last_name }}" required></div>
+      <div class="col-md-4">
+        <label class="pg-label">Gender</label>
+        <select name="gender" class="pg-select" required>
+          <option value="Male" {% if person.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if person.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if person.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
       </div>
-
-      <div class="mt-4 d-flex gap-2">
-        <button class="btn btn-primary">Save Changes</button>
-        <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
-      </div>
-    </form>
-  </div>
+      <div class="col-md-4"><label class="pg-label">Date of Birth</label><input type="date" name="date_of_birth" class="pg-input" value="{{ person.date_of_birth|date:'Y-m-d' }}" required></div>
+      <div class="col-md-4"><label class="pg-label">Email</label><input type="email" name="email" class="pg-input" value="{{ person.email }}"></div>
+      <div class="col-md-4"><label class="pg-label">Phone</label><input name="phone" class="pg-input" value="{{ person.phone }}"></div>
+      <div class="col-12"><label class="pg-label">Address</label><input name="address" class="pg-input" value="{{ person.address }}"></div>
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button class="pg-btn-primary">Save Changes</button>
+      <a href="javascript:history.back()" class="pg-btn-outline">Cancel</a>
+    </div>
+  </form>
 </div>
 
 {% if person.baptism %}
-<div class="card mt-3">
-  <div class="card-body">
-    <h5>Sacramental Records</h5>
-    <ul class="mb-0">
-      {% if person.baptism %}<li>Baptism: {{ person.baptism.status }} ({{ person.baptism.baptism_date|default:"-" }})</li>{% endif %}
-      {% for d in person.father_dedications.all %}<li>Dedication (as father): {{ d.child }} - {{ d.status }}</li>{% endfor %}
-      {% for d in person.mother_dedications.all %}<li>Dedication (as mother): {{ d.child }} - {{ d.status }}</li>{% endfor %}
-      {% for w in person.groom_weddings.all %}<li>Wedding (as groom): {{ w.bride }} - {{ w.status }}</li>{% endfor %}
-      {% for w in person.bride_weddings.all %}<li>Wedding (as bride): {{ w.groom }} - {{ w.status }}</li>{% endfor %}
-    </ul>
+<div class="pg-card">
+  <div class="pg-section-title">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Sacramental Records
   </div>
+  <ul class="mb-0 small" style="color:#4a5568;">
+    {% if person.baptism %}<li>Baptism: {{ person.baptism.status }} ({{ person.baptism.baptism_date|default:"-" }})</li>{% endif %}
+    {% for d in person.father_dedications.all %}<li>Dedication (as father): {{ d.child }} — {{ d.status }}</li>{% endfor %}
+    {% for d in person.mother_dedications.all %}<li>Dedication (as mother): {{ d.child }} — {{ d.status }}</li>{% endfor %}
+    {% for w in person.groom_weddings.all %}<li>Wedding (as groom): {{ w.bride }} — {{ w.status }}</li>{% endfor %}
+    {% for w in person.bride_weddings.all %}<li>Wedding (as bride): {{ w.groom }} — {{ w.status }}</li>{% endfor %}
+  </ul>
 </div>
 {% endif %}
+
+</div>
 {% endblock %}

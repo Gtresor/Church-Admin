@@ -62,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'base.context_processors.notifications',
             ],
         },
     },
@@ -128,3 +129,18 @@ LOGOUT_REDIRECT_URL = 'login'
 SITE_BASE_URL = 'http://127.0.0.1:8000'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ---------------------------------------------------------------------------
+# Email — Gmail SMTP
+# To switch back to console output (dev), change EMAIL_BACKEND to:
+#   django.core.mail.backends.console.EmailBackend
+# ---------------------------------------------------------------------------
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "tresory.cy@gmail.com"
+EMAIL_HOST_PASSWORD = "xtdrgjfoywdmtkdy"
+DEFAULT_FROM_EMAIL = "New Life Bible Church <tresory.cy@gmail.com>"
+# Receives new-request alerts (baptism, dedication, wedding)
+STAFF_NOTIFICATION_EMAIL = "tresory.cy@gmail.com"

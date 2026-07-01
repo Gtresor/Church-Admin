@@ -1,0 +1,28 @@
+{% extends "emails/_base.html" %}
+{% block body %}
+<p style="font-size:15px;margin:0 0 8px 0;">Dear {{ wrequest.partner.first_name|default:wrequest.partner_non_member_data.first_name }},</p>
+<p style="font-size:14px;color:#4a5568;line-height:1.6;margin:0 0 24px 0;">
+  <strong>{{ submitter_name }}</strong> has submitted a wedding request at New Life Bible Church, Kigali,
+  and has listed you as their partner. To proceed, we need your confirmation.
+</p>
+
+<div style="background:#f8faff;border-left:4px solid #667eea;border-radius:6px;padding:16px 20px;margin:0 0 28px 0;">
+  <p style="margin:0;font-size:13px;color:#4a5568;line-height:1.6;">
+    By clicking the button below you confirm your agreement to participate in this wedding ceremony
+    at New Life Bible Church and consent to the process as outlined by the church.
+  </p>
+</div>
+
+<div style="text-align:center;margin:0 0 28px 0;">
+  <a href="{{ invite_url }}"
+     style="display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:14px;font-weight:700;
+            padding:14px 32px;border-radius:8px;text-decoration:none;letter-spacing:0.3px;">
+    Confirm My Participation
+  </a>
+</div>
+
+<p style="font-size:12px;color:#a0aec0;line-height:1.5;margin:0;">
+  If the button above doesn't work, copy and paste this link into your browser:<br>
+  <a href="{{ invite_url }}" style="color:#667eea;word-break:break-all;">{{ invite_url }}</a>
+</p>
+{% endblock %}

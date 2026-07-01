@@ -1,115 +1,370 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dashboard-wrap">
-<div class="dashboard-hero hero-admin mb-4">
-  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+<div class="pg-page">
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<div class="pg-card mb-4 pg-notice-info">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
     <div>
-      <h3 class="mb-1">Admin Command Center</h3>
-      <p class="mb-0 opacity-75">Track sacramental operations, upcoming services, and certificate activity at a glance.</p>
+      <h3 class="mb-0" style="color:#1a202c;font-weight:700;">Admin Command Center</h3>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.88rem;">Sacramental operations, upcoming services, and certificate activity at a glance.</p>
     </div>
-    <span class="badge rounded-pill text-bg-light">Church Management</span>
+    <div class="d-flex flex-column align-items-end gap-2">
+      <span class="pg-status-badge" style="background:#e0e7ff;color:#3730a3;">Church Management</span>
+      <span style="font-size:0.8rem;color:#a0aec0;">{% now "N j, Y" %}</span>
+    </div>
+  </div>
+  <!-- Quick actions -->
+  <div class="d-flex flex-wrap gap-2 mt-3 pt-3" style="border-top:1px solid #e8eef7;">
+    <a href="{% url 'admin_member_create' %}" class="pg-btn-primary pg-btn-sm">
+      <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Member
+    </a>
+    <a href="{% url 'admin_baptism_create' %}" class="pg-btn-primary pg-btn-sm">
+      <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Baptism
+    </a>
+    <a href="{% url 'admin_wedding_create' %}" class="pg-btn-primary pg-btn-sm">
+      <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Wedding
+    </a>
+    <a href="{% url 'admin_visitor_register' %}" class="pg-btn-outline pg-btn-sm">
+      <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      Visitor
+    </a>
+    <a href="{% url 'admin_calendar' %}" class="pg-btn-outline pg-btn-sm">
+      <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Calendar
+    </a>
   </div>
 </div>
 
-<div class="row row-cols-1 row-cols-md-2 row-cols-xxl-5 g-3 mb-4">
+<!-- ── Stat Cards ─────────────────────────────────────────────────────────── -->
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+
   <div class="col">
     <a href="{% url 'admin_member_list' %}" class="text-decoration-none">
-      <div class="stat-card stat-1 h-100"><div class="card-body"><div class="label">Total Members</div><p class="value">{{ total_members }}</p></div></div>
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#e0e7ff;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#3730a3" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Total Members</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ total_members }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">All registered members</div>
+      </div>
     </a>
   </div>
+
+  <div class="col">
+    <a href="{% url 'admin_member_list' %}" class="text-decoration-none">
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#d1fae5;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">New This Month</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ new_members_this_month }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Members joined this month</div>
+      </div>
+    </a>
+  </div>
+
   <div class="col">
     <a href="{% url 'admin_baptism_list' %}?status=Pending" class="text-decoration-none">
-      <div class="stat-card stat-2 h-100"><div class="card-body"><div class="label">Pending Baptisms</div><p class="value">{{ pending_baptisms }}</p></div></div>
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#fef3c7;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Pending Baptisms</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ pending_baptisms }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Awaiting review</div>
+      </div>
     </a>
   </div>
+
   <div class="col">
     <a href="{% url 'admin_dedication_list' %}?status=Pending" class="text-decoration-none">
-      <div class="stat-card stat-3 h-100"><div class="card-body"><div class="label">Pending Dedications</div><p class="value">{{ pending_dedications }}</p></div></div>
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#fef3c7;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Pending Dedications</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ pending_dedications }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Awaiting review</div>
+      </div>
     </a>
   </div>
+
+  <div class="col">
+    <a href="{% url 'admin_wedding_list' %}?status=Pending" class="text-decoration-none">
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#fef3c7;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Pending Weddings</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ pending_weddings }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Pending or approved</div>
+      </div>
+    </a>
+  </div>
+
   <div class="col">
     <a href="{% url 'admin_wedding_list' %}" class="text-decoration-none">
-      <div class="stat-card stat-4 h-100"><div class="card-body"><div class="label">Total Weddings</div><p class="value">{{ total_weddings }}</p></div></div>
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#f3e8ff;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#6b21a8" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Total Weddings</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ total_weddings }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">All-time records</div>
+      </div>
     </a>
   </div>
+
   <div class="col">
     <a href="{% url 'admin_certificate_list' %}" class="text-decoration-none">
-      <div class="stat-card stat-5 h-100"><div class="card-body"><div class="label">Certificates Issued</div><p class="value">{{ certificates_issued }}</p></div></div>
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#dbeafe;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Certificates Issued</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ certificates_issued }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Total certificates generated</div>
+      </div>
     </a>
+  </div>
+
+  <div class="col">
+    <a href="{% url 'admin_officiant_list' %}" class="text-decoration-none">
+      <div class="pg-card h-100" style="transition:transform 0.15s;cursor:pointer;" onmouseenter="this.style.transform='translateY(-3px)'" onmouseleave="this.style.transform=''">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#d1fae5;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">Active Officiants</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ active_officiants }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">Currently active</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Visitors this month -->
+  <div class="col">
+    <a href="{% url 'admin_visitor_list' %}" style="text-decoration:none;">
+      <div class="pg-card h-100 pg-stat-card">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span style="background:#fef3c7;border-radius:8px;padding:0.4rem;display:inline-flex;">
+            <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span style="font-size:0.75rem;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:0.04em;">New Visitors</span>
+        </div>
+        <div style="font-size:2rem;font-weight:800;color:#1a202c;line-height:1;">{{ new_visitors_this_month }}</div>
+        <div style="font-size:0.75rem;color:#a0aec0;margin-top:0.25rem;">This month · {{ total_visitors }} total</div>
+      </div>
+    </a>
+  </div>
+
+</div>
+
+<!-- ── Activity Chart ──────────────────────────────────────────────────────── -->
+<div class="pg-card mb-4">
+  <div class="pg-section-title">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    6-Month Activity
+    <span style="font-size:0.78rem;color:#a0aec0;font-weight:400;margin-left:auto;">Requests submitted per month</span>
+  </div>
+  <canvas id="activityChart" height="80"
+    data-labels="{{ chart_labels }}"
+    data-baptisms="{{ chart_baptisms }}"
+    data-dedications="{{ chart_dedications }}"
+    data-weddings="{{ chart_weddings }}"></canvas>
+  <div class="d-flex gap-4 mt-3" style="font-size:0.78rem;color:#718096;">
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#3b82f6;margin-right:4px;vertical-align:middle;"></span>Baptisms</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#f59e0b;margin-right:4px;vertical-align:middle;"></span>Dedications</span>
+    <span><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:#a855f7;margin-right:4px;vertical-align:middle;"></span>Weddings</span>
   </div>
 </div>
 
+<!-- ── Action Required + Upcoming Services ───────────────────────────────── -->
 <div class="row g-3 mb-4">
+
+  <!-- Action Required -->
   <div class="col-lg-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title">Upcoming Services</h5>
-        <div class="table-responsive">
-          <table class="table table-sm soft-table mb-0">
-            <thead><tr><th>Type</th><th>Name</th><th>Date</th><th></th></tr></thead>
-            <tbody>
-            {% for item in upcoming_services %}
-              <tr>
-                <td>{{ item.service }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.date }}</td>
-                <td><a href="{{ item.url }}" class="btn btn-sm btn-outline-primary">Open</a></td>
-              </tr>
-            {% empty %}
-              <tr><td colspan="4">No upcoming services.</td></tr>
-            {% endfor %}
-            </tbody>
-          </table>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Action Required
+        {% if pending_actions %}
+          <span class="pg-status-badge pg-status-pending ms-auto" style="font-size:0.72rem;padding:0.2rem 0.6rem;">{{ pending_actions|length }} pending</span>
+        {% endif %}
+      </div>
+      {% if pending_actions %}
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        {% for item in pending_actions %}
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;border-radius:0.65rem;background:#f8faff;border:1px solid #eef2f7;">
+          <span class="pg-status-badge pg-status-{{ item.service|lower }}" style="font-size:0.7rem;padding:0.2rem 0.55rem;flex-shrink:0;">{{ item.service }}</span>
+          <span style="flex:1;font-size:0.85rem;color:#2d3748;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.name }}</span>
+          <span style="font-size:0.75rem;color:#a0aec0;flex-shrink:0;">
+            {% if item.age == 0 %}Today{% elif item.age == 1 %}1d ago{% else %}{{ item.age }}d ago{% endif %}
+          </span>
+          <a href="{{ item.url }}" class="pg-btn-primary pg-btn-sm" style="flex-shrink:0;">Review</a>
         </div>
-      </div>
-    </div>
-  </div>
-  <div class="col-lg-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title">Recent Requests</h5>
-        <div class="mb-2"><strong>Baptisms</strong></div>
-        <ul class="small ps-3 mb-3">
-          {% for item in recent_requests.baptisms %}
-            <li><a href="{% url 'admin_baptism_review' item.id %}">{{ item.person }} - {{ item.status }}</a></li>
-          {% empty %}
-            <li>No baptism requests.</li>
-          {% endfor %}
-        </ul>
-        <div class="mb-2"><strong>Dedications</strong></div>
-        <ul class="small ps-3 mb-0">
-          {% for item in recent_requests.dedications %}
-            <li><a href="{% url 'admin_dedication_review' item.id %}">{{ item.child }} - {{ item.status }}</a></li>
-          {% empty %}
-            <li>No dedication requests.</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="glass-card mb-3">
-  <div class="card-body">
-    <h5 class="section-title">Recent Certificates</h5>
-    <div class="table-responsive">
-      <table class="table table-sm soft-table mb-0">
-        <thead><tr><th>Number</th><th>Service</th><th>Date</th><th>Status</th><th>File</th></tr></thead>
-        <tbody>
-        {% for cert in recent_certificates %}
-          <tr>
-            <td>{{ cert.certificate_number }}</td>
-            <td>{{ cert.service_type }}</td>
-            <td>{{ cert.issued_date }}</td>
-            <td>{% if cert.is_valid %}<span class="badge bg-success">Valid</span>{% else %}<span class="badge bg-danger">Revoked</span>{% endif %}</td>
-            <td>{% if cert.certificate_file %}<a class="btn btn-sm btn-outline-primary" href="{{ cert.certificate_file.url }}">Download</a>{% else %}-{% endif %}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="5">No certificates yet.</td></tr>
         {% endfor %}
-        </tbody>
-      </table>
+      </div>
+      {% else %}
+      <div class="pg-empty" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;padding:2.5rem 1rem;">
+        <svg style="width:32px;height:32px;color:#22c55e;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span>All caught up! No pending actions.</span>
+      </div>
+      {% endif %}
     </div>
   </div>
+
+  <!-- Upcoming Services -->
+  <div class="col-lg-6">
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Upcoming Services
+        <a href="{% url 'admin_calendar' %}" class="pg-btn-outline pg-btn-sm ms-auto" style="font-weight:400;">Calendar</a>
+      </div>
+      {% if upcoming_services %}
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        {% for item in upcoming_services %}
+        <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;border-radius:0.65rem;background:#f8faff;border:1px solid #eef2f7;">
+          <span class="pg-status-badge pg-status-{{ item.service|lower }}" style="font-size:0.7rem;padding:0.2rem 0.55rem;flex-shrink:0;">{{ item.service }}</span>
+          <span style="flex:1;font-size:0.85rem;color:#2d3748;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ item.name }}</span>
+          <span style="font-size:0.75rem;color:#a0aec0;flex-shrink:0;">
+            {% if item.days_away == 0 %}Today
+            {% elif item.days_away == 1 %}Tomorrow
+            {% else %}In {{ item.days_away }}d{% endif %}
+          </span>
+          <a href="{{ item.url }}" class="pg-btn-outline pg-btn-sm" style="flex-shrink:0;">Open</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="pg-empty">No upcoming services scheduled.</div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
+
+<!-- ── Recent Certificates ────────────────────────────────────────────────── -->
+<div class="pg-card">
+  <div class="pg-section-title">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+    Recent Certificates
+    <a href="{% url 'admin_certificate_list' %}" class="pg-btn-outline pg-btn-sm ms-auto" style="font-weight:400;">View All</a>
+  </div>
+  <div class="table-responsive">
+    <table class="pg-table">
+      <thead>
+        <tr>
+          <th>Number</th>
+          <th>Service</th>
+          <th>Date</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for cert in recent_certificates %}
+        <tr>
+          <td><code style="color:#667eea;font-size:0.82rem;">{{ cert.certificate_number }}</code></td>
+          <td>{{ cert.service_type }}</td>
+          <td>{{ cert.issued_date }}</td>
+          <td>
+            {% if cert.is_valid %}
+              <span class="pg-status-badge pg-status-valid">Valid</span>
+            {% else %}
+              <span class="pg-status-badge pg-status-revoked">Revoked</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if cert.certificate_file %}
+              <a class="pg-btn-outline pg-btn-sm" href="{{ cert.certificate_file.url }}">Download</a>
+            {% else %}
+              <span style="color:#a0aec0;font-size:0.82rem;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5"><div class="pg-empty">No certificates yet.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
+
+</div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('activityChart');
+  if (!canvas) return;
+  const labels = JSON.parse(canvas.dataset.labels);
+  const baptisms = JSON.parse(canvas.dataset.baptisms);
+  const dedications = JSON.parse(canvas.dataset.dedications);
+  const weddings = JSON.parse(canvas.dataset.weddings);
+  const ctx = canvas;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Baptisms',
+          data: baptisms,
+          backgroundColor: 'rgba(59,130,246,0.75)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Dedications',
+          data: dedications,
+          backgroundColor: 'rgba(245,158,11,0.75)',
+          borderRadius: 4,
+        },
+        {
+          label: 'Weddings',
+          data: weddings,
+          backgroundColor: 'rgba(168,85,247,0.75)',
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { mode: 'index', intersect: false },
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0, font: { size: 11 } },
+          grid: { color: '#f0f2f5' },
+        },
+      },
+    },
+  });
+}());
+</script>
 {% endblock %}

@@ -1,223 +1,226 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dashboard-wrap">
-<div class="dashboard-hero hero-admin mb-4">
+<div class="pg-page">
+
+<div class="pg-card mb-4" style="border-left:4px solid #667eea;">
   <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
     <div>
-      <h3 class="mb-1">Scheduling Interface</h3>
-      <p class="mb-0 opacity-75">Manage available dates, blackout dates, and view scheduled services.</p>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Scheduling Interface</h4>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.88rem;">Manage available dates, blackout dates, and view scheduled services.</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'admin_calendar' %}?year={{ year }}&month={{ month }}" class="btn btn-sm btn-outline-secondary">View Calendar</a>
-    </div>
+    <a href="{% url 'admin_calendar' %}?year={{ year }}&month={{ month }}" class="pg-btn-outline">View Calendar</a>
   </div>
 </div>
 
 <div class="row g-3 mb-4">
-  <!-- Add Available Slot -->
   <div class="col-lg-4 col-md-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title"><i class="fas fa-plus-circle text-success"></i> Add Available Slot</h5>
-        <form method="post">{% csrf_token %}
-          <input type="hidden" name="action" value="add_slot">
-          <div class="mb-2">
-            <select name="activity_type" class="form-select form-select-sm" required>
-              <option value="">Select Activity</option>
-              {% for val, label in activity_choices %}
-                <option value="{{ val }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="mb-2">
-            <input type="date" name="date" class="form-control form-control-sm" required>
-          </div>
-          <div class="mb-2">
-            <input type="time" name="time" class="form-control form-control-sm" placeholder="Time (weddings only)">
-            <small class="text-muted">Only for weddings (12:00, 14:00, 16:00)</small>
-          </div>
-          <button class="btn btn-sm btn-success w-100">Create Slot</button>
-        </form>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Add Available Slot
       </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_slot">
+        <div class="mb-2">
+          <label class="pg-label">Activity</label>
+          <select name="activity_type" class="pg-select" required>
+            <option value="">Select Activity</option>
+            {% for val, label in activity_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="pg-label">Date</label>
+          <input type="date" name="date" class="pg-input" required>
+        </div>
+        <div class="mb-3">
+          <label class="pg-label">Time (weddings only)</label>
+          <input type="time" name="time" class="pg-input" placeholder="12:00, 14:00, 16:00">
+        </div>
+        <button class="pg-btn-success w-100">Create Slot</button>
+      </form>
     </div>
   </div>
 
-  <!-- Add Blackout Date -->
   <div class="col-lg-4 col-md-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title"><i class="fas fa-ban text-danger"></i> Add Blackout Date</h5>
-        <form method="post">{% csrf_token %}
-          <input type="hidden" name="action" value="add_blackout">
-          <div class="mb-2">
-            <input type="date" name="date" class="form-control form-control-sm" required>
-          </div>
-          <div class="mb-2">
-            <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason (e.g. Easter Sunday)">
-          </div>
-          <div class="mb-2">
-            <select name="activity_type" class="form-select form-select-sm">
-              {% for val, label in blackout_activity_choices %}
-                <option value="{{ val }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-            <small class="text-muted">Applies to all activities by default</small>
-          </div>
-          <button class="btn btn-sm btn-danger w-100">Add Blackout</button>
-        </form>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        Add Blackout Date
       </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_blackout">
+        <div class="mb-2">
+          <label class="pg-label">Date</label>
+          <input type="date" name="date" class="pg-input" required>
+        </div>
+        <div class="mb-2">
+          <label class="pg-label">Reason</label>
+          <input type="text" name="reason" class="pg-input" placeholder="e.g. Easter Sunday">
+        </div>
+        <div class="mb-3">
+          <label class="pg-label">Activity Type</label>
+          <select name="activity_type" class="pg-select">
+            {% for val, label in blackout_activity_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+          <p style="font-size:0.78rem;color:#718096;margin-top:0.25rem;margin-bottom:0;">Applies to all activities by default.</p>
+        </div>
+        <button class="pg-btn-danger w-100">Add Blackout</button>
+      </form>
     </div>
   </div>
 
-  <!-- Bulk Create -->
   <div class="col-lg-4 col-md-12">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title"><i class="fas fa-calendar-alt text-primary"></i> Bulk Create Slots</h5>
-        <form method="post">{% csrf_token %}
-          <input type="hidden" name="action" value="bulk_create">
-          <div class="mb-2">
-            <select name="activity_type" class="form-select form-select-sm" required>
-              <option value="">Select Activity</option>
-              {% for val, label in activity_choices %}
-                <option value="{{ val }}">{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="row g-1 mb-2">
-            <div class="col-6"><input type="date" name="start_date" class="form-control form-control-sm" required></div>
-            <div class="col-6"><input type="date" name="end_date" class="form-control form-control-sm" required></div>
-          </div>
-          <small class="text-muted d-block mb-2">Creates slots for each day in the range.</small>
-          <button class="btn btn-sm btn-primary w-100">Bulk Create</button>
-        </form>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Bulk Create Slots
       </div>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="bulk_create">
+        <div class="mb-2">
+          <label class="pg-label">Activity</label>
+          <select name="activity_type" class="pg-select" required>
+            <option value="">Select Activity</option>
+            {% for val, label in activity_choices %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col-6"><label class="pg-label">Start Date</label><input type="date" name="start_date" class="pg-input" required></div>
+          <div class="col-6"><label class="pg-label">End Date</label><input type="date" name="end_date" class="pg-input" required></div>
+        </div>
+        <p style="font-size:0.78rem;color:#718096;margin-bottom:0.75rem;">Creates slots for each day in the range.</p>
+        <button class="pg-btn-primary w-100">Bulk Create</button>
+      </form>
     </div>
   </div>
 </div>
 
-<!-- Calendar -->
-<div class="glass-card mb-4">
-  <div class="card-body">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h5 class="section-title mb-0">
-        <i class="fas fa-calendar"></i> {{ month_name }} {{ year }}
-        <span class="badge bg-secondary ms-2">{{ events|length }} event(s)</span>
-      </h5>
-      <div class="btn-group btn-group-sm">
-        {% if month == 1 %}
-          <a href="?year={{ year|add:"-1" }}&month=12" class="btn btn-outline-secondary">&laquo; Prev</a>
-        {% else %}
-          <a href="?year={{ year }}&month={{ month|add:"-1" }}" class="btn btn-outline-secondary">&laquo; Prev</a>
-        {% endif %}
-        {% if month == 12 %}
-          <a href="?year={{ year|add:"1" }}&month=1" class="btn btn-outline-secondary">Next &raquo;</a>
-        {% else %}
-          <a href="?year={{ year }}&month={{ month|add:"1" }}" class="btn btn-outline-secondary">Next &raquo;</a>
-        {% endif %}
-      </div>
+<div class="pg-card mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="pg-section-title mb-0">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      {{ month_name }} {{ year }}
+      <span class="pg-status-badge" style="background:#e0e7ff;color:#3730a3;margin-left:0.5rem;">{{ events|length }} event(s)</span>
     </div>
-    <div class="table-responsive">
-      <table class="table table-bordered table-sm mb-0">
-        <thead class="table-light">
+    <div class="d-flex gap-2">
+      {% if month == 1 %}
+        <a href="?year={{ year|add:"-1" }}&month=12" class="pg-btn-outline pg-btn-sm">« Prev</a>
+      {% else %}
+        <a href="?year={{ year }}&month={{ month|add:"-1" }}" class="pg-btn-outline pg-btn-sm">« Prev</a>
+      {% endif %}
+      {% if month == 12 %}
+        <a href="?year={{ year|add:"1" }}&month=1" class="pg-btn-outline pg-btn-sm">Next »</a>
+      {% else %}
+        <a href="?year={{ year }}&month={{ month|add:"1" }}" class="pg-btn-outline pg-btn-sm">Next »</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="table-responsive">
+    <table class="pg-table" style="table-layout:fixed;">
+      <thead>
+        <tr>
+          <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for week_row in month_rows %}
           <tr>
-            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+            {% for day_num in week_row %}
+              <td class="pg-cal-day {% if day_num == 0 %}pg-cal-empty{% endif %}" style="height:80px;vertical-align:top;">
+                {% if day_num > 0 %}
+                  <strong style="font-size:0.82rem;">{{ day_num }}</strong>
+                  {% for event in events %}
+                    {% if event.day == day_num %}
+                      <div style="font-size:10px;padding:2px 5px;margin-top:2px;border-radius:4px;background:#e0e7ff;color:#3730a3;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ event.label }}</div>
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+              </td>
+            {% endfor %}
           </tr>
-        </thead>
-        <tbody>
-          {% for week_row in month_rows %}
-            <tr>
-              {% for day_num in week_row %}
-                <td class="{% if day_num == 0 %}bg-light{% endif %}" style="height:80px;vertical-align:top;width:14%;">
-                  {% if day_num > 0 %}
-                    <strong>{{ day_num }}</strong>
-                    {% for event in events %}
-                      {% if event.day == day_num %}
-                        <div class="small rounded px-1 mb-1" style="background:{{ event.color }}20;border-left:3px solid {{ event.color }};font-size:11px;">
-                          {{ event.label }}
-                        </div>
-                      {% endif %}
-                    {% endfor %}
-                  {% endif %}
-                </td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="mt-2 d-flex gap-3 small">
-      <span><span class="badge bg-primary">Baptism</span></span>
-      <span><span class="badge bg-warning text-dark">Dedication</span></span>
-      <span><span class="badge bg-secondary">Wedding</span></span>
-      <span><span class="badge bg-danger">Blackout</span></span>
-    </div>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="mt-3 d-flex gap-3" style="font-size:0.82rem;">
+    <span><span class="pg-status-badge" style="background:#dbeafe;color:#1e40af;">Baptism</span></span>
+    <span><span class="pg-status-badge" style="background:#fef3c7;color:#92400e;">Dedication</span></span>
+    <span><span class="pg-status-badge" style="background:#f3f4f6;color:#4b5563;">Wedding</span></span>
+    <span><span class="pg-status-badge" style="background:#fee2e2;color:#991b1b;">Blackout</span></span>
   </div>
 </div>
 
-<!-- Upcoming Slots & Blackouts -->
 <div class="row g-3">
   <div class="col-md-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title"><i class="fas fa-check-circle text-success"></i> Upcoming Available Slots</h5>
-        <div class="table-responsive">
-          <table class="table table-sm soft-table mb-0">
-            <thead><tr><th>Type</th><th>Date</th><th>Time</th><th>Action</th></tr></thead>
-            <tbody>
-              {% for slot in upcoming_slots %}
-                <tr>
-                  <td><span class="badge bg-{% if slot.activity_type == 'Baptism' %}primary{% elif slot.activity_type == 'Dedication' %}warning text-dark{% else %}secondary{% endif %}">{{ slot.activity_type }}</span></td>
-                  <td>{{ slot.date }}</td>
-                  <td>{% if slot.time %}{{ slot.time|time:"H:i" }}{% else %}-{% endif %}</td>
-                  <td>
-                    <form method="post" class="d-inline">{% csrf_token %}
-                      <input type="hidden" name="action" value="toggle_slot">
-                      <input type="hidden" name="slot_id" value="{{ slot.id }}">
-                      <button class="btn btn-sm btn-outline-danger" title="Disable slot">Disable</button>
-                    </form>
-                  </td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="4" class="text-muted">No upcoming slots.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <small class="text-muted">Total slots loaded for this month: {{ available_slots|length }}</small>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Upcoming Available Slots
       </div>
+      <div class="table-responsive">
+        <table class="pg-table">
+          <thead><tr><th>Type</th><th>Date</th><th>Time</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for slot in upcoming_slots %}
+              <tr>
+                <td>
+                  <span class="pg-status-badge {% if slot.activity_type == 'Baptism' %}pg-status-approved{% elif slot.activity_type == 'Dedication' %}pg-status-pending{% else %}pg-status-cancelled{% endif %}">{{ slot.activity_type }}</span>
+                </td>
+                <td>{{ slot.date }}</td>
+                <td>{% if slot.time %}{{ slot.time|time:"H:i" }}{% else %}—{% endif %}</td>
+                <td>
+                  <form method="post" class="d-inline">{% csrf_token %}
+                    <input type="hidden" name="action" value="toggle_slot">
+                    <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                    <button class="pg-btn-danger pg-btn-sm">Disable</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="pg-empty">No upcoming slots.</div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.78rem;color:#718096;margin-top:0.5rem;margin-bottom:0;">Total slots loaded for this month: {{ available_slots|length }}</p>
     </div>
   </div>
   <div class="col-md-6">
-    <div class="glass-card h-100">
-      <div class="card-body">
-        <h5 class="section-title"><i class="fas fa-calendar-times text-danger"></i> Upcoming Blackout Dates</h5>
-        <div class="table-responsive">
-          <table class="table table-sm soft-table mb-0">
-            <thead><tr><th>Date</th><th>Reason</th><th>Activity</th><th>Action</th></tr></thead>
-            <tbody>
-              {% for bd in upcoming_blackouts %}
-                <tr>
-                  <td>{{ bd.date }}</td>
-                  <td>{{ bd.reason|default:"-" }}</td>
-                  <td><span class="badge bg-danger">{{ bd.activity_type }}</span></td>
-                  <td>
-                    <form method="post" class="d-inline">{% csrf_token %}
-                      <input type="hidden" name="action" value="delete_blackout">
-                      <input type="hidden" name="blackout_id" value="{{ bd.id }}">
-                      <button class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this blackout date?')">Remove</button>
-                    </form>
-                  </td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="4" class="text-muted">No blackout dates set.</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Upcoming Blackout Dates
+      </div>
+      <div class="table-responsive">
+        <table class="pg-table">
+          <thead><tr><th>Date</th><th>Reason</th><th>Activity</th><th>Action</th></tr></thead>
+          <tbody>
+            {% for bd in upcoming_blackouts %}
+              <tr>
+                <td>{{ bd.date }}</td>
+                <td>{{ bd.reason|default:"—" }}</td>
+                <td><span class="pg-status-badge pg-status-rejected">{{ bd.activity_type }}</span></td>
+                <td>
+                  <form method="post" class="d-inline">{% csrf_token %}
+                    <input type="hidden" name="action" value="delete_blackout">
+                    <input type="hidden" name="blackout_id" value="{{ bd.id }}">
+                    <button class="pg-btn-danger pg-btn-sm" onclick="return confirm('Remove this blackout date?')">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4"><div class="pg-empty">No blackout dates set.</div></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </div>
+
 </div>
 {% endblock %}

@@ -1,28 +1,44 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between mb-3">
-  <h3>Kids Database</h3>
-  <a href="{% url 'admin_kid_create' %}" class="btn btn-primary">Add Kid</a>
+<div class="pg-page">
+
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Kids Database</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="{% url 'admin_kid_create' %}" class="pg-btn-primary">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Kid
+    </a>
+  </div>
 </div>
 
-<form class="row g-2 mb-3">
-  <div class="col-lg-4 col-md-6"><input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search kids"></div>
-  <div class="col-lg-3 col-md-6">
-    <select name="status" class="form-select">
-      <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
-      <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
-      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
-    </select>
-  </div>
-  <div class="col-lg-5 col-md-12 d-flex gap-2">
-    <button class="btn btn-outline-primary">Apply Filters</button>
-    <a href="{% url 'admin_kid_list' %}" class="btn btn-outline-secondary">Reset</a>
-  </div>
-</form>
+<div class="pg-card mb-3">
+  <form class="row g-2">
+    <div class="col-lg-4 col-md-6">
+      <label class="pg-label">Search</label>
+      <input type="text" name="q" value="{{ q }}" class="pg-input" placeholder="Search kids…">
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <label class="pg-label">Status</label>
+      <select name="status" class="pg-select">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="col-lg-5 col-md-12 d-flex align-items-end gap-2">
+      <button class="pg-btn-primary">Apply Filters</button>
+      <a href="{% url 'admin_kid_list' %}" class="pg-btn-outline">Reset</a>
+    </div>
+  </form>
+</div>
 
-<div class="card border-0 shadow-sm">
+<div class="pg-card">
   <div class="table-responsive">
-    <table class="table mb-0">
+    <table class="pg-table">
       <thead>
         <tr>
           <th>Name</th>
@@ -35,26 +51,36 @@
       </thead>
       <tbody>
       {% for kid in page_obj %}
-        <tr class="{% if not kid.is_active %}table-light text-muted{% endif %}">
-          <td>{{ kid }}</td>
+        <tr class="{% if not kid.is_active %}pg-muted-row{% endif %}">
+          <td><a href="{% url 'admin_person_detail' kid.id %}" style="color:#667eea;font-weight:600;">{{ kid }}</a></td>
           <td>{{ kid.gender }}</td>
           <td>{{ kid.date_of_birth|date:'M d, Y' }}</td>
           <td>{{ kid.date_of_birth|timesince|cut:"," }}</td>
-          <td>{% if kid.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-          <td class="d-flex gap-2">
-            <a href="{% url 'admin_kid_edit' kid.id %}" class="btn btn-sm btn-secondary">Edit</a>
-            <form method="post" action="{% url 'admin_kid_delete' kid.id %}">
-              {% csrf_token %}
-              <button class="btn btn-sm btn-danger">Delete</button>
-            </form>
+          <td>
+            {% if kid.is_active %}
+              <span class="pg-status-badge pg-status-active">Active</span>
+            {% else %}
+              <span class="pg-status-badge pg-status-inactive">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{% url 'admin_kid_edit' kid.id %}" class="pg-btn-outline pg-btn-sm">Edit</a>
+              <form method="post" action="{% url 'admin_kid_delete' kid.id %}">
+                {% csrf_token %}
+                <button class="pg-btn-danger pg-btn-sm">Delete</button>
+              </form>
+            </div>
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="6">No kids found.</td></tr>
+        <tr><td colspan="6"><div class="pg-empty">No kids found.</div></td></tr>
       {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
 {% include 'partials/pagination.html' with page_query=page_query %}
+
+</div>
 {% endblock %}

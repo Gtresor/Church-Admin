@@ -1,54 +1,76 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Register Baptism</h3>
-  <span class="badge bg-primary-subtle text-primary-emphasis">Walk-in Registration</span>
+<div class="pg-page">
+
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Register Baptism</h4>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.88rem;">Walk-in registration — use an existing person or create a new profile.</p>
+    </div>
+    <span class="pg-status-badge" style="background:#e0e7ff;color:#3730a3;">Walk-in</span>
+  </div>
 </div>
 
-<form method="post" class="card shadow-sm border-0">
+<form method="post">
 {% csrf_token %}
-<div class="card-body">
-  <div class="row g-4">
-    <div class="col-lg-6">
-      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
-        <h5 class="mb-1">Use Existing Person</h5>
-        <p class="text-muted small mb-3">Search and select someone already in your records.</p>
-        <label class="form-label">Existing Person</label>
-        <select id="person_id" name="person_id" class="form-select">
-          <option value="">-- Select Person --</option>
-          {% for person in people %}
-          <option value="{{ person.id }}">{{ person }} {% if person.is_member %}(Member){% else %}(Guest){% endif %}</option>
-          {% endfor %}
-        </select>
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Use Existing Person
       </div>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:0.75rem;">Search and select someone already in your records.</p>
+      <label class="pg-label">Existing Person</label>
+      <select id="person_id" name="person_id" class="pg-select">
+        <option value="">-- Select Person --</option>
+        {% for person in people %}
+        <option value="{{ person.id }}">{{ person }} {% if person.is_member %}(Member){% else %}(Guest){% endif %}</option>
+        {% endfor %}
+      </select>
     </div>
+  </div>
 
-    <div class="col-lg-6">
-      <div class="border rounded-3 p-3 h-100 bg-light-subtle">
-        <h5 class="mb-1">Manual Walk-in</h5>
-        <p class="text-muted small mb-3">If not in system, create a quick profile now.</p>
-        <div class="row g-2">
-          <div class="col-md-6"><label class="form-label">First Name</label><input name="first_name" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Last Name</label><input name="last_name" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Gender</label><select name="gender" class="form-select"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option></select></div>
-          <div class="col-md-6"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Phone</label><input name="phone" class="form-control"></div>
-          <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control"></div>
-          <div class="col-12"><label class="form-label">Address</label><input name="address" class="form-control"></div>
+  <div class="col-lg-6">
+    <div class="pg-card h-100">
+      <div class="pg-section-title">
+        <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Manual Walk-in
+      </div>
+      <p style="font-size:0.85rem;color:#718096;margin-bottom:0.75rem;">If not in system, create a quick profile now.</p>
+      <div class="row g-2">
+        <div class="col-md-6"><label class="pg-label">First Name</label><input name="first_name" class="pg-input"></div>
+        <div class="col-md-6"><label class="pg-label">Last Name</label><input name="last_name" class="pg-input"></div>
+        <div class="col-md-6">
+          <label class="pg-label">Gender</label>
+          <select name="gender" class="pg-select">
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
         </div>
+        <div class="col-md-6"><label class="pg-label">Date of Birth</label><input type="date" name="date_of_birth" class="pg-input"></div>
+        <div class="col-md-6"><label class="pg-label">Phone</label><input name="phone" class="pg-input"></div>
+        <div class="col-md-6"><label class="pg-label">Email</label><input type="email" name="email" class="pg-input"></div>
+        <div class="col-12"><label class="pg-label">Address</label><input name="address" class="pg-input"></div>
       </div>
     </div>
-
-    <div class="col-12">
-      <label class="form-label">Admin Note (Optional)</label>
-      <textarea name="admin_comment" class="form-control" rows="3" placeholder="Example: Registered at office desk after Sunday service."></textarea>
-    </div>
   </div>
+</div>
 
-  <div class="mt-4 d-flex justify-content-end gap-2">
-    <a href="{% url 'admin_baptism_list' %}" class="btn btn-outline-secondary">Cancel</a>
-    <button class="btn btn-primary px-4">Save Registration</button>
-  </div>
+<div class="pg-card mb-3">
+  <label class="pg-label">Admin Note (Optional)</label>
+  <textarea name="admin_comment" class="pg-input" rows="3" placeholder="Example: Registered at office desk after Sunday service." style="height:auto;"></textarea>
+</div>
+
+<div class="d-flex justify-content-end gap-2">
+  <a href="{% url 'admin_baptism_list' %}" class="pg-btn-outline">Cancel</a>
+  <button class="pg-btn-primary">Save Registration</button>
 </div>
 </form>
+
+</div>
 {% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .nf-page { background:linear-gradient(135deg,#f8faff 0%,#eef2f7 50%,#e8ecf4 100%);min-height:100vh;margin:-1.5rem;padding:1.5rem; }
+  .nf-card { background:#fff;border-radius:1.25rem;padding:1.25rem 1.5rem;box-shadow:0 4px 24px rgba(0,0,0,0.06),0 12px 48px rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.04); }
+  .nf-tab { display:inline-flex;align-items:center;gap:0.35rem;padding:0.45rem 1rem;border-radius:999px;font-size:0.82rem;font-weight:600;text-decoration:none;transition:background 0.15s,color 0.15s;color:#4a5568;background:#f0f2f5; }
+  .nf-tab:hover { background:#e2e8f0;color:#2d3748; }
+  .nf-tab.active { background:linear-gradient(135deg,#667eea,#764ba2);color:#fff; }
+  .nf-row { display:flex;align-items:flex-start;gap:0.85rem;padding:0.85rem 1rem;border-bottom:1px solid #f0f2f5;transition:background 0.12s; }
+  .nf-row:last-child { border-bottom:0; }
+  .nf-row:hover { background:#f8faff; }
+  .nf-row.unread { border-left:3px solid #667eea;background:#fafbff;padding-left:calc(1rem - 3px); }
+  .nf-icon { width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+  .nf-icon-auth { background:#ebf5fb;color:#1a6fa6; }
+  .nf-icon-member { background:#eef2ff;color:#5b21b6; }
+  .nf-icon-baptism { background:#f0fff4;color:#276749; }
+  .nf-icon-dedication { background:#fff5f5;color:#c53030; }
+  .nf-icon-wedding { background:#fff7ed;color:#c05621; }
+  .nf-icon-certificate { background:#f5f3ff;color:#6d28d9; }
+  .nf-icon-system { background:#f7fafc;color:#718096; }
+  .nf-desc { font-size:0.86rem;color:#1a202c;line-height:1.45; }
+  .nf-meta { font-size:0.75rem;color:#a0aec0;margin-top:3px; }
+  .nf-unread-dot { width:7px;height:7px;border-radius:50%;background:#667eea;flex-shrink:0;margin-top:6px; }
+  .nf-empty { text-align:center;color:#a0aec0;padding:3rem 0;font-size:0.9rem; }
+  .pg-btn-primary { padding:0.5rem 1.1rem;border-radius:0.65rem;border:0;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-weight:600;font-size:0.85rem;cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;text-decoration:none;transition:transform 0.15s,box-shadow 0.2s; }
+  .pg-btn-primary:hover { transform:translateY(-1px);box-shadow:0 8px 20px rgba(102,126,234,0.3);color:#fff; }
+  .pg-btn-outline { padding:0.45rem 0.9rem;border-radius:0.6rem;border:1.5px solid #e2e8f0;background:#fff;color:#4a5568;font-weight:600;font-size:0.8rem;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:0.3rem;transition:border-color 0.2s; }
+  .pg-btn-outline:hover { border-color:#667eea;color:#667eea; }
+</style>
+
+<div class="nf-page">
+  <!-- Header -->
+  <div class="nf-card mb-3" style="border-left:4px solid #667eea;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Activity Log</h4>
+        <div style="height:4px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:2px;width:80px;margin-top:0.3rem;"></div>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        {% if unread_total %}
+        <span class="badge rounded-pill" style="background:linear-gradient(135deg,#667eea,#764ba2);font-size:0.78rem;padding:0.35em 0.8em;">
+          {{ unread_total }} unread
+        </span>
+        <form method="post" action="{% url 'admin_notifications_mark_read' %}" class="m-0">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button type="submit" class="pg-btn-outline">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+            Mark all read
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Category filter tabs -->
+  <div class="nf-card mb-3">
+    <div class="d-flex flex-wrap gap-2">
+      <a href="?cat=all" class="nf-tab {% if active_cat == 'all' %}active{% endif %}">All</a>
+      {% for cat_val, cat_label in categories %}
+      <a href="?cat={{ cat_val }}" class="nf-tab {% if active_cat == cat_val %}active{% endif %}">{{ cat_label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Log list -->
+  <div class="nf-card">
+    {% if page_obj.object_list %}
+    {% for n in page_obj %}
+    <div class="nf-row {% if not n.is_read %}unread{% endif %}">
+      <!-- Category icon -->
+      <div class="nf-icon nf-icon-{{ n.category }}">
+        {% if n.category == "auth" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        {% elif n.category == "member" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        {% elif n.category == "baptism" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        {% elif n.category == "dedication" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        {% elif n.category == "wedding" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/><circle cx="12" cy="12" r="3"/></svg>
+        {% elif n.category == "certificate" %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        {% else %}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {% endif %}
+      </div>
+      <!-- Content -->
+      <div style="flex:1;min-width:0;">
+        <p class="nf-desc mb-0">{{ n.description }}</p>
+        <p class="nf-meta mb-0">
+          {% if n.actor %}{{ n.actor.get_full_name|default:n.actor.username }} &middot; {% endif %}
+          {{ n.created_at|date:"d M Y, H:i" }}
+          &middot; {{ n.created_at|timesince }} ago
+        </p>
+      </div>
+      <!-- Unread indicator -->
+      {% if not n.is_read %}<div class="nf-unread-dot"></div>{% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2 px-2">
+      <small style="color:#718096;">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</small>
+      <div class="d-flex gap-1">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}&cat={{ active_cat }}" class="pg-btn-outline">Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}&cat={{ active_cat }}" class="pg-btn-outline">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="nf-empty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e0" stroke-width="1.5" class="mb-3 d-block mx-auto">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </svg>
+      <p class="mb-0">No activity logged yet{% if active_cat != 'all' %} in this category{% endif %}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

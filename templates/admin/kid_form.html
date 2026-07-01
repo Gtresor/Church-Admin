@@ -1,29 +1,51 @@
 {% extends 'base.html' %}
 {% block content %}
-<h3 class="mb-3">{% if person %}Edit Kid Profile{% else %}Create Kid Profile{% endif %}</h3>
-<form method="post" class="card card-body">
-{% csrf_token %}
-<div class="row g-3">
-  <div class="col-md-6"><label class="form-label">First Name</label><input name="first_name" class="form-control" value="{{ person.first_name|default:'' }}" required></div>
-  <div class="col-md-6"><label class="form-label">Last Name</label><input name="last_name" class="form-control" value="{{ person.last_name|default:'' }}" required></div>
-  <div class="col-md-4">
-    <label class="form-label">Gender</label>
-    <select name="gender" class="form-select" required>
-      <option value="">Select</option>
-      <option value="Male" {% if person.gender == 'Male' %}selected{% endif %}>Male</option>
-      <option value="Female" {% if person.gender == 'Female' %}selected{% endif %}>Female</option>
-      <option value="Other" {% if person.gender == 'Other' %}selected{% endif %}>Other</option>
-    </select>
+<div class="pg-page">
+
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h4 class="mb-0" style="color:#1a202c;font-weight:700;">{% if person %}Edit Kid Profile{% else %}Create Kid Profile{% endif %}</h4>
+      <div class="pg-gradient-accent"></div>
+    </div>
+    <a href="{% url 'admin_kid_list' %}" class="pg-btn-outline">Back</a>
   </div>
-  <div class="col-md-4"><label class="form-label">Date of Birth</label><input type="date" name="date_of_birth" class="form-control" value="{{ person.date_of_birth|date:'Y-m-d' }}" required></div>
-  <div class="col-md-4"><label class="form-label">Phone (Optional)</label><input name="phone" class="form-control" value="{{ person.phone|default:'' }}"></div>
-  <div class="col-md-6"><label class="form-label">Email (Optional)</label><input type="email" name="email" class="form-control" value="{{ person.email|default:'' }}"></div>
-  <div class="col-md-6"><label class="form-label">Address (Optional)</label><input name="address" class="form-control" value="{{ person.address|default:'' }}"></div>
-  {% if person %}
-  <div class="col-md-6 form-check mt-4 ms-2"><input class="form-check-input" type="checkbox" name="is_active" {% if person.is_active %}checked{% endif %}><label class="form-check-label">Active</label></div>
-  {% endif %}
 </div>
-<button class="btn btn-primary mt-3">Save</button>
-<a href="{% url 'admin_kid_list' %}" class="btn btn-outline-secondary mt-2">Back</a>
-</form>
+
+<div class="pg-card">
+  <form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+      <div class="col-md-6"><label class="pg-label">First Name</label><input name="first_name" class="pg-input" value="{{ person.first_name|default:'' }}" required></div>
+      <div class="col-md-6"><label class="pg-label">Last Name</label><input name="last_name" class="pg-input" value="{{ person.last_name|default:'' }}" required></div>
+      <div class="col-md-4">
+        <label class="pg-label">Gender</label>
+        <select name="gender" class="pg-select" required>
+          <option value="">Select</option>
+          <option value="Male" {% if person.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if person.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if person.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4"><label class="pg-label">Date of Birth</label><input type="date" name="date_of_birth" class="pg-input" value="{{ person.date_of_birth|date:'Y-m-d' }}" required></div>
+      <div class="col-md-4"><label class="pg-label">Phone (Optional)</label><input name="phone" class="pg-input" value="{{ person.phone|default:'' }}"></div>
+      <div class="col-md-6"><label class="pg-label">Email (Optional)</label><input type="email" name="email" class="pg-input" value="{{ person.email|default:'' }}"></div>
+      <div class="col-md-6"><label class="pg-label">Address (Optional)</label><input name="address" class="pg-input" value="{{ person.address|default:'' }}"></div>
+      {% if person %}
+      <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="is_active" {% if person.is_active %}checked{% endif %}>
+          <label class="form-check-label" style="font-weight:600;color:#1a202c;">Active</label>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    <div class="d-flex gap-2 mt-4">
+      <button class="pg-btn-primary">Save</button>
+      <a href="{% url 'admin_kid_list' %}" class="pg-btn-outline">Cancel</a>
+    </div>
+  </form>
+</div>
+
+</div>
 {% endblock %}

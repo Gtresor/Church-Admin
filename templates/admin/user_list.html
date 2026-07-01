@@ -1,81 +1,59 @@
 {% extends 'base.html' %}
 {% block content %}
-<style>
-  .muted-user-row {
-    opacity: 0.58;
-    background: #f8f9fa;
-  }
+<div class="pg-page">
 
-  .muted-user-row .btn {
-    opacity: 1;
-  }
-
-  .user-avatar-chip {
-    width: 34px;
-    height: 34px;
-    border-radius: 999px;
-    overflow: hidden;
-    background: #e9eefc;
-    border: 1px solid #d6def4;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #334155;
-  }
-
-  .user-avatar-chip img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-</style>
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h3 class="mb-0">Users Management</h3>
+<div class="pg-card mb-3" style="border-left:4px solid #667eea;">
+  <div>
+    <h4 class="mb-0" style="color:#1a202c;font-weight:700;">Users Management</h4>
+    <div class="pg-gradient-accent"></div>
+  </div>
 </div>
 
-<form class="row g-2 mb-3">
-  <div class="col-lg-3 col-md-6">
-    <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by username, email, or name">
-  </div>
-  <div class="col-lg-2 col-md-6">
-    <select name="status" class="form-select">
-      <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
-      <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
-      <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
-    </select>
-  </div>
-  <div class="col-lg-2 col-md-6">
-    <select name="role" class="form-select">
-      <option value="all" {% if role == 'all' %}selected{% endif %}>All Roles</option>
-      <option value="superuser" {% if role == 'superuser' %}selected{% endif %}>Superuser</option>
-      <option value="staff" {% if role == 'staff' %}selected{% endif %}>Staff</option>
-      <option value="member" {% if role == 'member' %}selected{% endif %}>Member</option>
-    </select>
-  </div>
-  <div class="col-lg-2 col-md-6">
-    <select name="member_link" class="form-select">
-      <option value="all" {% if member_link == 'all' %}selected{% endif %}>All Links</option>
-      <option value="linked" {% if member_link == 'linked' %}selected{% endif %}>Linked to Member</option>
-      <option value="unlinked" {% if member_link == 'unlinked' %}selected{% endif %}>Unlinked</option>
-    </select>
-  </div>
-  <div class="col-lg-3 col-md-12 d-flex gap-2">
-    <button class="btn btn-outline-primary">Apply Filters</button>
-    <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary">Reset</a>
-  </div>
-</form>
+<div class="pg-card mb-3">
+  <form class="row g-2">
+    <div class="col-lg-3 col-md-6">
+      <label class="pg-label">Search</label>
+      <input type="text" name="q" value="{{ q }}" class="pg-input" placeholder="Username, email, or name…">
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="pg-label">Status</label>
+      <select name="status" class="pg-select">
+        <option value="all" {% if status == 'all' %}selected{% endif %}>All Status</option>
+        <option value="active" {% if status == 'active' %}selected{% endif %}>Active</option>
+        <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactive</option>
+      </select>
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="pg-label">Role</label>
+      <select name="role" class="pg-select">
+        <option value="all" {% if role == 'all' %}selected{% endif %}>All Roles</option>
+        <option value="superuser" {% if role == 'superuser' %}selected{% endif %}>Superuser</option>
+        <option value="staff" {% if role == 'staff' %}selected{% endif %}>Staff</option>
+        <option value="member" {% if role == 'member' %}selected{% endif %}>Member</option>
+      </select>
+    </div>
+    <div class="col-lg-2 col-md-6">
+      <label class="pg-label">Link</label>
+      <select name="member_link" class="pg-select">
+        <option value="all" {% if member_link == 'all' %}selected{% endif %}>All Links</option>
+        <option value="linked" {% if member_link == 'linked' %}selected{% endif %}>Linked to Member</option>
+        <option value="unlinked" {% if member_link == 'unlinked' %}selected{% endif %}>Unlinked</option>
+      </select>
+    </div>
+    <div class="col-lg-3 col-md-12 d-flex align-items-end gap-2">
+      <button class="pg-btn-primary">Apply Filters</button>
+      <a href="{% url 'admin_user_list' %}" class="pg-btn-outline">Reset</a>
+    </div>
+  </form>
+</div>
 
-<form id="bulkUsersForm" method="post" action="{% url 'admin_user_bulk_action' %}" class="card border-0 shadow-sm mb-3">
-  {% csrf_token %}
-  <div class="card-body py-2">
+<div class="pg-card mb-3">
+  <form id="bulkUsersForm" method="post" action="{% url 'admin_user_bulk_action' %}">
+    {% csrf_token %}
     <div class="row g-2 align-items-center">
-      <div class="col-lg-5 col-md-12 small text-muted">
-        Select users, then run a bulk action.
-      </div>
+      <div class="col-lg-5 col-md-12" style="color:#718096;font-size:0.85rem;">Select users, then run a bulk action.</div>
       <div class="col-lg-4 col-md-6">
-        <select name="bulk_action" id="bulkUserAction" class="form-select form-select-sm" required>
+        <select name="bulk_action" id="bulkUserAction" class="pg-select" required>
           <option value="">Choose bulk action</option>
           <option value="activate">Activate selected</option>
           <option value="deactivate">Deactivate selected</option>
@@ -84,19 +62,19 @@
           <option value="export_pdf">Export selected to PDF</option>
         </select>
       </div>
-      <div class="col-lg-3 col-md-6 d-grid">
-        <button type="submit" class="btn btn-sm btn-primary">Apply Bulk Action</button>
+      <div class="col-lg-3 col-md-6">
+        <button type="submit" class="pg-btn-primary w-100">Apply Bulk Action</button>
       </div>
     </div>
-  </div>
-</form>
+  </form>
+</div>
 
-<div class="card border-0 shadow-sm">
+<div class="pg-card">
   <div class="table-responsive">
-    <table class="table mb-0">
+    <table class="pg-table">
       <thead>
         <tr>
-          <th style="width: 40px;"><input type="checkbox" id="selectAllUsers"></th>
+          <th style="width:40px;"><input type="checkbox" id="selectAllUsers"></th>
           <th>Photo</th>
           <th>Username</th>
           <th>Name</th>
@@ -109,12 +87,10 @@
       </thead>
       <tbody>
       {% for item in page_obj %}
-        <tr class="{% if not item.is_active %}muted-user-row{% endif %}">
+        <tr class="{% if not item.is_active %}pg-muted-row{% endif %}">
+          <td><input type="checkbox" class="user-row-checkbox" name="selected_ids" value="{{ item.id }}" form="bulkUsersForm"></td>
           <td>
-            <input type="checkbox" class="user-row-checkbox" name="selected_ids" value="{{ item.id }}" form="bulkUsersForm">
-          </td>
-          <td>
-            <span class="user-avatar-chip">
+            <span class="pg-avatar-chip">
               {% if item.is_staff and item.admin_profile.profile_photo %}
                 <img src="{{ item.admin_profile.profile_photo.url }}" alt="{{ item.username }} photo">
               {% elif not item.is_staff and item.member_account.profile_photo %}
@@ -124,37 +100,40 @@
               {% endif %}
             </span>
           </td>
+          <td style="font-weight:600;">{{ item.username }}</td>
           <td>
-            {{ item.username }}
-          </td>
-          <td>
-            {% if item.member_account %}
-              {{ item.member_account.person }}
-            {% elif item.first_name or item.last_name %}
-              {{ item.first_name|default:'' }} {{ item.last_name|default:'' }}
-            {% else %}
-              -
-            {% endif %}
+            {% if item.member_account %}{{ item.member_account.person }}
+            {% elif item.first_name or item.last_name %}{{ item.first_name|default:'' }} {{ item.last_name|default:'' }}
+            {% else %}-{% endif %}
           </td>
           <td>{{ item.email|default:'-' }}</td>
           <td>{% if item.member_account %}{{ item.member_account.person }}{% else %}-{% endif %}</td>
           <td>
-            {% if item.is_superuser %}<span class="badge bg-danger me-1">Superuser</span>{% endif %}
-            {% if item.is_staff %}<span class="badge bg-primary">Staff</span>{% else %}<span class="badge bg-secondary">Member</span>{% endif %}
+            {% if item.is_superuser %}<span class="pg-status-badge" style="background:#fee2e2;color:#991b1b;margin-right:4px;">Superuser</span>{% endif %}
+            {% if item.is_staff %}<span class="pg-status-badge" style="background:#dbeafe;color:#1e40af;">Staff</span>
+            {% else %}<span class="pg-status-badge" style="background:#f3f4f6;color:#4b5563;">Member</span>{% endif %}
           </td>
-          <td>{% if item.is_active %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
-          <td class="d-flex gap-2">
-            <a href="{% url 'admin_user_edit' item.id %}" class="btn btn-sm btn-outline-primary">Manage</a>
-            {% if item.id != request.user.id %}
-            <form method="post" action="{% url 'admin_user_toggle_active' item.id %}" class="user-toggle-form" data-username="{{ item.username }}" data-action-label="{% if item.is_active %}deactivate{% else %}activate{% endif %}">
-              {% csrf_token %}
-              <button type="button" class="btn btn-sm {% if item.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %} open-user-toggle-modal">{% if item.is_active %}Deactivate{% else %}Activate{% endif %}</button>
-            </form>
+          <td>
+            {% if item.is_active %}
+              <span class="pg-status-badge pg-status-active">Active</span>
+            {% else %}
+              <span class="pg-status-badge pg-status-inactive">Inactive</span>
             {% endif %}
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <a href="{% url 'admin_user_edit' item.id %}" class="pg-btn-outline pg-btn-sm">Manage</a>
+              {% if item.id != request.user.id %}
+              <form method="post" action="{% url 'admin_user_toggle_active' item.id %}" class="user-toggle-form" data-username="{{ item.username }}" data-action-label="{% if item.is_active %}deactivate{% else %}activate{% endif %}">
+                {% csrf_token %}
+                <button type="button" class="{% if item.is_active %}pg-btn-danger{% else %}pg-btn-success{% endif %} pg-btn-sm open-user-toggle-modal">{% if item.is_active %}Deactivate{% else %}Activate{% endif %}</button>
+              </form>
+              {% endif %}
+            </div>
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="9">No users found.</td></tr>
+        <tr><td colspan="9"><div class="pg-empty">No users found.</div></td></tr>
       {% endfor %}
       </tbody>
     </table>
@@ -162,48 +141,51 @@
 </div>
 {% include 'partials/pagination.html' with page_query=page_query %}
 
-<div id="userToggleModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
-<div id="userToggleModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
-  <div class="card shadow-lg border-0">
-    <div class="card-body p-4">
-      <div class="d-flex align-items-start justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-          <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
-          <h5 class="mb-0">Confirm Action</h5>
-        </div>
-        <button type="button" id="closeUserToggleModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+<!-- Toggle Modal -->
+<div id="userToggleModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background:rgba(0,0,0,0.45);z-index:1050;"></div>
+<div id="userToggleModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index:1060;width:min(92vw,460px);">
+  <div class="pg-modal-content">
+    <div class="pg-modal-header d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div style="width:38px;height:38px;border-radius:999px;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-weight:700;">!</div>
+        <h6 class="mb-0" style="font-weight:700;color:#1a202c;">Confirm Action</h6>
       </div>
-      <p class="mb-2">You are about to <strong id="userToggleActionLabel"></strong> user <strong id="userToggleName"></strong>.</p>
-      <p class="text-muted small mb-4">This updates account access and linked member active status.</p>
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" id="cancelUserToggleBtn" class="btn btn-outline-secondary">Cancel</button>
-        <button type="button" id="confirmUserToggleBtn" class="btn btn-warning">Proceed</button>
-      </div>
+      <button type="button" id="closeUserToggleModalBtn" class="pg-btn-outline pg-btn-sm">✕</button>
+    </div>
+    <div class="pg-modal-body">
+      <p class="mb-2" style="color:#1a202c;">You are about to <strong id="userToggleActionLabel"></strong> user <strong id="userToggleName"></strong>.</p>
+      <p class="mb-0" style="color:#718096;font-size:0.85rem;">This updates account access and linked member active status.</p>
+    </div>
+    <div class="pg-modal-footer d-flex justify-content-end gap-2">
+      <button type="button" id="cancelUserToggleBtn" class="pg-btn-outline">Cancel</button>
+      <button type="button" id="confirmUserToggleBtn" class="pg-btn-warning">Proceed</button>
     </div>
   </div>
 </div>
 
-<div id="bulkUserModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(0,0,0,0.45); z-index: 1050;"></div>
-<div id="bulkUserModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index: 1060; width: min(92vw, 460px);">
-  <div class="card shadow-lg border-0">
-    <div class="card-body p-4">
-      <div class="d-flex align-items-start justify-content-between mb-3">
-        <div class="d-flex align-items-center">
-          <div class="rounded-circle bg-warning-subtle text-warning d-flex align-items-center justify-content-center me-3" style="width: 44px; height: 44px;">!</div>
-          <h5 class="mb-0">Confirm Bulk Action</h5>
-        </div>
-        <button type="button" id="closeBulkUserModalBtn" class="btn btn-sm btn-light border" aria-label="Close">X</button>
+<!-- Bulk Modal -->
+<div id="bulkUserModalBackdrop" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background:rgba(0,0,0,0.45);z-index:1050;"></div>
+<div id="bulkUserModal" class="position-fixed top-50 start-50 translate-middle d-none" style="z-index:1060;width:min(92vw,460px);">
+  <div class="pg-modal-content">
+    <div class="pg-modal-header d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2">
+        <div style="width:38px;height:38px;border-radius:999px;background:#fef3c7;color:#d97706;display:flex;align-items:center;justify-content:center;font-weight:700;">!</div>
+        <h6 class="mb-0" style="font-weight:700;color:#1a202c;">Confirm Bulk Action</h6>
       </div>
-      <p class="mb-2">You are about to <strong id="bulkUserActionLabel"></strong> selected users.</p>
-      <p class="text-muted small mb-4">This action applies to all checked users.</p>
-      <div class="d-flex justify-content-end gap-2">
-        <button type="button" id="cancelBulkUserBtn" class="btn btn-outline-secondary">Cancel</button>
-        <button type="button" id="confirmBulkUserBtn" class="btn btn-warning">Proceed</button>
-      </div>
+      <button type="button" id="closeBulkUserModalBtn" class="pg-btn-outline pg-btn-sm">✕</button>
+    </div>
+    <div class="pg-modal-body">
+      <p class="mb-2" style="color:#1a202c;">You are about to <strong id="bulkUserActionLabel"></strong> selected users.</p>
+      <p class="mb-0" style="color:#718096;font-size:0.85rem;">This action applies to all checked users.</p>
+    </div>
+    <div class="pg-modal-footer d-flex justify-content-end gap-2">
+      <button type="button" id="cancelBulkUserBtn" class="pg-btn-outline">Cancel</button>
+      <button type="button" id="confirmBulkUserBtn" class="pg-btn-warning">Proceed</button>
     </div>
   </div>
 </div>
 
+</div>
 <script>
 (() => {
   const selectAllUsers = document.getElementById('selectAllUsers');
@@ -229,18 +211,12 @@
 
   if (selectAllUsers) {
     selectAllUsers.addEventListener('change', () => {
-      rowCheckboxes.forEach((checkbox) => {
-        checkbox.checked = selectAllUsers.checked;
-      });
+      rowCheckboxes.forEach((cb) => { cb.checked = selectAllUsers.checked; });
     });
   }
-
-  rowCheckboxes.forEach((checkbox) => {
-    checkbox.addEventListener('change', () => {
-      if (!selectAllUsers) {
-        return;
-      }
-      selectAllUsers.checked = rowCheckboxes.length > 0 && rowCheckboxes.every((item) => item.checked);
+  rowCheckboxes.forEach((cb) => {
+    cb.addEventListener('change', () => {
+      if (selectAllUsers) selectAllUsers.checked = rowCheckboxes.every((c) => c.checked);
     });
   });
 
@@ -248,71 +224,34 @@
     pendingForm = form;
     usernameEl.textContent = form.dataset.username || 'this user';
     actionEl.textContent = form.dataset.actionLabel || 'update';
-    modal.classList.remove('d-none');
-    backdrop.classList.remove('d-none');
+    modal.classList.remove('d-none'); backdrop.classList.remove('d-none');
   }
-
   function closeModal() {
-    pendingForm = null;
-    modal.classList.add('d-none');
-    backdrop.classList.add('d-none');
+    pendingForm = null; modal.classList.add('d-none'); backdrop.classList.add('d-none');
   }
-
-  document.querySelectorAll('.open-user-toggle-modal').forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const form = event.target.closest('.user-toggle-form');
-      if (form) {
-        openModal(form);
-      }
-    });
+  document.querySelectorAll('.open-user-toggle-modal').forEach((btn) => {
+    btn.addEventListener('click', (e) => { const f = e.target.closest('.user-toggle-form'); if (f) openModal(f); });
   });
-
-  confirmBtn.addEventListener('click', () => {
-    if (pendingForm) {
-      pendingForm.submit();
-    }
-  });
-
+  confirmBtn.addEventListener('click', () => { if (pendingForm) pendingForm.submit(); });
   cancelBtn.addEventListener('click', closeModal);
   closeBtn.addEventListener('click', closeModal);
   backdrop.addEventListener('click', closeModal);
 
-  function openBulkModal(actionValue) {
-    bulkActionLabel.textContent = actionValue.replace('_', ' ');
-    bulkModal.classList.remove('d-none');
-    bulkBackdrop.classList.remove('d-none');
+  function openBulkModal(v) {
+    bulkActionLabel.textContent = v.replace('_', ' ');
+    bulkModal.classList.remove('d-none'); bulkBackdrop.classList.remove('d-none');
   }
-
   function closeBulkModal() {
-    bulkModal.classList.add('d-none');
-    bulkBackdrop.classList.add('d-none');
+    bulkModal.classList.add('d-none'); bulkBackdrop.classList.add('d-none');
   }
-
   if (bulkForm && bulkAction) {
-    bulkForm.addEventListener('submit', (event) => {
-      const selectedCount = rowCheckboxes.filter((item) => item.checked).length;
-      if (!bulkAction.value) {
-        event.preventDefault();
-        return;
-      }
-      if (!selectedCount) {
-        event.preventDefault();
-        return;
-      }
-      const needsConfirm = ['activate', 'deactivate', 'delete'].includes(bulkAction.value);
-      if (needsConfirm) {
-        event.preventDefault();
-        openBulkModal(bulkAction.value);
-      }
+    bulkForm.addEventListener('submit', (e) => {
+      const cnt = rowCheckboxes.filter((c) => c.checked).length;
+      if (!bulkAction.value || !cnt) { e.preventDefault(); return; }
+      if (['activate','deactivate','delete'].includes(bulkAction.value)) { e.preventDefault(); openBulkModal(bulkAction.value); }
     });
   }
-
-  confirmBulkBtn.addEventListener('click', () => {
-    closeBulkModal();
-    if (bulkForm) {
-      bulkForm.submit();
-    }
-  });
+  confirmBulkBtn.addEventListener('click', () => { closeBulkModal(); if (bulkForm) bulkForm.submit(); });
   cancelBulkBtn.addEventListener('click', closeBulkModal);
   closeBulkBtn.addEventListener('click', closeBulkModal);
   bulkBackdrop.addEventListener('click', closeBulkModal);

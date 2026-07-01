@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="pg-page">
+
+<div class="pg-card mb-4" style="border-left:4px solid #667eea;">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h3 class="mb-0" style="color:#1a202c;font-weight:700;">Edit Wedding Request</h3>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.9rem;">Update your wedding request details. Partner and roles cannot be changed here.</p>
+    </div>
+    <span class="pg-status-badge pg-status-pending">Pending</span>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  <!-- Preferred Date / Slot -->
+  <div class="pg-card mb-4">
+    <div class="pg-section-title mb-3">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Preferred Date
+    </div>
+    <div>
+      <label class="pg-label" for="available_slot">Select a preferred date (optional)</label>
+      <select name="available_slot" id="available_slot" class="pg-select">
+        <option value="">— No preference / keep current —</option>
+        {% for slot in available_slots %}
+        <option value="{{ slot.id }}" {% if wrequest.available_slot_id == slot.id %}selected{% endif %}>
+          {{ slot.date|date:"l, d M Y" }}{% if slot.time %} at {{ slot.time|time:"H:i" }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      {% if wrequest.available_slot %}
+      <p class="mt-1" style="font-size:0.8rem;color:#718096;">
+        Currently: {{ wrequest.available_slot.date|date:"d M Y" }}{% if wrequest.available_slot.time %} at {{ wrequest.available_slot.time|time:"H:i" }}{% endif %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Couple Photo -->
+  <div class="pg-card mb-4">
+    <div class="pg-section-title mb-3">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Couple Photo
+    </div>
+    {% if wrequest.couple_photo %}
+    <div class="mb-3">
+      <p class="pg-label mb-1">Current photo</p>
+      <img src="{{ wrequest.couple_photo.url }}" alt="Current couple photo"
+           style="max-height:140px;border-radius:0.75rem;object-fit:cover;border:1px solid #e2e8f0;">
+    </div>
+    {% endif %}
+    <div>
+      <label class="pg-label" for="couple_photo">{% if wrequest.couple_photo %}Replace photo{% else %}Upload photo{% endif %}</label>
+      <input type="file" name="couple_photo" id="couple_photo" accept="image/*"
+             class="pg-input" style="padding:0.4rem 0.6rem;">
+    </div>
+  </div>
+
+  <!-- Health Documents -->
+  <div class="pg-card mb-4">
+    <div class="pg-section-title mb-3">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      Health Documents
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="pg-label" for="submitter_health_document">
+          Your health document{% if wrequest.submitter_health_document %} (currently uploaded){% endif %}
+        </label>
+        <input type="file" name="submitter_health_document" id="submitter_health_document"
+               class="pg-input" style="padding:0.4rem 0.6rem;">
+        {% if wrequest.submitter_health_document %}
+        <p class="mt-1" style="font-size:0.78rem;color:#22c55e;">&#10003; Document on file — upload to replace</p>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label" for="partner_health_document">
+          Partner's health document{% if wrequest.partner_health_document %} (currently uploaded){% endif %}
+        </label>
+        <input type="file" name="partner_health_document" id="partner_health_document"
+               class="pg-input" style="padding:0.4rem 0.6rem;">
+        {% if wrequest.partner_health_document %}
+        <p class="mt-1" style="font-size:0.78rem;color:#22c55e;">&#10003; Document on file — upload to replace</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Partner details -->
+  <div class="pg-card mb-4">
+    <div class="pg-section-title mb-3">
+      <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Partner Details
+      <span style="font-size:0.75rem;font-weight:400;color:#94a3b8;margin-left:0.5rem;">({{ wrequest.get_submitter_role_display }} → {% if wrequest.submitter_role == 'groom' %}Bride{% else %}Groom{% endif %})</span>
+    </div>
+
+    {% if not wrequest.partner_is_member %}
+    <!-- Non-member partner: fully editable -->
+    {% with d=wrequest.partner_non_member_data %}
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="pg-label">First Name</label>
+        <input name="partner_first_name" class="pg-input" value="{{ d.first_name|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Last Name</label>
+        <input name="partner_last_name" class="pg-input" value="{{ d.last_name|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Gender</label>
+        <select name="partner_gender" class="pg-select">
+          <option value="">Select</option>
+          <option value="Male" {% if d.gender == 'Male' %}selected{% endif %}>Male</option>
+          <option value="Female" {% if d.gender == 'Female' %}selected{% endif %}>Female</option>
+          <option value="Other" {% if d.gender == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Date of Birth</label>
+        <input type="date" name="partner_date_of_birth" class="pg-input" value="{{ d.date_of_birth|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Phone</label>
+        <input name="partner_phone" class="pg-input" value="{{ d.phone|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Email</label>
+        <input type="email" name="partner_email" class="pg-input" value="{{ d.email|default:'' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Current Church</label>
+        <input name="partner_church_name" class="pg-input" value="{{ d.church_name|default:'' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Address</label>
+        <input name="partner_address" class="pg-input" value="{{ d.address|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Province</label>
+        <input name="partner_province" class="pg-input" value="{{ d.province|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">District</label>
+        <input name="partner_district" class="pg-input" value="{{ d.district|default:'' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="pg-label">Sector</label>
+        <input name="partner_sector" class="pg-input" value="{{ d.sector|default:'' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Cell</label>
+        <input name="partner_cell" class="pg-input" value="{{ d.cell|default:'' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="pg-label">Village</label>
+        <input name="partner_village" class="pg-input" value="{{ d.village|default:'' }}">
+      </div>
+    </div>
+    {% endwith %}
+
+    {% elif not wrequest.partner_consented %}
+    <!-- Member partner — not yet consented: allow changing -->
+    <p style="font-size:0.85rem;color:#718096;margin-bottom:0.75rem;">
+      Your partner hasn't confirmed yet. You can change who you select below.
+    </p>
+    <div>
+      <label class="pg-label">Search &amp; select partner</label>
+      <input id="partnerSearch" class="pg-input mb-2" placeholder="Type name to filter…">
+      <select name="partner_member_id" id="partnerSelect" class="pg-select">
+        <option value="">— Keep current: {{ wrequest.partner }} —</option>
+        {% for person in member_choices %}
+        <option value="{{ person.id }}" {% if wrequest.partner_id == person.id %}selected{% endif %}>{{ person }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <script>
+    document.getElementById('partnerSearch').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#partnerSelect option').forEach(function(opt, i) {
+        if (i === 0) return;
+        opt.hidden = q && !opt.textContent.toLowerCase().includes(q);
+      });
+    });
+    </script>
+
+    {% else %}
+    <!-- Member partner — already consented: read-only -->
+    <div class="d-flex align-items-center gap-3 px-3 py-2 rounded" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      <div>
+        <p class="mb-0" style="font-weight:600;color:#065f46;">{{ wrequest.partner.first_name }} {{ wrequest.partner.last_name }}</p>
+        <p class="mb-0" style="font-size:0.8rem;color:#718096;">Partner has already confirmed — cannot be changed.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap">
+    <button type="submit" class="pg-btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+      Save Changes
+    </button>
+    <a href="{% url 'member_wedding_status' wrequest.id %}" class="pg-btn-outline">Cancel</a>
+  </div>
+</form>
+
+</div>
+{% endblock %}

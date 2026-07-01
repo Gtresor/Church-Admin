@@ -1,46 +1,162 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
-<h3>Wedding Request Status</h3>
+<div class="pg-page">
 
-<div class="card card-body mb-3">
-  <h5 class="mb-3">Request Details</h5>
-  <table class="table table-sm">
-    <tr><th>Status</th><td><span class="badge {% if wrequest.status == 'Pending' %}bg-warning{% elif wrequest.status == 'Approved' %}bg-success{% elif wrequest.status == 'Rejected' %}bg-danger{% else %}bg-secondary{% endif %}">{{ wrequest.status }}</span></td></tr>
-    <tr><th>Your Role</th><td>{{ wrequest.get_submitter_role_display|default:wrequest.submitter_role }}</td></tr>
-    <tr><th>Partner</th><td>{{ wrequest.partner|default:"Not yet assigned (non-member)" }}</td></tr>
-    <tr><th>Partner Consented</th>
-      <td>
-        {% if wrequest.partner_consented %}
-          <span class="text-success">✓ Yes</span>
-        {% elif wrequest.partner_is_member %}
-          <span class="text-warning">⏳ Awaiting partner confirmation</span>
-        {% else %}
-          <span class="text-muted">N/A (non-member partner)</span>
-        {% endif %}
-      </td>
-    </tr>
-    <tr><th>Admin Comment</th><td>{{ wrequest.admin_comment|default:"None yet" }}</td></tr>
-    <tr><th>Submitted</th><td>{{ wrequest.created_at|date:"M d, Y H:i" }}</td></tr>
-  </table>
-</div>
-
-{% if wrequest.partner_is_member and not wrequest.partner_consented %}
-<div class="card card-body mb-3 border-warning">
-  <h5 class="text-warning">⏳ Partner Confirmation Required</h5>
-  <p>Share this link with your partner so they can confirm their participation:</p>
-  <div class="input-group mb-2">
-    <input type="text" class="form-control" value="{{ invite_url }}" id="inviteLink" readonly>
-    <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText(document.getElementById('inviteLink').value)">Copy</button>
+<div class="pg-card mb-4" style="border-left:4px solid #667eea;">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div>
+      <h3 class="mb-0" style="color:#1a202c;font-weight:700;">Wedding Request Status</h3>
+      <div class="pg-gradient-accent"></div>
+      <p class="mb-0 mt-1" style="color:#718096;font-size:0.9rem;">Track the progress of your wedding request.</p>
+    </div>
+    <span class="pg-status-badge pg-status-{{ wrequest.status|lower }}">{{ wrequest.status }}</span>
   </div>
-  <small class="text-muted">The link is unique to this request. Your partner must be logged in to confirm.</small>
+</div>
+
+<!-- Application Form download (APPROVED only) -->
+{% if show_application_form %}
+<div class="pg-card mb-4" style="border-left:4px solid #22c55e;background:linear-gradient(135deg,#f0fdf4,#dcfce7);">
+  <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:48px;height:48px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div>
+        <p class="mb-0" style="font-weight:700;color:#065f46;font-size:1rem;">Your request has been approved!</p>
+        <p class="mb-0 mt-1" style="font-size:0.85rem;color:#047857;">
+          Please download the Wedding Application Form, fill it in, and bring it to the church office in person.
+        </p>
+      </div>
+    </div>
+    <a href="{% static 'files/Wedding application form.pdf' %}" class="pg-btn-primary" download>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Form
+    </a>
+  </div>
 </div>
 {% endif %}
 
-{% if wrequest.admin_comment %}
-<div class="alert alert-info">
-  <strong>Admin Note:</strong> {{ wrequest.admin_comment }}
+<!-- Details -->
+<div class="pg-card mb-4">
+  <div class="pg-section-title mb-3">
+    <svg class="pg-icon-svg" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2"><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M7.5 7.5c3.5-1 5.5-1 9 0"/><path d="M7 16.5c3.5 1 6.5 1 10 0"/><path d="M15.5 17c0 1-1.5 3-2 3-1 0-2.5-2-2.5-3"/></svg>
+    Request Details
+  </div>
+  <div class="pg-info-grid">
+    <div class="pg-info-cell">
+      <span class="pg-label">Status</span>
+      <span class="pg-status-badge pg-status-{{ wrequest.status|lower }}">{{ wrequest.status }}</span>
+    </div>
+    <div class="pg-info-cell">
+      <span class="pg-label">Your Role</span>
+      <span class="pg-value">{{ wrequest.get_submitter_role_display|default:wrequest.submitter_role }}</span>
+    </div>
+    <div class="pg-info-cell">
+      <span class="pg-label">Partner</span>
+      <span class="pg-value">{{ wrequest.partner|default:"Non-member partner" }}</span>
+    </div>
+    <div class="pg-info-cell">
+      <span class="pg-label">Partner Consented</span>
+      <span class="pg-value">
+        {% if wrequest.partner_consented %}
+          <span class="pg-status-badge pg-status-completed">&#10003; Yes</span>
+        {% elif wrequest.partner_is_member %}
+          <span class="pg-status-badge pg-status-pending">Awaiting</span>
+        {% else %}
+          <span style="color:#a0aec0;font-size:0.85rem;">N/A</span>
+        {% endif %}
+      </span>
+    </div>
+    {% if wrequest.available_slot %}
+    <div class="pg-info-cell">
+      <span class="pg-label">Preferred Date</span>
+      <span class="pg-value">{{ wrequest.available_slot.date|date:"d M Y" }}{% if wrequest.available_slot.time %} at {{ wrequest.available_slot.time|time:"H:i" }}{% endif %}</span>
+    </div>
+    {% endif %}
+    <div class="pg-info-cell">
+      <span class="pg-label">Submitted</span>
+      <span class="pg-value">{{ wrequest.created_at|date:"d M Y" }}</span>
+    </div>
+  </div>
+
+  {% if wrequest.admin_comment %}
+  <div class="mt-3 px-3 py-2 rounded" style="background:#eff6ff;border-left:3px solid #667eea;">
+    <p class="mb-0" style="font-size:0.82rem;font-weight:600;color:#1e40af;">Note from the Church</p>
+    <p class="mb-0 mt-1" style="font-size:0.88rem;color:#1e2a4a;">{{ wrequest.admin_comment }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Partner invite link (member partner, not yet consented) -->
+{% if wrequest.partner_is_member and not wrequest.partner_consented %}
+<div class="pg-card mb-4" style="border-left:4px solid #f59e0b;">
+  <div style="font-weight:700;color:#92400e;margin-bottom:0.5rem;">Partner Confirmation Required</div>
+  <p style="font-size:0.88rem;color:#4a5568;margin-bottom:0.75rem;">Share this link with your partner so they can confirm their participation:</p>
+  <div class="d-flex gap-2 mb-2">
+    <input type="text" class="pg-input" value="{{ invite_url }}" id="inviteLink" readonly style="flex:1;">
+    <button class="pg-btn-outline" onclick="navigator.clipboard.writeText(document.getElementById('inviteLink').value)">Copy</button>
+  </div>
+  <p style="font-size:0.8rem;color:#718096;margin-bottom:0;">The link is unique to this request. Your partner must be logged in to confirm.</p>
 </div>
 {% endif %}
 
-<a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">&larr; Back to Dashboard</a>
+<!-- Action buttons -->
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <a href="{% url 'member_dashboard' %}" class="pg-btn-outline">&larr; Back to Dashboard</a>
+
+  {% if can_edit %}
+  <a href="{% url 'member_wedding_edit' wrequest.id %}" class="pg-btn-primary">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    Edit Request
+  </a>
+  {% endif %}
+
+  {% if can_resubmit %}
+  <form method="post" action="{% url 'member_wedding_resubmit' wrequest.id %}" class="m-0">
+    {% csrf_token %}
+    <button type="submit" class="pg-btn-primary" style="background:linear-gradient(135deg,#22c55e,#16a34a);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.86"/></svg>
+      Resubmit Request
+    </button>
+  </form>
+  {% endif %}
+
+  {% if can_cancel %}
+  <button type="button" class="pg-btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal"
+          style="background:transparent;border:1.5px solid #ef4444;color:#ef4444;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    Remove Request
+  </button>
+  {% endif %}
+</div>
+
+<!-- Cancel confirmation modal -->
+{% if can_cancel %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content pg-modal-content">
+      <div class="pg-modal-header">
+        <h5 class="modal-title" id="cancelModalLabel" style="font-weight:700;color:#1a202c;">Remove Wedding Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="pg-modal-body">
+        <p style="color:#4a5568;font-size:0.92rem;margin:0;">
+          Are you sure you want to remove this wedding request? It will be permanently deleted and the church administration will be notified.
+          You can submit a new request later if you change your mind.
+        </p>
+      </div>
+      <div class="pg-modal-footer d-flex justify-content-end gap-2">
+        <button type="button" class="pg-btn-outline" data-bs-dismiss="modal">Keep Request</button>
+        <form method="post" action="{% url 'member_wedding_cancel' wrequest.id %}" class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="pg-btn-danger">Yes, Remove Request</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+</div>
 {% endblock %}
